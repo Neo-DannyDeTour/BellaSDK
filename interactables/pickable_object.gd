@@ -60,7 +60,7 @@ const MIN_HOLD_DISTANCE: float = 1.2
 @export var hold_distance_offset: float = 0.0
 
 ## When enabled, anchors the object at chest height instead of floor-hovering.
-@export var hold_at_chest: bool = true
+@export var hold_at_chest: bool = false
 
 ## Explicit hold distance in meters. Values >= 0.0 override default distance limits.
 @export var custom_hold_distance: float = 0.15

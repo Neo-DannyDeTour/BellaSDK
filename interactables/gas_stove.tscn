@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://c8gas7stove01"]
+
+[ext_resource type="Script" uid="uid://ctasl1kis3ejw" path="res://interactables/gas_stove.gd" id="1_stove_script"]
+[ext_resource type="PackedScene" uid="uid://b5emgpwe37cyd" path="res://assets/props/gas_stove/gas_stove.glb" id="2_stove_glb"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_stove"]
+size = Vector3(0.85, 0.78, 0.55)
+
+[node name="GasStove" type="RigidBody3D" unique_id=1922105809]
+mass = 800.0
+script = ExtResource("1_stove_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1686035445]
+shape = SubResource("BoxShape3D_stove")
+
+[node name="gas_stove" parent="." unique_id=315577427 instance=ExtResource("2_stove_glb")]

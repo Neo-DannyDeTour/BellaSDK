@@ -1,0 +1,164 @@
+[gd_scene format=4]
+
+[ext_resource type="Script" path="res://interactables/industrial_door.gd" id="1_os1id"]
+[ext_resource type="Shader" path="res://shaders/industrial_door.gdshader" id="2_opxme"]
+[ext_resource type="Texture2D" path="res://assets/textures/door/door_albedo.png" id="3_xkwjn"]
+[ext_resource type="Texture2D" path="res://assets/textures/door/door_normal.png" id="4_wealx"]
+[ext_resource type="Texture2D" path="res://assets/textures/door/door_orm.png" id="5_xhy3f"]
+[ext_resource type="Script" path="res://interactables/interact_component.gd" id="6_rfnj8"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8iall"]
+render_priority = 0
+shader = ExtResource("2_opxme")
+shader_parameter/albedo_texture = ExtResource("3_xkwjn")
+shader_parameter/orm_texture = ExtResource("5_xhy3f")
+shader_parameter/normal_texture = ExtResource("4_wealx")
+shader_parameter/normal_scale = null
+
+[sub_resource type="BoxMesh" id="BoxMesh_4r0ao"]
+size = Vector3(0.06, 2.06, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_t5jl5"]
+size = Vector3(0.06, 2.06, 0.08)
+
+[sub_resource type="BoxMesh" id="BoxMesh_fel1w"]
+size = Vector3(0.06, 2.06, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_uuhlo"]
+size = Vector3(0.06, 2.06, 0.08)
+
+[sub_resource type="BoxMesh" id="BoxMesh_nc5wp"]
+size = Vector3(1.02, 0.06, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_40lv4"]
+size = Vector3(1.02, 0.06, 0.08)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_x34n2"]
+_surfaces = [{
+"aabb": AABB(-0.45, -1, -0.0225, 0.9, 2, 0.045),
+"attribute_data": PackedByteArray("AAAAAAAAAAAAAIA/AAAAAAAAgD8AAIA/AAAAAAAAAAAAAIA/AACAPwAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgD8AAIA/AAAAAAAAAAAAAIA/AACAPwAAAAAAAIA/CtejPArXozwK16M9CtejPArXoz1H4Xo/CtejPArXozwK16M9R+F6PwrXozxH4Xo/CtejPArXozwK16M9CtejPArXoz1H4Xo/CtejPArXozwK16M9R+F6PwrXozxH4Xo/CtejPArXozwK16M9CtejPArXoz1H4Xo/CtejPArXozwK16M9R+F6PwrXozxH4Xo/CtejPArXozwK16M9CtejPArXoz1H4Xo/CtejPArXozwK16M9R+F6PwrXozxH4Xo/"),
+"format": 34359738391,
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 36,
+"vertex_data": PackedByteArray("ZmbmvgAAgD/sUbg8ZmbmPgAAgD/sUbg8ZmbmPgAAgL/sUbg8ZmbmvgAAgD/sUbg8ZmbmPgAAgL/sUbg8ZmbmvgAAgL/sUbg8ZmbmPgAAgD/sUbi8ZmbmvgAAgD/sUbi8ZmbmvgAAgL/sUbi8ZmbmPgAAgD/sUbi8ZmbmvgAAgL/sUbi8ZmbmPgAAgL/sUbi8ZmbmvgAAgD/sUbi8ZmbmvgAAgD/sUbg8ZmbmvgAAgL/sUbg8ZmbmvgAAgD/sUbi8ZmbmvgAAgL/sUbg8ZmbmvgAAgL/sUbi8ZmbmPgAAgD/sUbg8ZmbmPgAAgD/sUbi8ZmbmPgAAgL/sUbi8ZmbmPgAAgD/sUbg8ZmbmPgAAgL/sUbi8ZmbmPgAAgL/sUbg8ZmbmvgAAgD/sUbi8ZmbmPgAAgD/sUbi8ZmbmPgAAgD/sUbg8ZmbmvgAAgD/sUbi8ZmbmPgAAgD/sUbg8ZmbmvgAAgD/sUbg8ZmbmvgAAgL/sUbg8ZmbmPgAAgL/sUbg8ZmbmPgAAgL/sUbi8ZmbmvgAAgL/sUbg8ZmbmPgAAgL/sUbi8ZmbmvgAAgL/sUbi8/3//f////7//f/9/////v/9//3////+//3//f////7//f/9/////v/9//3////+//////wAA/7//////AAD/v/////8AAP+//////wAA/7//////AAD/v/////8AAP+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/////f/////////9//////////3//////////f/////////9//////////3///////3///////7//f///////v/9///////+//3///////7//f///////v/9///////+//38AAP///7//fwAA////v/9/AAD///+//38AAP///7//fwAA////v/9/AAD///+/")
+}]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wbrhy"]
+size = Vector3(0.9, 2, 0.045)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_srjlt"]
+top_radius = 0.009
+bottom_radius = 0.009
+height = 0.09
+radial_segments = 8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_f8f5i"]
+top_radius = 0.009
+bottom_radius = 0.009
+height = 0.09
+radial_segments = 8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_a5yu7"]
+top_radius = 0.009
+bottom_radius = 0.009
+height = 0.09
+radial_segments = 8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_bwfxv"]
+top_radius = 0.022
+bottom_radius = 0.026
+height = 0.025
+radial_segments = 12
+
+[node name="IndustrialDoor" type="Node3D" unique_id=2089017629]
+script = ExtResource("1_os1id")
+
+[node name="FrameBody" type="StaticBody3D" parent="." unique_id=2018843487]
+collision_mask = 0
+
+[node name="LeftJamb" type="MeshInstance3D" parent="FrameBody" unique_id=550939791]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.48, 1.03, 0)
+material_override = SubResource("ShaderMaterial_8iall")
+instance_shader_parameters/tint = Color(0.82, 0.85, 0.86, 1)
+instance_shader_parameters/uv_scale = Vector2(0.15, 0.15)
+mesh = SubResource("BoxMesh_4r0ao")
+
+[node name="LeftJambCol" type="CollisionShape3D" parent="FrameBody" unique_id=101726711]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.48, 1.03, 0)
+shape = SubResource("BoxShape3D_t5jl5")
+
+[node name="RightJamb" type="MeshInstance3D" parent="FrameBody" unique_id=1118224740]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.48, 1.03, 0)
+material_override = SubResource("ShaderMaterial_8iall")
+instance_shader_parameters/tint = Color(0.82, 0.85, 0.86, 1)
+instance_shader_parameters/uv_scale = Vector2(0.15, 0.15)
+mesh = SubResource("BoxMesh_fel1w")
+
+[node name="RightJambCol" type="CollisionShape3D" parent="FrameBody" unique_id=1797630477]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.48, 1.03, 0)
+shape = SubResource("BoxShape3D_uuhlo")
+
+[node name="TopHeader" type="MeshInstance3D" parent="FrameBody" unique_id=262413385]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.03, 0)
+material_override = SubResource("ShaderMaterial_8iall")
+instance_shader_parameters/tint = Color(0.82, 0.85, 0.86, 1)
+instance_shader_parameters/uv_scale = Vector2(0.15, 0.15)
+mesh = SubResource("BoxMesh_nc5wp")
+
+[node name="TopHeaderCol" type="CollisionShape3D" parent="FrameBody" unique_id=674779262]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.03, 0)
+shape = SubResource("BoxShape3D_40lv4")
+
+[node name="DoorLeaf" type="AnimatableBody3D" parent="." unique_id=308876580]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0, 0)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+
+[node name="SlabMesh" type="MeshInstance3D" parent="DoorLeaf" unique_id=273158640]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45, 1, 0)
+layers = 4
+material_override = SubResource("ShaderMaterial_8iall")
+instance_shader_parameters/tint = Color(1, 1, 1, 1)
+instance_shader_parameters/uv_scale = Vector2(1, 1)
+mesh = SubResource("ArrayMesh_x34n2")
+
+[node name="SlabCollider" type="CollisionShape3D" parent="DoorLeaf" unique_id=935419293]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45, 1, 0)
+shape = SubResource("BoxShape3D_wbrhy")
+
+[node name="Hinge_0" type="MeshInstance3D" parent="DoorLeaf" unique_id=715920866]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28, 0.0265)
+layers = 4
+material_override = SubResource("ShaderMaterial_8iall")
+instance_shader_parameters/tint = Color(0.75, 0.68, 0.42, 1)
+instance_shader_parameters/uv_scale = Vector2(0.05, 0.05)
+mesh = SubResource("CylinderMesh_srjlt")
+
+[node name="Hinge_1" type="MeshInstance3D" parent="DoorLeaf" unique_id=1567146710]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.02, 0.0265)
+layers = 4
+material_override = SubResource("ShaderMaterial_8iall")
+instance_shader_parameters/tint = Color(0.75, 0.68, 0.42, 1)
+instance_shader_parameters/uv_scale = Vector2(0.05, 0.05)
+mesh = SubResource("CylinderMesh_f8f5i")
+
+[node name="Hinge_2" type="MeshInstance3D" parent="DoorLeaf" unique_id=178737524]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.74, 0.0265)
+layers = 4
+material_override = SubResource("ShaderMaterial_8iall")
+instance_shader_parameters/tint = Color(0.75, 0.68, 0.42, 1)
+instance_shader_parameters/uv_scale = Vector2(0.05, 0.05)
+mesh = SubResource("CylinderMesh_a5yu7")
+
+[node name="DeadboltKnob" type="MeshInstance3D" parent="DoorLeaf" unique_id=407375921]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.835, 1.03, 0.0345)
+layers = 4
+material_override = SubResource("ShaderMaterial_8iall")
+instance_shader_parameters/tint = Color(0.68, 0.64, 0.48, 1)
+instance_shader_parameters/uv_scale = Vector2(0.05, 0.05)
+mesh = SubResource("CylinderMesh_bwfxv")
+
+[node name="InteractComponent" type="Node" parent="." unique_id=249733588]
+script = ExtResource("6_rfnj8")

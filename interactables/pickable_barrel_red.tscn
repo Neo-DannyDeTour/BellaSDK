@@ -20,6 +20,8 @@ radius = 0.45
 [node name="PickableBarrelRed" unique_id=259863869 node_paths=PackedStringArray("mesh") groups=["magnetizable"] instance=ExtResource("1_aapj8")]
 mass = 10.0
 mesh = NodePath("Barrel_red")
+custom_hold_distance = 1.0
+hold_vertical_offset = 0.0
 held_transparency = 0.75
 
 [node name="HighlightComponent" parent="." index="1" unique_id=1233358358]

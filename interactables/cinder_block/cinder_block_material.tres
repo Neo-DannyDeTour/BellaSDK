@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" uid="uid://cre761e4qxq13" path="res://shaders/cinder_block.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/base_color = Color(0.42, 0.43, 0.41, 1)
+shader_parameter/grime_color = Color(0.18, 0.17, 0.15, 1)
+shader_parameter/noise_scale = 28.0
+shader_parameter/bump_strength = 0.45

@@ -1,0 +1,66 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_pickable"]
+[ext_resource type="Script" path="res://interactables/pickable_tire.gd" id="2_tire_script"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_outline"]
+[ext_resource type="PackedScene" uid="uid://c3520niafc4wy" path="res://assets/models/props/tire/tire_carcass.glb" id="4_tire_mesh"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_rubber"]
+friction = 0.9
+bounce = 0.35
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
+render_priority = 0
+shader = ExtResource("3_outline")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_tire"]
+height = 0.22
+radius = 0.325
+
+[node name="PickableTire" unique_id=594279821 node_paths=PackedStringArray("mesh") groups=["magnetizable"] instance=ExtResource("1_pickable")]
+mass = 9.5
+physics_material_override = SubResource("PhysicsMaterial_rubber")
+script = ExtResource("2_tire_script")
+mesh = NodePath("tire_carcass")
+float_force = 1.2
+water_drag = 4.0
+water_angular_drag = 3.0
+custom_hold_distance = 0.5
+hold_vertical_offset = -0.15
+held_transparency = 0.75
+
+[node name="HighlightComponent" parent="." index="1" unique_id=1233358358]
+outline_material = SubResource("ShaderMaterial_outline")
+
+[node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.325, 0)
+shape = SubResource("CylinderShape3D_tire")
+
+[node name="Label3D" parent="." index="4" unique_id=1035008069]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+
+[node name="PromptIcon" parent="." index="5" unique_id=931149645]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+
+[node name="Marker3D" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="0" unique_id=1977258969]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, 0.325, 0)
+
+[node name="Marker3D2" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="1" unique_id=1466183085]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 0.325, 0)
+
+[node name="Marker3D3" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="2" unique_id=865436627]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.325, 0.25)
+
+[node name="Marker3D4" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="3" unique_id=1857240385]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.325, -0.25)
+
+[node name="tire_carcass" parent="." index="7" unique_id=1018090182 instance=ExtResource("4_tire_mesh")]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.325, 0)

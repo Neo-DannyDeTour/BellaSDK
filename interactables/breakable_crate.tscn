@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://cxvh8qm1a7ypl"]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_base"]
+[ext_resource type="Script" path="res://interactables/breakable_crate.gd" id="2_script"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_outline"]
+[ext_resource type="Shader" path="res://shaders/crate_fade.gdshader" id="4_fade"]
+[ext_resource type="PackedScene" path="res://assets/props/crates/wooden_crate_mesh.tscn" id="5_mesh"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crate_outline"]
+render_priority = 0
+shader = ExtResource("3_outline")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_crate"]
+size = Vector3(1, 1.05, 1)
+
+[node name="BreakableCrate" unique_id=594279821 node_paths=PackedStringArray("intact_mesh", "intact_collision", "debris_root", "mesh") instance=ExtResource("1_base")]
+mass = 25.0
+script = ExtResource("2_script")
+max_health = 25.0
+intact_mesh = NodePath("wooden_crate/Crate_Intact")
+intact_collision = NodePath("CollisionShape3D")
+debris_root = NodePath("wooden_crate/Crate_Debris")
+fade_shader = ExtResource("4_fade")
+mesh = NodePath("wooden_crate/Crate_Intact")
+float_force = 1.5
+
+[node name="HighlightComponent" parent="." index="1" unique_id=1233358358]
+outline_material = SubResource("ShaderMaterial_crate_outline")
+
+[node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.525, 0)
+shape = SubResource("BoxShape3D_crate")
+
+[node name="Label3D" parent="." index="4" unique_id=1035008069]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+
+[node name="PromptIcon" parent="." index="5" unique_id=931149645]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+
+[node name="wooden_crate" parent="." index="7" instance=ExtResource("5_mesh")]

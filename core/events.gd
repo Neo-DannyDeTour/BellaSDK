@@ -407,6 +407,10 @@ signal vault_prompt_updated(is_available: bool, screen_pos: Vector2, is_on_scree
 @warning_ignore("unused_signal")
 signal held_item_changed(is_holding: bool)
 
+## Emitted when an interactive physics prop impacts a surface above velocity threshold.
+@warning_ignore("unused_signal")
+signal prop_impacted(prop: RigidBody3D, collider: Node, impact_speed_sq: float)
+
 ## Emitted when the player enters or exits a water volume. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal swim_surface_toggled(is_active: bool)
