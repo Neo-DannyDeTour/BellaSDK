@@ -20,6 +20,12 @@ const SMOOTHING_SPEED: float = 6.0
 ## Minimum fill rate per second when approaching target progress.
 const MIN_FILL_RATE: float = 12.0
 
+## Animation playback framerate locked strictly to audio.
+const ANIM_FPS: float = 24.0
+
+## Total frame count per animation sequence (120 frames at 24 FPS = 5.0 seconds).
+const TOTAL_ANIM_FRAMES: int = 120
+
 ## Animation name for the Bella Wrench loading sequence.
 const ANIM_BELLA_WRENCH: StringName = &"bella_wrench"
 
@@ -81,6 +87,9 @@ var _is_resource_loaded: bool = false
 ## Flag indicating whether shader warmup has completed.
 var _is_warmup_complete: bool = false
 
+## Flag indicating whether the single playback animation cycle has finished.
+var _is_animation_finished: bool = false
+
 ## Flag preventing duplicate transition execution.
 var _is_transitioning_scene: bool = false
 
@@ -111,6 +120,9 @@ var _fade_tween: Tween = null
 ## The visual indicator container to fade smoothly without breaking root layout.
 @onready var visual_root: Control = $VisualRoot
 
+## Full-screen static splash image displayed after animation completion.
+@onready var static_splash: TextureRect = $VisualRoot/StaticSplash
+
 ## The animated sprite showing random loading sequence loops.
 @onready var animation: AnimatedSprite2D = $VisualRoot/CenterContainer/SpriteAnchor/AnimatedSprite2D
 
@@ -124,6 +136,7 @@ var _fade_tween: Tween = null
 ## Initializes background animation asset loading and transition guards.
 func _ready() -> void:
 	assert(is_instance_valid(visual_root), "LoadingScreen: visual_root missing.")
+	assert(is_instance_valid(static_splash), "LoadingScreen: static_splash missing.")
 	assert(is_instance_valid(animation), "LoadingScreen: animation missing.")
 	assert(is_instance_valid(progress_bar), "LoadingScreen: progress_bar missing.")
 	assert(is_instance_valid(audio_player), "LoadingScreen: audio_player missing.")
@@ -143,7 +156,14 @@ func _ready() -> void:
 
 	_select_random_presentation()
 
-	# Threaded request for ONLY the selected animation's SpriteFrames resource first.
+	# Threaded request for the level scene using worker subthreads immediately.
+	var level_error: Error = ResourceLoader.load_threaded_request(level_scene_path, "", true)
+	if level_error != OK:
+		push_error("LoadingScreen: Level request failed: " + error_string(level_error))
+		set_process(false)
+		return
+
+	# Threaded request for ONLY the selected animation's SpriteFrames resource.
 	var frame_error: Error = ResourceLoader.load_threaded_request(_selected_frames_path, "", false)
 	if frame_error != OK:
 		push_error("LoadingScreen: SpriteFrames request failed: " + error_string(frame_error))
@@ -177,22 +197,20 @@ func _process(delta: float) -> void:
 				if is_instance_valid(loaded_frames):
 					animation.sprite_frames = loaded_frames
 					animation.play(_selected_anim_name)
+					animation.pause()
+					animation.set_frame_and_progress(0, 0.0)
 					_is_frames_loaded = true
-					print("LoadingScreen: SpriteFrames loaded. Starting background level load.")
-
-					var level_error: Error = ResourceLoader.load_threaded_request(
-						level_scene_path, "", false
-					)
-					if level_error != OK:
-						push_error(
-							"LoadingScreen: Level request failed: " + error_string(level_error)
-						)
-						set_process(false)
+					if is_instance_valid(audio_player.stream):
+						audio_player.play()
+					print("LoadingScreen: SpriteFrames loaded. Audio and animation started synced.")
 			ResourceLoader.THREAD_LOAD_FAILED, ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
 				set_process(false)
 				push_error("LoadingScreen: Failed loading selected SpriteFrames resource.")
+				return
+	elif not _is_animation_finished:
+		_sync_animation_with_audio()
 
-	elif not _is_resource_loaded:
+	if not _is_resource_loaded:
 		_status = ResourceLoader.load_threaded_get_status(level_scene_path, _progress_array)
 
 		var has_shader_cache: bool = (
@@ -222,7 +240,7 @@ func _process(delta: float) -> void:
 				_cleanup_warmup_viewport()
 				push_error("LoadingScreen: Invalid scene path provided.")
 
-	elif _is_warmup_complete and not _is_transitioning_scene:
+	elif _is_warmup_complete and _is_animation_finished and not _is_transitioning_scene:
 		_is_transitioning_scene = true
 		_finalize_scene_transition()
 
@@ -237,12 +255,10 @@ func _select_random_presentation() -> void:
 		_selected_frames_path = bella_wrench_frames_path
 		if is_instance_valid(audio_bella_wrench):
 			audio_player.stream = audio_bella_wrench
-			audio_player.play()
 	elif _selected_anim_name == ANIM_PRIESTESS_TWOFACE:
 		_selected_frames_path = priestess_twoface_frames_path
 		if is_instance_valid(audio_priestess_twoface):
 			audio_player.stream = audio_priestess_twoface
-			audio_player.play()
 
 
 ## Smoothly steps the visual progress bar towards [member _target_progress].
@@ -254,6 +270,40 @@ func _update_progress_bar_visual(delta: float) -> void:
 		var speed: float = maxf(remaining * SMOOTHING_SPEED, MIN_FILL_RATE)
 		var step: float = minf(speed * delta, FILL_RATE_MAX * delta)
 		progress_bar.value = clampf(progress_bar.value + step, 0.0, _target_progress)
+
+
+## Synchronizes animation frame strictly to hardware audio playback at 24 FPS.
+func _sync_animation_with_audio() -> void:
+	if not is_instance_valid(animation) or not is_instance_valid(animation.sprite_frames):
+		return
+
+	if not audio_player.playing:
+		_on_single_animation_cycle_finished()
+		return
+
+	var playback_pos: float = (
+		audio_player.get_playback_position() + AudioServer.get_time_since_last_mix()
+	)
+	var target_frame: int = int(playback_pos * ANIM_FPS)
+
+	if target_frame >= TOTAL_ANIM_FRAMES - 1:
+		_on_single_animation_cycle_finished()
+	else:
+		animation.set_frame_and_progress(target_frame, 0.0)
+
+
+## Halts animation and audio, evicts texture frames, and displays static splash.
+func _on_single_animation_cycle_finished() -> void:
+	_is_animation_finished = true
+	print("LoadingScreen: Single 24 FPS cycle complete. Switching to Godiva splash.")
+	if is_instance_valid(audio_player):
+		audio_player.stop()
+	if is_instance_valid(animation):
+		animation.stop()
+		animation.visible = false
+		animation.sprite_frames = null
+	if is_instance_valid(static_splash):
+		static_splash.visible = true
 
 
 ## Sets up the isolated warmup viewport and begins pipeline compilation.

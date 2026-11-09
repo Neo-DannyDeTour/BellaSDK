@@ -1,4 +1,4 @@
-[gd_resource type="SpriteFrames" load_steps=121 format=3]
+[gd_resource type="SpriteFrames" format=3 uid="uid://dqweq0m8b2tvi"]
 
 [ext_resource type="Texture2D" uid="uid://b4ygi4s0hyes7" path="res://assets/images/loading_screens/bella_wrench_loading_frames/loading_frame_0001.png" id="1_473av"]
 [ext_resource type="Texture2D" uid="uid://bqjj86chnbi62" path="res://assets/images/loading_screens/bella_wrench_loading_frames/loading_frame_0002.png" id="2_i2epk"]
@@ -484,7 +484,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("120_ficay")
 }],
-"loop": true,
+"loop": 1,
 "name": &"bella_wrench",
-"speed": 12.0
+"speed": 24.0
 }]

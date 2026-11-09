@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://dn6pth4ryiv4s"]
+[gd_scene format=3 uid="uid://dn6pth4ryiv4s"]
 
 [ext_resource type="Script" uid="uid://mlc5e56gmbf1" path="res://ui/loading_screen_anim.gd" id="1_jp8si"]
 [ext_resource type="AudioStream" uid="uid://c28fbgq1hlnvx" path="res://assets/images/loading_screens/bella_wrench_loading_frames/bella_wrench_sound.ogg" id="2_473av"]
 [ext_resource type="AudioStream" uid="uid://dd53arqnsya7u" path="res://assets/images/loading_screens/priestess_two_face/priestess_two_face.ogg" id="3_priestess"]
+[ext_resource type="Texture2D" uid="uid://bsew3m3ca7tu1" path="res://assets/images/Godiva_Creative_Wave.jpeg" id="4_godiva"]
 
 [node name="LoadingScreen" type="CanvasLayer" unique_id=538110634]
 layer = 100
@@ -25,6 +26,18 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="StaticSplash" type="TextureRect" parent="VisualRoot" unique_id=1293847561]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("4_godiva")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="CenterContainer" type="CenterContainer" parent="VisualRoot" unique_id=712546798]
 layout_mode = 1
