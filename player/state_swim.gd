@@ -220,7 +220,9 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	if not is_instance_valid(loco) or not is_instance_valid(cam):
 		return
 
-	loco.head.position.y = MathUtils.damp(loco.head.position.y, 1.8, loco.default_lerp_speed, delta)
+	loco.head.position.y = MathUtils.damp(
+		loco.head.position.y, loco.STANDING_HEIGHT, loco.default_lerp_speed, delta
+	)
 
 	var input_vec: Vector3 = Vector3(input_dir.x, 0.0, input_dir.y)
 	var cam_basis: Basis = cam.global_transform.basis

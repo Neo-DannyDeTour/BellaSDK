@@ -334,9 +334,12 @@ _data = {
 }
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_62jtm"]
+radius = 0.35
+height = 1.64
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_34orh"]
-height = 1.2
+radius = 0.35
+height = 1.0
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_mdl7e"]
 
@@ -443,7 +446,7 @@ ui_controller = NodePath("UI")
 wolf_hands = NodePath("Head/Eyes/Camera3D/WolfHands")
 
 [node name="Head" type="Node3D" parent="." unique_id=1584872370]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.52, 0)
 
 [node name="Eyes" type="Node3D" parent="Head" unique_id=1925066158]
 
@@ -467,7 +470,7 @@ margin = 0.1
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1)
 
 [node name="FlashlightMount" type="Node3D" parent="Head/Eyes/Camera3D" unique_id=120381391]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.52, 0)
 
 [node name="Flashlight" type="SpotLight3D" parent="Head/Eyes/Camera3D/FlashlightMount" unique_id=2067377290]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -0.25)
@@ -522,16 +525,16 @@ eyes = NodePath("../Eyes")
 camera = NodePath("../Eyes/Camera3D")
 
 [node name="StandingCollisionShape" type="CollisionShape3D" parent="." unique_id=74353325]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.82, 0)
 shape = SubResource("CapsuleShape3D_62jtm")
 
 [node name="CrouchingCollisionShape" type="CollisionShape3D" parent="." unique_id=434486244]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("CapsuleShape3D_34orh")
 disabled = true
 
 [node name="CrouchCast" type="RayCast3D" parent="." unique_id=1427954589]
-target_position = Vector3(0, 2, 0)
+target_position = Vector3(0, 1.64, 0)
 collision_mask = 5
 
 [node name="StairsAheadCast" type="RayCast3D" parent="." unique_id=1957762492]

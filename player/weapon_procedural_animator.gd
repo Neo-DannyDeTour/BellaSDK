@@ -76,10 +76,10 @@ const SWAY_SMOOTH_SPEED: float = 14.0
 @export var sprint_bob_roll_amplitude: float = 0.035
 
 ## Target position offset applied during tactical sprint stance.
-@export var sprint_pose_position: Vector3 = Vector3(-0.06, -0.08, 0.04)
+@export var sprint_pose_position: Vector3 = Vector3(-0.05, 0.0, 0.16)
 
 ## Target rotation offset in radians applied during tactical sprint stance.
-@export var sprint_pose_rotation: Vector3 = Vector3(-0.35, -0.45, 0.32)
+@export var sprint_pose_rotation: Vector3 = Vector3(0.0, 1.65806, -0.17453)
 
 ## Procedural reload position dip offset.
 @export var reload_pose_position: Vector3 = Vector3(-0.02, -0.10, 0.05)

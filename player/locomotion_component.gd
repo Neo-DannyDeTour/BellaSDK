@@ -2,11 +2,14 @@
 class_name PlayerLocomotionComponent
 extends Node
 
+## Total physical character height in meters.
+const CHARACTER_HEIGHT: float = 1.64
+
 ## Target local Y position of [member head] when standing.
-const STANDING_HEIGHT: float = 1.8
+const STANDING_HEIGHT: float = 1.52
 
 ## Target local Y position of [member head] when crouched.
-const CROUCHING_HEIGHT: float = 1.0
+const CROUCHING_HEIGHT: float = 0.9
 
 ## Group tag marking physics bodies that ignore downward weight forces.
 const GROUP_IGNORE_WEIGHT: StringName = &"ignore_weight"

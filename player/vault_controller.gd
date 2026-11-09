@@ -49,6 +49,9 @@ signal crouch_state_changed(is_crouching: bool)
 ## Clearance depth in meters required behind ledge to complete vault.
 @export var vault_depth_clearance: float = 0.5
 
+## Maximum vertical reach in meters for standing ledge vaults.
+@export var max_reach: float = 2.1
+
 ## Automatically scans for vaultable ledges during physics frames.
 @export var auto_scan: bool = true
 
@@ -197,7 +200,7 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 
 	# 3. CLEARANCE CAST (Headroom Check)
 	var clearance_start: Vector3 = ledge_point + (forward_dir * 0.15) + Vector3(0.0, 0.05, 0.0)
-	var clearance_end: Vector3 = clearance_start + Vector3(0.0, 1.8, 0.0)
+	var clearance_end: Vector3 = clearance_start + Vector3(0.0, 1.64, 0.0)
 
 	var clearance_result: Dictionary = Utilities.raycast_3d(
 		space_state, clearance_start, clearance_end, mask, exclude_rids
