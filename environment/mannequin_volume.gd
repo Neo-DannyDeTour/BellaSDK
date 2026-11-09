@@ -1,6 +1,11 @@
 @tool
 extends Node3D
 
+## Visual volume tool for scale verification, metric alignment, and climbability validation.
+
+## Group tag identifying objects that cannot be climbed or vaulted.
+const GROUP_NOT_CLIMBABLE: StringName = &"not_climbable"
+
 ## The 3D bounding volume. Determines the overall footprint where references will spawn.
 @export var volume_size: Vector3 = Vector3(10.0, 4.0, 10.0):
 	set(value):
@@ -68,7 +73,7 @@ extends Node3D
 		_request_update()
 
 ## The specific heights in meters for each spawned reference box.
-@export var box_heights: Array[float] = [1.0, 2.5, 3.0]:
+@export var box_heights: Array[float] = [0.9, 1.64, 2.91551]:
 	set(value):
 		box_heights = value
 		_request_update()
@@ -99,7 +104,7 @@ extends Node3D
 		jump_gravity = value
 		_request_update()
 
-## Draws a 2m high, 0.5m radius cyan wireframe collision capsule around each mannequin.
+## Draws a wireframe collision capsule around each mannequin matching player dimensions.
 @export var show_collision_capsules: bool = true:
 	set(value):
 		show_collision_capsules = value
@@ -118,16 +123,25 @@ extends Node3D
 			_bake_meshes()
 		bake_to_scene = false
 
-## Property: Update Queued.
+## Flag tracking whether a reference regeneration pass is scheduled for the next frame.
 var _update_queued: bool = false
-## Property: Container.
+## Generated node container holding all procedural reference geometry instances.
 var _container: Node3D
-## Property: Standing Height.
-var _standing_height: float = 2.0
-## Property: Crouch Height.
-var _crouch_height: float = 1.0
+## Full physical standing height of the character in meters.
+var _character_height: float = 1.64
+## Eye level height of the player head node in meters.
+var _standing_height: float = 1.52
+## Head eye level height during crouch stance in meters.
+var _crouch_height: float = 0.9
+## Collision capsule horizontal radius in meters.
+var _capsule_radius: float = 0.35
+## Collision capsule total height in meters.
+var _capsule_height: float = 1.64
+## Maximum vertical reach in meters for standing ledge vaults.
+var _standing_reach: float = 2.1
 
 
+## Initializes reference tool and queues regeneration if in editor or enabled in-game.
 func _ready() -> void:
 	print("Initializing Reference Volume Tool...")
 	if not Engine.is_editor_hint() and not show_in_game:
@@ -136,6 +150,7 @@ func _ready() -> void:
 	_request_update()
 
 
+## Processes deferred volume regeneration requests.
 func _process(_delta: float) -> void:
 	if _update_queued:
 		_update_queued = false
@@ -151,7 +166,7 @@ func _request_update() -> void:
 		set_process(true)
 
 
-## Pulls relevant movement and dimension parameters by safely duck-typing a temporary player scene.
+## Pulls movement and dimension parameters by safely duck-typing temporary player scene.
 func _sync_with_target() -> void:
 	if not player_scene:
 		return
@@ -162,44 +177,55 @@ func _sync_with_target() -> void:
 		return
 
 	var loco_comp: Node = _find_locomotion_component(temp_player)
+	var vault_comp: Node = _find_vault_controller(temp_player)
 
 	if is_instance_valid(loco_comp):
 		print("Syncing metrics from PlayerLocomotionComponent...")
 
-		# Safely extract variables to prevent editor crashes on strictly typed custom nodes
 		if "gravity" in loco_comp:
-			jump_gravity = loco_comp.get("gravity")
+			jump_gravity = float(loco_comp.get("gravity"))
 		if "sprinting_speed" in loco_comp:
-			jump_forward_speed = loco_comp.get("sprinting_speed")
+			jump_forward_speed = float(loco_comp.get("sprinting_speed"))
 
 		if "jump_velocity" in loco_comp:
-			jump_velocity = loco_comp.get("jump_velocity")
+			jump_velocity = float(loco_comp.get("jump_velocity"))
 		elif "jump_velocity" in temp_player:
-			jump_velocity = temp_player.get("jump_velocity")
+			jump_velocity = float(temp_player.get("jump_velocity"))
 
+		if "CHARACTER_HEIGHT" in loco_comp:
+			_character_height = float(loco_comp.get("CHARACTER_HEIGHT"))
 		if "STANDING_HEIGHT" in loco_comp:
-			_standing_height = loco_comp.get("STANDING_HEIGHT")
+			_standing_height = float(loco_comp.get("STANDING_HEIGHT"))
 		if "CROUCHING_HEIGHT" in loco_comp:
-			_crouch_height = loco_comp.get("CROUCHING_HEIGHT")
+			_crouch_height = float(loco_comp.get("CROUCHING_HEIGHT"))
 
-		var max_jump_height: float = (pow(jump_velocity, 2.0)) / (2.0 * jump_gravity)
+	if is_instance_valid(vault_comp):
+		if "max_reach" in vault_comp:
+			_standing_reach = float(vault_comp.get("max_reach"))
 
-		var target_heights: Array[float] = [
-			_crouch_height, _standing_height, _standing_height + max_jump_height
-		]
-		if box_heights != target_heights:
-			box_heights = target_heights
+	var standing_shape_node: Node = temp_player.find_child("StandingCollisionShape", true, false)
+	if standing_shape_node is CollisionShape3D:
+		var col_node: CollisionShape3D = standing_shape_node as CollisionShape3D
+		if col_node.shape is CapsuleShape3D:
+			var capsule: CapsuleShape3D = col_node.shape as CapsuleShape3D
+			_capsule_height = capsule.height
+			_capsule_radius = capsule.radius
+			if _character_height <= 0.0:
+				_character_height = capsule.height
 
-		# Clear update flag set by @export property setters during metric sync.
-		_update_queued = false
+	var max_jump_height: float = (pow(jump_velocity, 2.0)) / (2.0 * jump_gravity)
+	var target_heights: Array[float] = [
+		_crouch_height, _character_height, _character_height + max_jump_height
+	]
+	if box_heights != target_heights:
+		box_heights = target_heights
 
-	temp_player.queue_free()
+	_update_queued = false
+	temp_player.free()
 
 
-## Recursively searches the temporary player instance to locate the locomotion component safely.
+## Recursively searches temporary player instance to locate locomotion component safely.
 func _find_locomotion_component(node: Node) -> Node:
-	# Duck-typing by checking for unique properties guarantees we find the script
-	# without crashing the editor due to missing global class contexts.
 	if node.get_script() != null and "STANDING_HEIGHT" in node:
 		return node
 
@@ -209,6 +235,35 @@ func _find_locomotion_component(node: Node) -> Node:
 			return found
 
 	return null
+
+
+## Recursively searches temporary player instance to locate vault controller safely.
+func _find_vault_controller(node: Node) -> Node:
+	if node.get_script() != null and "max_reach" in node:
+		return node
+
+	for child: Node in node.get_children():
+		var found: Node = _find_vault_controller(child)
+		if found:
+			return found
+
+	return null
+
+
+## Verifies if a body or its parents belong to the non-climbable group.
+func _is_not_climbable(collider: Object) -> bool:
+	if not collider is Node:
+		return true
+
+	var curr: Node = collider as Node
+	for i: int in range(5):
+		if curr == null:
+			break
+		if curr.is_in_group(GROUP_NOT_CLIMBABLE):
+			return true
+		curr = curr.get_parent()
+
+	return false
 
 
 ## Clears old references, calculates valid spawn positions, and builds multimeshes.
@@ -273,16 +328,15 @@ func _generate_references() -> void:
 				)
 			else:
 				final_pos.y = -half_size.y
-				# Change: Base at final_pos, pivot bottom.
 				standing_xforms.append(Transform3D().translated(final_pos))
 
 			valid_positions.append(final_pos)
 
 	if valid_positions.size() > 0:
-		_build_sprite_multimesh(standing_xforms, mannequin_texture, _standing_height)
+		_build_sprite_multimesh(standing_xforms, mannequin_texture, _character_height)
 		_build_sprite_multimesh(crouching_xforms, crouch_texture, _crouch_height)
-		_build_sprite_multimesh(climb_xforms, climb_texture, _standing_height)
-		_build_sprite_multimesh(jump_climb_xforms, jump_climb_texture, _standing_height)
+		_build_sprite_multimesh(climb_xforms, climb_texture, _character_height)
+		_build_sprite_multimesh(jump_climb_xforms, jump_climb_texture, _character_height)
 
 		_build_boxes_multimesh(valid_positions)
 
@@ -295,7 +349,7 @@ func _generate_references() -> void:
 		_build_slope_warnings_multimesh(invalid_slope_data)
 
 
-## Determines if a spot is a crouch zone or has adjacent climbable walls via spatial raycasts.
+## Determines if spot is a crouch zone or has adjacent climbable ledges via spatial raycasts.
 func _process_posture_and_walls(
 	global_floor: Vector3,
 	local_floor: Vector3,
@@ -304,14 +358,11 @@ func _process_posture_and_walls(
 	climb_xforms: Array[Transform3D],
 	jump_climb_xforms: Array[Transform3D]
 ) -> void:
-	#print("Processing posture constraints and resolving wall clearance...")
-
-	# Crouch Check: Raycast up from crouch height to standing height
+	# Crouch Check: Raycast up from crouch height to character height
 	var ceil_start: Vector3 = global_floor + Vector3(0.0, _crouch_height, 0.0)
-	var ceil_end: Vector3 = global_floor + Vector3(0.0, _standing_height, 0.0)
+	var ceil_end: Vector3 = global_floor + Vector3(0.0, _character_height, 0.0)
 	var ceil_hit: Dictionary = _raycast(ceil_start, ceil_end)
 
-	# Change: Base at final_pos, pivot bottom for all postural mannequins.
 	if not ceil_hit.is_empty():
 		crouching_xforms.append(Transform3D().translated(local_floor))
 	else:
@@ -320,35 +371,72 @@ func _process_posture_and_walls(
 	# Wall Check: Raycast horizontally in 4 directions to find climbable geometry
 	var dirs: Array[Vector3] = [Vector3.FORWARD, Vector3.BACK, Vector3.LEFT, Vector3.RIGHT]
 	var max_jump: float = (pow(jump_velocity, 2.0)) / (2.0 * jump_gravity)
+	var total_reach: float = _standing_reach + max_jump
 
 	for dir: Vector3 in dirs:
-		var wall_start: Vector3 = global_floor + Vector3(0.0, _standing_height * 0.5, 0.0)
+		var wall_start: Vector3 = global_floor + Vector3(0.0, _character_height * 0.5, 0.0)
 		var wall_end: Vector3 = wall_start + (dir * spacing * 0.8)
 		var wall_hit: Dictionary = _raycast(wall_start, wall_end)
 
-		if not wall_hit.is_empty():
-			var wall_normal: Vector3 = wall_hit["normal"]
-			# Ensure we are hitting a vertical surface (not a slope)
-			if abs(wall_normal.y) < 0.2:
-				var wall_pos: Vector3 = wall_hit["position"]
-				var w_pos: Vector3 = to_local(wall_pos)
-				# Base at wall floor level (final_pos), pivot bottom for walls
-				# Offset slightly from the wall so Z-fighting doesn't obscure the texture
-				var w_xform: Transform3D = Transform3D().translated(w_pos + (wall_normal * 0.2))
+		if wall_hit.is_empty():
+			continue
 
-				# Check overhead clearance for jump climbs
-				var h_start: Vector3 = wall_pos + (wall_normal * 0.1) + Vector3(0.0, max_jump, 0.0)
-				var h_end: Vector3 = wall_pos + (wall_normal * -0.5) + Vector3(0.0, max_jump, 0.0)
-				var ledge_hit: Dictionary = _raycast(h_start, h_end)
+		var wall_normal: Vector3 = wall_hit["normal"]
+		if absf(wall_normal.y) >= 0.2:
+			continue
 
-				if not ledge_hit.is_empty():
-					# Shift the jump climb texture up by exactly max_jump so it reflects character at apex
-					var jump_w_xform: Transform3D = Transform3D().translated(
-						w_pos + (wall_normal * 0.2) + Vector3(0.0, max_jump, 0.0)
-					)
-					jump_climb_xforms.append(jump_w_xform)
-				else:
-					climb_xforms.append(w_xform)
+		var wall_collider: Object = wall_hit.get("collider")
+		if _is_not_climbable(wall_collider):
+			continue
+
+		var wall_pos: Vector3 = wall_hit["position"]
+
+		# Downward scan from above to find ledge top
+		var down_start: Vector3 = wall_pos - (wall_normal * 0.2)
+		down_start.y = global_floor.y + total_reach
+		var down_end: Vector3 = down_start + Vector3(0.0, -total_reach - 0.2, 0.0)
+		var ledge_hit: Dictionary = _raycast(down_start, down_end)
+
+		if ledge_hit.is_empty():
+			# Infinite sheer wall or ledge above reach -> Cannot climb
+			continue
+
+		var ledge_normal: Vector3 = ledge_hit.get("normal", Vector3.ZERO)
+		if ledge_normal.y < 0.7:
+			# Not a walkable flat top surface
+			continue
+
+		var ledge_collider: Object = ledge_hit.get("collider")
+		if _is_not_climbable(ledge_collider):
+			continue
+
+		var ledge_pos: Vector3 = ledge_hit["position"]
+		var ledge_height: float = ledge_pos.y - global_floor.y
+
+		if ledge_height <= 0.5:
+			continue
+
+		# Headroom check above detected ledge
+		var clearance_start: Vector3 = ledge_pos + Vector3(0.0, 0.05, 0.0)
+		var clearance_end: Vector3 = clearance_start + Vector3(0.0, _character_height, 0.0)
+		var clearance_hit: Dictionary = _raycast(clearance_start, clearance_end)
+
+		if not clearance_hit.is_empty():
+			var hit_pos: Vector3 = clearance_hit["position"]
+			var available_clearance: float = hit_pos.y - ledge_pos.y
+			if available_clearance < _crouch_height:
+				# Blocked overhead by low ceiling -> Cannot climb
+				continue
+
+		var w_pos: Vector3 = to_local(wall_pos)
+		if ledge_height <= _standing_reach:
+			var w_xform: Transform3D = Transform3D().translated(w_pos + (wall_normal * 0.2))
+			climb_xforms.append(w_xform)
+		elif ledge_height <= total_reach:
+			var jump_w_xform: Transform3D = Transform3D().translated(
+				w_pos + (wall_normal * 0.2) + Vector3(0.0, max_jump, 0.0)
+			)
+			jump_climb_xforms.append(jump_w_xform)
 
 
 ## Renders a yellow wireframe grid across the bottom plane of the volume boundaries.
@@ -406,15 +494,10 @@ func _build_sprite_multimesh(
 	var aspect: float = tex_width / tex_height if tex_height > 0.0 else 1.0
 
 	var quad: ArrayMesh = ArrayMesh.new()
-
-	# A structured array holding rendering data for the custom mesh surface creation.
 	var arr: Array = []
 	arr.resize(Mesh.ARRAY_MAX)
 
-	# The calculated horizontal span of the sprite based on its height and aspect ratio.
 	var visual_width: float = sprite_height * aspect
-
-	# The specific 3D spatial coordinates defining the four corners of the quad mesh.
 	var vertices: PackedVector3Array = PackedVector3Array(
 		[
 			Vector3(-visual_width / 2.0, 0.0, 0.0),
@@ -425,7 +508,6 @@ func _build_sprite_multimesh(
 	)
 
 	arr[Mesh.ARRAY_VERTEX] = vertices
-
 	arr[Mesh.ARRAY_TEX_UV] = PackedVector2Array(
 		[
 			Vector2(0.0, 1.0),
@@ -434,7 +516,6 @@ func _build_sprite_multimesh(
 			Vector2(0.0, 0.0),
 		]
 	)
-
 	arr[Mesh.ARRAY_INDEX] = PackedInt32Array([0, 1, 2, 0, 2, 3])
 	quad.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
 
@@ -520,7 +601,7 @@ func _build_boxes_multimesh(positions: Array[Vector3]) -> void:
 ## Builds and batches wireframe cylinders to represent character controller footprint.
 func _build_capsule_multimesh(positions: Array[Vector3]) -> void:
 	print("Building wireframe collision capsules...")
-	var capsule_mesh: ArrayMesh = _create_wireframe_capsule_mesh(0.5, _standing_height)
+	var capsule_mesh: ArrayMesh = _create_wireframe_capsule_mesh(_capsule_radius, _capsule_height)
 
 	var mat: StandardMaterial3D = StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -535,7 +616,6 @@ func _build_capsule_multimesh(positions: Array[Vector3]) -> void:
 
 	for i: int in range(positions.size()):
 		var xform: Transform3D = Transform3D()
-		# Change: Base at positions[i], pivot bottom.
 		xform = xform.translated(positions[i])
 		multimesh.set_instance_transform(i, xform)
 
@@ -546,26 +626,24 @@ func _build_capsule_multimesh(positions: Array[Vector3]) -> void:
 
 ## Generates a raw ArrayMesh of lines representing a capsule footprint.
 func _create_wireframe_capsule_mesh(radius: float, height: float) -> ArrayMesh:
-	# Change: Pivot to bottom-center. Cylinder base at (0,0), top at (0,height)
 	var arr: PackedVector3Array = PackedVector3Array()
 	var segments: int = 8
 
 	for i: int in range(segments):
-		var angle1: float = (PI * 2.0 * i) / segments
-		var angle2: float = (PI * 2.0 * (i + 1)) / segments
+		var angle1: float = (PI * 2.0 * float(i)) / float(segments)
+		var angle2: float = (PI * 2.0 * float(i + 1)) / float(segments)
 		var x1: float = cos(angle1) * radius
 		var z1: float = sin(angle1) * radius
 		var x2: float = cos(angle2) * radius
 		var z2: float = sin(angle2) * radius
 
-		# Vertices at base and full height.
 		arr.append(Vector3(x1, 0, z1))
 		arr.append(Vector3(x2, 0, z2))
 		arr.append(Vector3(x1, height, z1))
 		arr.append(Vector3(x2, height, z2))
 
 	for i: int in range(4):
-		var angle: float = (PI * 2.0 * i) / 4.0
+		var angle: float = (PI * 2.0 * float(i)) / 4.0
 		var x: float = cos(angle) * radius
 		var z: float = sin(angle) * radius
 

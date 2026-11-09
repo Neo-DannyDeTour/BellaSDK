@@ -43,10 +43,16 @@ var _time_passed: float = 0.0
 ## Flame particle emitter attached to torch tip.
 @onready var _particles: GPUParticles3D = $FlameParticles
 
+## Audio emitter playing spatial flame crackle loop.
+@onready var _flame_audio: AudioStreamPlayer3D = $FlameAudio
 
-## Initializes noise generator for flame flicker evaluation.
+
+## Initializes noise generator and validates child node bindings.
 func _ready() -> void:
 	print("Torch: _ready() initialized.")
+	assert(is_instance_valid(_light), "Torch: Missing FlickerLight OmniLight3D.")
+	assert(is_instance_valid(_particles), "Torch: Missing FlameParticles GPUParticles3D.")
+	assert(is_instance_valid(_flame_audio), "Torch: Missing FlameAudio AudioStreamPlayer3D.")
 	if noise == null:
 		noise = FastNoiseLite.new()
 		noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
@@ -105,19 +111,23 @@ func _on_interact_component_interacted(_character: CharacterBody3D = null) -> vo
 		equip_to_player(player)
 
 
-## Activates flame particles and enables dynamic light source.
+## Activates flame particles, enables dynamic light source, and resumes audio.
 func ignite_torch() -> void:
 	print("Torch: ignite_torch() called.")
 	if is_instance_valid(_particles):
 		_particles.emitting = true
 	if is_instance_valid(_light):
 		_light.visible = true
+	if is_instance_valid(_flame_audio) and not _flame_audio.playing:
+		_flame_audio.play()
 
 
-## Deactivates flame particles and hides dynamic light source.
+## Deactivates flame particles, hides dynamic light source, and halts audio.
 func douse_torch() -> void:
 	print("Torch: douse_torch() called.")
 	if is_instance_valid(_particles):
 		_particles.emitting = false
 	if is_instance_valid(_light):
 		_light.visible = false
+	if is_instance_valid(_flame_audio) and _flame_audio.playing:
+		_flame_audio.stop()

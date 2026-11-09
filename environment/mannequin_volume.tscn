@@ -13,6 +13,6 @@ crouch_texture = ExtResource("3_7amp5")
 jump_climb_texture = ExtResource("4_y5whk")
 player_scene = ExtResource("3_bng1x")
 enable_depth_test = true
-box_heights = Array[float]([1.0, 1.8, 3.075510204081633])
+box_heights = Array[float]([0.9, 1.64, 2.91551])
 jump_forward_speed = 6.5
 show_collision_capsules = false

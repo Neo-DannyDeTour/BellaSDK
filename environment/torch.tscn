@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_kx7w4"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_72pgl"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="4_wfdi7"]
+[ext_resource type="AudioStream" uid="uid://cxqj0co8iygr" path="res://assets/audio/sfx/fire/fire_crackle_loop.wav" id="5_a1b2c"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_pa17o"]
 noise_type = 3
@@ -77,6 +78,13 @@ noise = SubResource("FastNoiseLite_pa17o")
 amount = 16
 process_material = SubResource("ParticleProcessMaterial_kx7w4")
 draw_pass_1 = SubResource("QuadMesh_wfdi7")
+
+[node name="FlameAudio" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("5_a1b2c")
+autoplay = true
+bus = &"SFX"
+unit_size = 2.0
+max_distance = 15.0
 
 [node name="FlickerLight" type="OmniLight3D" parent="." unique_id=916275153]
 light_color = Color(0.9933772, 0.7917869, 0.5085073, 1)
