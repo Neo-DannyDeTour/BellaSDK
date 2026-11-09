@@ -574,6 +574,17 @@ signal wake_up_text_requested(text: String, fade_in: float, hold: float, fade_ou
 signal player_notarget_toggled(active: bool)
 
 # --------------------------------------
+# CHUNK STREAMING SIGNALS
+# --------------------------------------
+## Emitted by [PlayerChunkTracker] when player crosses a 250m chunk boundary.
+@warning_ignore("unused_signal")
+signal player_chunk_changed(coord: Vector2i)
+
+## Emitted when persistent chunk entity is modified or destroyed at runtime.
+@warning_ignore("unused_signal")
+signal chunk_entity_mutated(coord: Vector2i, entity_id: StringName, data: Variant)
+
+# --------------------------------------
 # ENUMS
 # --------------------------------------
 ## Visual animation style presets for chapter title card sequences.

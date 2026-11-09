@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://d1a8ricjeoax2"]
+
+[ext_resource type="Script" uid="uid://b5uo4uoevy2ly" path="res://world/chunk_manager.gd" id="1_d8wax"]
+[ext_resource type="PackedScene" uid="uid://2db87kewe2f2" path="res://player/player.tscn" id="2_ioal6"]
+[ext_resource type="Script" uid="uid://ca4mn3j02b5bi" path="res://player/player.gd" id="3_uarf4"]
+[ext_resource type="Script" uid="uid://dipbgvqxanjx8" path="res://world/player_chunk_tracker.gd" id="3_yyy6f"]
+[ext_resource type="Script" uid="uid://djj67ksh3pwmx" path="res://ui/chunk_debug_hud.gd" id="4_uarf4"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ioal6"]
+size = Vector3(5000, 1, 5000)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yyy6f"]
+albedo_color = Color(0.12, 0.13, 0.15, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="BoxMesh_uarf4"]
+size = Vector3(5000, 1, 5000)
+
+[node name="TestWorld" type="Node3D" unique_id=1751174523]
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1672757331]
+transform = Transform3D(0.70710677, -0.61237246, 0.35355335, 0, 0.49999997, 0.86602545, -0.70710677, -0.61237246, 0.35355335, 0, 0, 0)
+shadow_enabled = true
+
+[node name="BaseGround" type="StaticBody3D" parent="." unique_id=1893726083]
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BaseGround" unique_id=66062668]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("BoxShape3D_ioal6")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BaseGround" unique_id=252918838]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+material_override = SubResource("StandardMaterial3D_yyy6f")
+mesh = SubResource("BoxMesh_uarf4")
+
+[node name="DynamicContainer" type="Node3D" parent="." unique_id=1842979178]
+
+[node name="ChunkManager" type="Node3D" parent="." unique_id=2073576465 node_paths=PackedStringArray("dynamic_container")]
+script = ExtResource("1_d8wax")
+dynamic_container = NodePath("../DynamicContainer")
+
+[node name="IOTimer" type="Timer" parent="ChunkManager" unique_id=976058275]
+wait_time = 0.05
+
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu", "ui_controller", "wolf_hands") groups=["player"] instance=ExtResource("2_ioal6")]
+process_mode = 3
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 125, 2, 125)
+collision_layer = 2
+collision_mask = 21
+script = ExtResource("3_uarf4")
+locomotion_component = NodePath("Components/LocomotionComponent")
+interaction_component = NodePath("Components/InteractionComponent")
+environment_component = NodePath("Components/EnvironmentComponent")
+stats_component = NodePath("Components/StatsComponent")
+state_machine = NodePath("StateMachine")
+camera_controller = NodePath("Head/CameraController")
+system_menu = NodePath("SystemMenuController")
+ui_controller = NodePath("UI")
+wolf_hands = NodePath("Head/Eyes/Camera3D/WolfHands")
+
+[node name="PlayerChunkTracker" type="Node3D" parent="Player" unique_id=1951873033]
+script = ExtResource("3_yyy6f")
+
+[node name="PollTimer" type="Timer" parent="Player/PlayerChunkTracker" unique_id=1922501243]
+wait_time = 0.2
+autostart = true
+
+[node name="HUDLayer" type="CanvasLayer" parent="." unique_id=567225048]
+
+[node name="ChunkDebugHud" type="Control" parent="HUDLayer" unique_id=2024070881 node_paths=PackedStringArray("chunk_manager", "dynamic_container")]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("4_uarf4")
+chunk_manager = NodePath("../../ChunkManager")
+dynamic_container = NodePath("../../DynamicContainer")

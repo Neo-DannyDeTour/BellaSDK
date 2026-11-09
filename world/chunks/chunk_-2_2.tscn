@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://ciwa8yxgm0m08"]
+
+[ext_resource type="Script" uid="uid://bf56qfebsb2wi" path="res://world/chunk_root.gd" id="1_nm8fg"]
+
+[sub_resource type="Shader" id="Shader_q01p3"]
+code = "shader_type spatial;
+instance uniform vec3 tint_color : source_color = vec3(1.0);
+void fragment() {
+	ALBEDO = tint_color;
+	ROUGHNESS = 0.85;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_r2o4f"]
+render_priority = 0
+shader = SubResource("Shader_q01p3")
+
+[sub_resource type="BoxMesh" id="BoxMesh_htex7"]
+size = Vector3(246, 0.5, 246)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_m4dct"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_t0p7y"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wgplu"]
+radius = 0.6
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_m55dd"]
+radius = 0.6
+
+[node name="Chunk_-2_2" type="Node3D" unique_id=1291942642]
+script = ExtResource("1_nm8fg")
+
+[node name="BorderMarker" type="MeshInstance3D" parent="." unique_id=574435143]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 125, 0.25, 125)
+material_override = SubResource("ShaderMaterial_r2o4f")
+instance_shader_parameters/tint_color = Color(0.45, 0.2619, 0.20249999, 1)
+mesh = SubResource("BoxMesh_htex7")
+
+[node name="TestCrate" type="StaticBody3D" parent="." unique_id=543566106 groups=["test_crate"]]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 125, 1.5, 125)
+collision_layer = 4
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCrate" unique_id=918804117]
+shape = SubResource("BoxShape3D_m4dct")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TestCrate" unique_id=2141096902]
+layers = 4
+material_override = SubResource("ShaderMaterial_r2o4f")
+instance_shader_parameters/tint_color = Color(0.95, 0.65, 0.15, 1)
+mesh = SubResource("BoxMesh_t0p7y")
+
+[node name="TestRoamer" type="CharacterBody3D" parent="." unique_id=99072512 groups=["roaming"]]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 132, 1.5, 132)
+collision_layer = 16
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestRoamer" unique_id=322857928]
+shape = SubResource("CapsuleShape3D_wgplu")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TestRoamer" unique_id=1486483709]
+layers = 4
+material_override = SubResource("ShaderMaterial_r2o4f")
+instance_shader_parameters/tint_color = Color(0.95, 0.2, 0.3, 1)
+mesh = SubResource("CapsuleMesh_m55dd")
