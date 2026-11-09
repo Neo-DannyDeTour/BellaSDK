@@ -17,6 +17,8 @@ addons/gemini_copilot/
 addons/csg_toolkit/
 
 .vscode/
+.env
+.env*
 
 assets/decals
 assets/dev_meshes
