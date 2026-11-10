@@ -887,7 +887,8 @@ func _find_health_component(node: Node) -> HealthComponent:
 	if "health_component" in node:
 		var prop_val: Variant = node.get("health_component")
 		if prop_val is HealthComponent:
-			return prop_val as HealthComponent
+			var hc: HealthComponent = prop_val
+			return hc
 
 	var direct: Node = node.get_node_or_null("Components/HealthComponent")
 	if direct is HealthComponent:

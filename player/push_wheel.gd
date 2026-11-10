@@ -72,7 +72,7 @@ func enter(msg: Dictionary = {}) -> void:
 			_is_mounting = false
 
 	var raw_wheel: Variant = msg.get(KEY_WHEEL)
-	var candidate_wheel: Node3D = raw_wheel as Node3D if raw_wheel is Object else null
+	var candidate_wheel: Node3D = raw_wheel if raw_wheel is Node3D else null
 	if is_instance_valid(candidate_wheel) and candidate_wheel.has_method(METHOD_PUSH):
 		active_wheel = candidate_wheel
 		print("PushWheelState: Entered. Attached to wheel: ", active_wheel.name)
@@ -167,7 +167,7 @@ func _get_active_anchor() -> Marker3D:
 	if not is_instance_valid(active_wheel) or not (PROP_ACTIVE_ANCHOR in active_wheel):
 		return null
 	var raw_anchor: Variant = active_wheel.get(PROP_ACTIVE_ANCHOR)
-	return raw_anchor as Marker3D if raw_anchor is Object else null
+	return raw_anchor if raw_anchor is Marker3D else null
 
 
 ## Resolves the player head pivot node for pitch leveling.
@@ -203,7 +203,7 @@ func _calculate_input_sync_multiplier() -> float:
 	var wheel_center: Vector3 = active_wheel.global_position
 	if PROP_WHEEL_NODE in active_wheel:
 		var raw_hub: Variant = active_wheel.get(PROP_WHEEL_NODE)
-		var hub_node: Node3D = raw_hub as Node3D if raw_hub is Object else null
+		var hub_node: Node3D = raw_hub if raw_hub is Node3D else null
 		if is_instance_valid(hub_node):
 			wheel_center = hub_node.global_position
 

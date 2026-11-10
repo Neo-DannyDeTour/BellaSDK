@@ -223,7 +223,8 @@ func process_interaction(delta: float) -> void:
 			if is_instance_valid(player):
 				var loc: Variant = player.get(&"locomotion_component")
 				if loc is PlayerLocomotionComponent:
-					is_sprinting = (loc as PlayerLocomotionComponent).sprint_active
+					var loco: PlayerLocomotionComponent = loc
+					is_sprinting = loco.sprint_active
 			if is_sprinting:
 				print("InteractionComponent: Reload blocked while sprinting.")
 			else:

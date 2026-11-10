@@ -183,25 +183,41 @@ func _sync_with_target() -> void:
 		print("Syncing metrics from PlayerLocomotionComponent...")
 
 		if "gravity" in loco_comp:
-			jump_gravity = float(loco_comp.get("gravity"))
+			var g_val: Variant = loco_comp.get("gravity")
+			if g_val is float:
+				jump_gravity = g_val
 		if "sprinting_speed" in loco_comp:
-			jump_forward_speed = float(loco_comp.get("sprinting_speed"))
+			var s_val: Variant = loco_comp.get("sprinting_speed")
+			if s_val is float:
+				jump_forward_speed = s_val
 
 		if "jump_velocity" in loco_comp:
-			jump_velocity = float(loco_comp.get("jump_velocity"))
+			var j_val: Variant = loco_comp.get("jump_velocity")
+			if j_val is float:
+				jump_velocity = j_val
 		elif "jump_velocity" in temp_player:
-			jump_velocity = float(temp_player.get("jump_velocity"))
+			var j_val: Variant = temp_player.get("jump_velocity")
+			if j_val is float:
+				jump_velocity = j_val
 
 		if "CHARACTER_HEIGHT" in loco_comp:
-			_character_height = float(loco_comp.get("CHARACTER_HEIGHT"))
+			var ch_val: Variant = loco_comp.get("CHARACTER_HEIGHT")
+			if ch_val is float:
+				_character_height = ch_val
 		if "STANDING_HEIGHT" in loco_comp:
-			_standing_height = float(loco_comp.get("STANDING_HEIGHT"))
+			var sh_val: Variant = loco_comp.get("STANDING_HEIGHT")
+			if sh_val is float:
+				_standing_height = sh_val
 		if "CROUCHING_HEIGHT" in loco_comp:
-			_crouch_height = float(loco_comp.get("CROUCHING_HEIGHT"))
+			var cr_val: Variant = loco_comp.get("CROUCHING_HEIGHT")
+			if cr_val is float:
+				_crouch_height = cr_val
 
 	if is_instance_valid(vault_comp):
 		if "max_reach" in vault_comp:
-			_standing_reach = float(vault_comp.get("max_reach"))
+			var mr_val: Variant = vault_comp.get("max_reach")
+			if mr_val is float:
+				_standing_reach = mr_val
 
 	var standing_shape_node: Node = temp_player.find_child("StandingCollisionShape", true, false)
 	if standing_shape_node is CollisionShape3D:

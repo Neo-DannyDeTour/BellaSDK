@@ -172,9 +172,11 @@ func reload_active_weapon() -> void:
 	var player_node: Node = NodeQuery.find_ancestor_in_group(self, &"player")
 	if is_instance_valid(player_node):
 		var loc: Variant = player_node.get(&"locomotion_component")
-		if loc is PlayerLocomotionComponent and (loc as PlayerLocomotionComponent).sprint_active:
-			print("WeaponInventoryComponent: Reload blocked - player sprinting.")
-			return
+		if loc is PlayerLocomotionComponent:
+			var loco: PlayerLocomotionComponent = loc
+			if loco.sprint_active:
+				print("WeaponInventoryComponent: Reload blocked - player sprinting.")
+				return
 
 	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
 		if slots[current_slot_index].has_method("reload"):
@@ -187,9 +189,11 @@ func inspect_active_weapon() -> bool:
 	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
 		var active_gun: Node3D = slots[current_slot_index]
 		if active_gun.has_method(&"inspect"):
-			return bool(active_gun.call(&"inspect"))
+			var res_gun: Variant = active_gun.call(&"inspect")
+			return res_gun if res_gun is bool else false
 	if is_instance_valid(weapon_holder) and weapon_holder.has_method(&"inspect"):
-		return bool(weapon_holder.call(&"inspect"))
+		var res_holder: Variant = weapon_holder.call(&"inspect")
+		return res_holder if res_holder is bool else false
 	return false
 
 
@@ -201,9 +205,9 @@ func add_ammo(target_ammo_type: StringName, amount: int) -> bool:
 	for weapon: Node3D in slots:
 		if is_instance_valid(weapon) and weapon.get("ammo_type") == target_ammo_type:
 			var cap_val: Variant = weapon.get("ammo_capacity")
-			var max_res: int = int(cap_val) * 5 if cap_val is int else 30
+			var max_res: int = (cap_val * 5) if cap_val is int else 30
 			var current_res_val: Variant = weapon.get("reserve_ammo")
-			var current_res: int = int(current_res_val) if current_res_val is int else 0
+			var current_res: int = current_res_val if current_res_val is int else 0
 			var new_res: int = clampi(current_res + amount, 0, max_res)
 			weapon.set("reserve_ammo", new_res)
 			var w_tag: String = str(weapon.get("weapon_tag"))

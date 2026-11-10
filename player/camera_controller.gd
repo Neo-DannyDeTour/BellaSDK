@@ -211,13 +211,13 @@ func _evaluate_aim_assist_adjustments(yaw_in: float, pitch_in: float) -> Vector2
 	if not is_instance_valid(camera) or _cached_target_data.is_empty():
 		return Vector2(yaw_in, pitch_in)
 
-	var target_enemy: Node3D = _cached_target_data.get("target", null) as Node3D
+	var raw_target: Variant = _cached_target_data.get("target", null)
+	var target_enemy: Node3D = raw_target if raw_target is Node3D else null
 	if not is_instance_valid(target_enemy):
 		return Vector2(yaw_in, pitch_in)
 
-	var target_pos: Vector3 = (
-		_cached_target_data.get("aim_pos", target_enemy.global_position) as Vector3
-	)
+	var raw_pos: Variant = _cached_target_data.get("aim_pos", target_enemy.global_position)
+	var target_pos: Vector3 = raw_pos if raw_pos is Vector3 else target_enemy.global_position
 	var strength: float = clampf(aim_assist_amount, 0.1, 1.0)
 
 	# 1. Halo Reticle Friction (Active in Mid & Full): Slow down camera panning over target
@@ -385,14 +385,14 @@ func _update_target_tracking() -> void:
 		return
 
 	_cached_target_data = find_best_aim_assist_target(deg_to_rad(8.0))
-	var target_enemy: Node3D = _cached_target_data.get("target", null) as Node3D
+	var raw_target: Variant = _cached_target_data.get("target", null)
+	var target_enemy: Node3D = raw_target if raw_target is Node3D else null
 	var acquired: bool = is_instance_valid(target_enemy)
 	var screen_pos: Vector2 = Vector2.ZERO
 
 	if acquired:
-		var target_pos: Vector3 = (
-			_cached_target_data.get("aim_pos", target_enemy.global_position) as Vector3
-		)
+		var raw_pos: Variant = _cached_target_data.get("aim_pos", target_enemy.global_position)
+		var target_pos: Vector3 = raw_pos if raw_pos is Vector3 else target_enemy.global_position
 		if not camera.is_position_behind(target_pos):
 			screen_pos = camera.unproject_position(target_pos)
 		else:

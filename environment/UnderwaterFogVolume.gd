@@ -90,10 +90,10 @@ func _resolve_player_flashlight() -> void:
 	if "flashlight_controller" in player:
 		var controller_val: Variant = player.get("flashlight_controller")
 		if controller_val is Node3D:
-			_flashlight_controller = controller_val as Node3D
+			_flashlight_controller = controller_val
 			var light_val: Variant = _flashlight_controller.get("flashlight")
 			if light_val is SpotLight3D:
-				_flashlight_light = light_val as SpotLight3D
+				_flashlight_light = light_val
 
 
 ## Retrieves the active [Camera3D] from the viewport.

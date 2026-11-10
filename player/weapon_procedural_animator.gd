@@ -455,7 +455,7 @@ func _resolve_player_references() -> void:
 		_player = p_node as CharacterBody3D
 		var loc: Variant = _player.get(&"locomotion_component")
 		if loc is PlayerLocomotionComponent:
-			_locomotion = loc as PlayerLocomotionComponent
+			_locomotion = loc
 
 
 ## Resets inspect state upon tween completion.

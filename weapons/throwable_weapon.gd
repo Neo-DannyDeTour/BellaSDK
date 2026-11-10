@@ -234,6 +234,7 @@ func shoot(player_camera: Camera3D) -> bool:
 
 	if current_ammo <= 0:
 		print(weapon_tag, ": No throwables remaining in stack.")
+		visible = false
 		return false
 
 	last_throw_time = current_time
@@ -244,9 +245,19 @@ func shoot(player_camera: Camera3D) -> bool:
 	sync_ammo_ui()
 
 	if current_ammo <= 0:
+		visible = false
+		set_process(false)
+		set_physics_process(false)
 		_handle_depleted()
 
 	return true
+
+
+## Unequips throwable when switching away from this weapon slot.
+func on_unequip() -> void:
+	visible = false
+	set_process(false)
+	set_physics_process(false)
 
 
 # --------------------------------------
@@ -308,12 +319,35 @@ func _play_throw_audio() -> void:
 		throw_audio.play()
 
 
-## Swaps player to previous weapon when ammunition reaches zero.
+## Swaps player to previous weapon and removes depleted throwable from inventory.
 func _handle_depleted() -> void:
 	print(weapon_tag, ": Ammunition depleted -> auto-swapping to previous weapon.")
 	var inv: WeaponInventoryComponent = _find_inventory(null)
 	if is_instance_valid(inv):
-		inv.swap_to_previous()
+		var prev_idx: int = inv.previous_slot_index
+		var switched: bool = false
+		var prev_is_valid: bool = (
+			prev_idx != -1
+			and prev_idx < inv.slots.size()
+			and inv.slots[prev_idx] != null
+			and inv.slots[prev_idx] != self
+		)
+		if prev_is_valid:
+			inv.select_slot(prev_idx)
+			switched = true
+		else:
+			for i: int in range(inv.slots.size()):
+				var candidate: Node3D = inv.slots[i]
+				if is_instance_valid(candidate) and candidate != self:
+					inv.select_slot(i)
+					switched = true
+					break
+
+		if not switched:
+			inv.current_slot_index = -1
+		inv.remove_weapon(self)
+
+	queue_free()
 
 
 ## Handles world interaction: stacks into existing weapon or equips into inventory.

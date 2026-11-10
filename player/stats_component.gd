@@ -54,7 +54,8 @@ func load_save_data(data: Dictionary) -> void:
 	print("StatsComponent: load_save_data() called. Restoring health.")
 	if is_instance_valid(health_component):
 		var max_hp: int = health_component.max_health
-		var raw_health: int = int(data.get("health", max_hp))
+		var val_health: Variant = data.get("health", max_hp)
+		var raw_health: int = val_health if val_health is int else max_hp
 		var safe_health: int = clampi(raw_health, 1, max_hp)
 		health_component.current_health = safe_health
 		_on_health_changed(safe_health)

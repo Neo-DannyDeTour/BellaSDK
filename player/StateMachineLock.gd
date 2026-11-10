@@ -19,7 +19,8 @@ func enter(msg: Dictionary = {}) -> void:
 		if is_instance_valid(loco):
 			loco.reset_momentum()
 
-	_is_mouse_captured = bool(msg.get("capture_mouse", false))
+	var raw_capture: Variant = msg.get("capture_mouse", false)
+	_is_mouse_captured = raw_capture if raw_capture is bool else false
 	if _is_mouse_captured:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	else:
