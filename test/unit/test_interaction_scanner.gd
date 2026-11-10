@@ -29,7 +29,7 @@ func test_enter_terminal_mode() -> void:
 	var in_mode_val: Variant = scanner.get("is_in_terminal_mode")
 	var is_in_mode: bool = false
 	if in_mode_val is bool:
-		is_in_mode = bool(in_mode_val)
+		is_in_mode = in_mode_val
 	assert_true(is_in_mode, "Scanner should be in terminal mode.")
 
 	var active_val: Variant = scanner.get("active_terminal")
@@ -53,7 +53,7 @@ func test_exit_terminal_mode() -> void:
 	var in_mode_val: Variant = scanner.get("is_in_terminal_mode")
 	var is_in_mode: bool = true
 	if in_mode_val is bool:
-		is_in_mode = bool(in_mode_val)
+		is_in_mode = in_mode_val
 	assert_false(is_in_mode, "Scanner should have exited terminal mode.")
 
 	var active_val: Variant = scanner.get("active_terminal")

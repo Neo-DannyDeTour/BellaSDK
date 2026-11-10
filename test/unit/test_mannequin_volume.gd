@@ -14,12 +14,18 @@ func test_sync_with_target() -> void:
 	vol.set("player_scene", PLAYER_SCENE)
 	vol.call(&"_sync_with_target")
 
-	var char_height: float = float(vol.get(&"_character_height"))
-	var stand_height: float = float(vol.get(&"_standing_height"))
-	var crouch_height: float = float(vol.get(&"_crouch_height"))
-	var capsule_h: float = float(vol.get(&"_capsule_height"))
-	var capsule_r: float = float(vol.get(&"_capsule_radius"))
-	var reach: float = float(vol.get(&"_standing_reach"))
+	var raw_ch: Variant = vol.get(&"_character_height")
+	var char_height: float = raw_ch if raw_ch is float else 0.0
+	var raw_sh: Variant = vol.get(&"_standing_height")
+	var stand_height: float = raw_sh if raw_sh is float else 0.0
+	var raw_cr: Variant = vol.get(&"_crouch_height")
+	var crouch_height: float = raw_cr if raw_cr is float else 0.0
+	var raw_ch_h: Variant = vol.get(&"_capsule_height")
+	var capsule_h: float = raw_ch_h if raw_ch_h is float else 0.0
+	var raw_ch_r: Variant = vol.get(&"_capsule_radius")
+	var capsule_r: float = raw_ch_r if raw_ch_r is float else 0.0
+	var raw_reach: Variant = vol.get(&"_standing_reach")
+	var reach: float = raw_reach if raw_reach is float else 0.0
 
 	assert_almost_eq(char_height, 1.64, 0.01, "Character height must sync to 1.64m.")
 	assert_almost_eq(stand_height, 1.52, 0.01, "Standing eye level must sync to 1.52m.")

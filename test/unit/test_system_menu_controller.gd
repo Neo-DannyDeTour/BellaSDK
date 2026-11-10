@@ -99,13 +99,15 @@ func test_noclip_wheel_speed_scaling() -> void:
 	controller.call("toggle_noclip")
 	assert_true(controller.get("flying"), "Controller should be flying.")
 
-	var initial_mult: float = float(controller.get("noclip_speed_multiplier"))
+	var raw_init: Variant = controller.get("noclip_speed_multiplier")
+	var initial_mult: float = raw_init if raw_init is float else 1.0
 	var wheel_up_event: InputEventMouseButton = InputEventMouseButton.new()
 	wheel_up_event.button_index = MOUSE_BUTTON_WHEEL_UP
 	wheel_up_event.pressed = true
 
 	controller.call("_unhandled_input", wheel_up_event)
-	var new_mult: float = float(controller.get("noclip_speed_multiplier"))
+	var raw_new: Variant = controller.get("noclip_speed_multiplier")
+	var new_mult: float = raw_new if raw_new is float else 1.0
 	assert_gt(new_mult, initial_mult, "Wheel up should increase speed multiplier.")
 
 	var wheel_down_event: InputEventMouseButton = InputEventMouseButton.new()
@@ -113,7 +115,8 @@ func test_noclip_wheel_speed_scaling() -> void:
 	wheel_down_event.pressed = true
 
 	controller.call("_unhandled_input", wheel_down_event)
-	var reverted_mult: float = float(controller.get("noclip_speed_multiplier"))
+	var raw_rev: Variant = controller.get("noclip_speed_multiplier")
+	var reverted_mult: float = raw_rev if raw_rev is float else 1.0
 	assert_lt(reverted_mult, new_mult, "Wheel down should decrease speed multiplier.")
 
 

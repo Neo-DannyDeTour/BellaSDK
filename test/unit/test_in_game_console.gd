@@ -97,7 +97,7 @@ func test_infinite_ammo_console_command() -> void:
 ## Tests that toggle commands invert state on subsequent invocations.
 func test_toggle_command_double_invocation() -> void:
 	print("TestInGameConsole: Running test_toggle_command_double_invocation().")
-	var states: Dictionary = _console.get("toggle_states") as Dictionary
+	var states: Dictionary = _get_toggle_states()
 	states["wolfvision"] = false
 
 	_console.call("_cmd_wolfvision", PackedStringArray())
@@ -112,7 +112,7 @@ func test_toggle_command_double_invocation() -> void:
 ## Tests that toggle commands accept 1/0 and on/off arguments.
 func test_toggle_command_boolean_tokens() -> void:
 	print("TestInGameConsole: Running test_toggle_command_boolean_tokens().")
-	var states: Dictionary = _console.get("toggle_states") as Dictionary
+	var states: Dictionary = _get_toggle_states()
 
 	_console.call("_cmd_wolfvision", PackedStringArray(["1"]))
 	assert_true(states["wolfvision"], "Argument '1' should turn on wolfvision.")
@@ -130,7 +130,7 @@ func test_toggle_command_boolean_tokens() -> void:
 ## Tests that invalid toggle arguments do not mutate state.
 func test_toggle_command_invalid_argument() -> void:
 	print("TestInGameConsole: Running test_toggle_command_invalid_argument().")
-	var states: Dictionary = _console.get("toggle_states") as Dictionary
+	var states: Dictionary = _get_toggle_states()
 	states["wolfvision"] = false
 
 	_console.call("_cmd_wolfvision", PackedStringArray(["gibberish"]))
@@ -140,7 +140,7 @@ func test_toggle_command_invalid_argument() -> void:
 ## Tests that autocomplete matches include boolean toggle options.
 func test_toggle_command_autocomplete_suggestions() -> void:
 	print("TestInGameConsole: Running test_toggle_command_autocomplete_suggestions().")
-	var reg: ConsoleCommandRegistry = _console.get("registry") as ConsoleCommandRegistry
+	var reg: ConsoleCommandRegistry = _get_registry()
 	assert_not_null(reg, "Command registry should exist.")
 
 	var matches: Array[String] = reg.get_autocomplete_matches("wolfvision ")
@@ -153,7 +153,7 @@ func test_toggle_command_autocomplete_suggestions() -> void:
 ## Tests that autocomplete matches include give command targets.
 func test_give_command_autocomplete_suggestions() -> void:
 	print("TestInGameConsole: Running test_give_command_autocomplete_suggestions().")
-	var reg: ConsoleCommandRegistry = _console.get("registry") as ConsoleCommandRegistry
+	var reg: ConsoleCommandRegistry = _get_registry()
 	assert_not_null(reg, "Command registry should exist.")
 
 	var matches: Array[String] = reg.get_autocomplete_matches("give ")
@@ -166,7 +166,7 @@ func test_give_command_autocomplete_suggestions() -> void:
 ## Tests that autocomplete matches include ammo types.
 func test_give_ammo_command_autocomplete_suggestions() -> void:
 	print("TestInGameConsole: Running test_give_ammo_command_autocomplete_suggestions().")
-	var reg: ConsoleCommandRegistry = _console.get("registry") as ConsoleCommandRegistry
+	var reg: ConsoleCommandRegistry = _get_registry()
 	assert_not_null(reg, "Command registry should exist.")
 
 	var matches: Array[String] = reg.get_autocomplete_matches("give_ammo ")
@@ -179,7 +179,7 @@ func test_give_ammo_command_autocomplete_suggestions() -> void:
 ## Tests that give command grants keycard clearance to KeycardSystem.
 func test_give_keycard_clearance() -> void:
 	print("TestInGameConsole: Running test_give_keycard_clearance().")
-	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	var cheats: ConsoleCheatCommands = _get_cheat_commands()
 	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
 
 	cheats._cmd_give(PackedStringArray(["keycard_r"]))
@@ -190,7 +190,7 @@ func test_give_keycard_clearance() -> void:
 ## Tests that weapon topup gives 1 + 2 clips by default and clamps to 5x capacity.
 func test_weapon_ammo_defaults_and_clamp() -> void:
 	print("TestInGameConsole: Running test_weapon_ammo_defaults_and_clamp().")
-	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	var cheats: ConsoleCheatCommands = _get_cheat_commands()
 	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
 
 	var revolver: Revolver = Revolver.new()
@@ -211,7 +211,7 @@ func test_weapon_ammo_defaults_and_clamp() -> void:
 ## Tests that map command provides valid level autocomplete matches.
 func test_map_command_autocomplete() -> void:
 	print("TestInGameConsole: Running test_map_command_autocomplete().")
-	var reg: ConsoleCommandRegistry = _console.get("registry") as ConsoleCommandRegistry
+	var reg: ConsoleCommandRegistry = _get_registry()
 	assert_not_null(reg, "Command registry should exist.")
 
 	var matches: Array[String] = reg.get_autocomplete_matches("map ")
@@ -222,7 +222,7 @@ func test_map_command_autocomplete() -> void:
 ## Tests that checkpoint command validates unset vs set checkpoint positions.
 func test_checkpoint_command_unset_and_set() -> void:
 	print("TestInGameConsole: Running test_checkpoint_command_unset_and_set().")
-	var sys: ConsoleSystemCommands = _console.get("system_commands") as ConsoleSystemCommands
+	var sys: ConsoleSystemCommands = _get_system_commands()
 	assert_not_null(sys, "ConsoleSystemCommands module should exist.")
 
 	SaveManager.last_checkpoint_pos = Vector3.ZERO
@@ -239,7 +239,7 @@ func test_checkpoint_command_unset_and_set() -> void:
 ## Tests that save command dispatches save creation and load lists saves.
 func test_save_and_load_commands() -> void:
 	print("TestInGameConsole: Running test_save_and_load_commands().")
-	var sys: ConsoleSystemCommands = _console.get("system_commands") as ConsoleSystemCommands
+	var sys: ConsoleSystemCommands = _get_system_commands()
 	assert_not_null(sys, "ConsoleSystemCommands module should exist.")
 
 	# Save with custom name
@@ -255,9 +255,7 @@ func test_save_and_load_commands() -> void:
 ## Tests that diagnostics and metrics commands emit their respective signals.
 func test_telemetry_commands_emit_signals() -> void:
 	print("TestInGameConsole: Running test_telemetry_commands_emit_signals().")
-	var settings: ConsoleSettingsCommands = (
-		_console.get("settings_commands") as ConsoleSettingsCommands
-	)
+	var settings: ConsoleSettingsCommands = _get_settings_commands()
 	assert_not_null(settings, "ConsoleSettingsCommands module should exist.")
 
 	watch_signals(Events)
@@ -271,12 +269,10 @@ func test_telemetry_commands_emit_signals() -> void:
 ## Tests that fps_limit updates Engine max_fps and persists to GlobalSettings.
 func test_fps_limit_command() -> void:
 	print("TestInGameConsole: Running test_fps_limit_command().")
-	var settings: ConsoleSettingsCommands = (
-		_console.get("settings_commands") as ConsoleSettingsCommands
-	)
+	var settings: ConsoleSettingsCommands = _get_settings_commands()
 	assert_not_null(settings, "ConsoleSettingsCommands module should exist.")
 
-	var reg: ConsoleCommandRegistry = _console.get("registry") as ConsoleCommandRegistry
+	var reg: ConsoleCommandRegistry = _get_registry()
 	assert_not_null(reg, "Command registry should exist.")
 	var matches: Array[String] = reg.get_autocomplete_matches("fps_limit ")
 	assert_true(matches.has("fps_limit 60"), "Suggestions should contain 'fps_limit 60'.")
@@ -297,9 +293,7 @@ func test_fps_limit_command() -> void:
 ## Tests that stat_perf executes and writes metrics snapshot cleanly.
 func test_stat_perf_command() -> void:
 	print("TestInGameConsole: Running test_stat_perf_command().")
-	var settings: ConsoleSettingsCommands = (
-		_console.get("settings_commands") as ConsoleSettingsCommands
-	)
+	var settings: ConsoleSettingsCommands = _get_settings_commands()
 	assert_not_null(settings, "ConsoleSettingsCommands module should exist.")
 
 	settings._cmd_stat_perf(PackedStringArray())
@@ -309,7 +303,7 @@ func test_stat_perf_command() -> void:
 ## Tests that infinite_swim command updates GlobalSettings and emits signal.
 func test_infinite_swim_command() -> void:
 	print("TestInGameConsole: Running test_infinite_swim_command().")
-	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	var cheats: ConsoleCheatCommands = _get_cheat_commands()
 	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
 
 	watch_signals(Events)
@@ -330,10 +324,10 @@ func test_infinite_swim_command() -> void:
 ## Tests that noclip_speed validates input and emits noclip_speed_changed.
 func test_noclip_speed_command() -> void:
 	print("TestInGameConsole: Running test_noclip_speed_command().")
-	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	var cheats: ConsoleCheatCommands = _get_cheat_commands()
 	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
 
-	var reg: ConsoleCommandRegistry = _console.get("registry") as ConsoleCommandRegistry
+	var reg: ConsoleCommandRegistry = _get_registry()
 	assert_not_null(reg, "Command registry should exist.")
 	var matches: Array[String] = reg.get_autocomplete_matches("noclip_speed ")
 	assert_true(matches.has("noclip_speed 8.0"), "Suggestions should contain 'noclip_speed 8.0'.")
@@ -346,7 +340,7 @@ func test_noclip_speed_command() -> void:
 ## Tests that giveall unlocks all keycards in KeycardSystem.
 func test_giveall_keycard_grants() -> void:
 	print("TestInGameConsole: Running test_giveall_keycard_grants().")
-	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	var cheats: ConsoleCheatCommands = _get_cheat_commands()
 	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
 
 	cheats._cmd_giveall(PackedStringArray())
@@ -369,12 +363,10 @@ func test_giveall_keycard_grants() -> void:
 ## Tests that volume command queries and updates audio bus volume.
 func test_volume_command() -> void:
 	print("TestInGameConsole: Running test_volume_command().")
-	var settings: ConsoleSettingsCommands = (
-		_console.get("settings_commands") as ConsoleSettingsCommands
-	)
+	var settings: ConsoleSettingsCommands = _get_settings_commands()
 	assert_not_null(settings, "ConsoleSettingsCommands module should exist.")
 
-	var reg: ConsoleCommandRegistry = _console.get("registry") as ConsoleCommandRegistry
+	var reg: ConsoleCommandRegistry = _get_registry()
 	assert_not_null(reg, "Command registry should exist.")
 	var matches: Array[String] = reg.get_autocomplete_matches("volume ")
 	assert_true(matches.has("volume master"), "Suggestions should contain 'volume master'.")
@@ -395,9 +387,7 @@ func test_volume_command() -> void:
 ## Tests that fullscreen command toggles display mode and updates settings.
 func test_fullscreen_command() -> void:
 	print("TestInGameConsole: Running test_fullscreen_command().")
-	var settings: ConsoleSettingsCommands = (
-		_console.get("settings_commands") as ConsoleSettingsCommands
-	)
+	var settings: ConsoleSettingsCommands = _get_settings_commands()
 	assert_not_null(settings, "ConsoleSettingsCommands module should exist.")
 
 	settings._cmd_fullscreen(PackedStringArray(["on"]))
@@ -418,12 +408,10 @@ func test_fullscreen_command() -> void:
 ## Tests that resolution command validates bounds and persists values.
 func test_resolution_command() -> void:
 	print("TestInGameConsole: Running test_resolution_command().")
-	var settings: ConsoleSettingsCommands = (
-		_console.get("settings_commands") as ConsoleSettingsCommands
-	)
+	var settings: ConsoleSettingsCommands = _get_settings_commands()
 	assert_not_null(settings, "ConsoleSettingsCommands module should exist.")
 
-	var reg: ConsoleCommandRegistry = _console.get("registry") as ConsoleCommandRegistry
+	var reg: ConsoleCommandRegistry = _get_registry()
 	assert_not_null(reg, "Command registry should exist.")
 	var matches: Array[String] = reg.get_autocomplete_matches("resolution ")
 	assert_true(
@@ -450,9 +438,7 @@ func test_resolution_command() -> void:
 ## Tests that tts command toggles narration setting and emits signal.
 func test_tts_command() -> void:
 	print("TestInGameConsole: Running test_tts_command().")
-	var settings: ConsoleSettingsCommands = (
-		_console.get("settings_commands") as ConsoleSettingsCommands
-	)
+	var settings: ConsoleSettingsCommands = _get_settings_commands()
 	assert_not_null(settings, "ConsoleSettingsCommands module should exist.")
 
 	watch_signals(Events)
@@ -473,7 +459,7 @@ func test_tts_command() -> void:
 ## Tests that freecam activates and deactivates cleanly without crashes.
 func test_freecam_command_toggle() -> void:
 	print("TestInGameConsole: Running test_freecam_command_toggle().")
-	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	var cheats: ConsoleCheatCommands = _get_cheat_commands()
 	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
 
 	cheats._cmd_freecam(PackedStringArray(["on"]))
@@ -515,7 +501,7 @@ func test_freecam_controller_lifecycle_and_input() -> void:
 ## Tests that damage and heal commands broadcast event signals.
 func test_damage_and_heal_commands() -> void:
 	print("TestInGameConsole: Running test_damage_and_heal_commands().")
-	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	var cheats: ConsoleCheatCommands = _get_cheat_commands()
 	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
 
 	watch_signals(Events)
@@ -529,7 +515,7 @@ func test_damage_and_heal_commands() -> void:
 ## Tests that water_wipe and shockwave commands broadcast their signals.
 func test_water_wipe_and_shockwave_commands() -> void:
 	print("TestInGameConsole: Running test_water_wipe_and_shockwave_commands().")
-	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	var cheats: ConsoleCheatCommands = _get_cheat_commands()
 	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
 
 	watch_signals(Events)
@@ -549,9 +535,7 @@ func test_water_wipe_and_shockwave_commands() -> void:
 ## Tests that outline command validates modes and emits outline_mode_changed.
 func test_outline_command() -> void:
 	print("TestInGameConsole: Running test_outline_command().")
-	var settings: ConsoleSettingsCommands = (
-		_console.get("settings_commands") as ConsoleSettingsCommands
-	)
+	var settings: ConsoleSettingsCommands = _get_settings_commands()
 	assert_not_null(settings, "ConsoleSettingsCommands module should exist.")
 
 	watch_signals(Events)
@@ -574,7 +558,7 @@ func test_outline_command() -> void:
 ## Tests that chapter command broadcasts chapter_triggered signal.
 func test_chapter_command() -> void:
 	print("TestInGameConsole: Running test_chapter_command().")
-	var sys: ConsoleSystemCommands = _console.get("system_commands") as ConsoleSystemCommands
+	var sys: ConsoleSystemCommands = _get_system_commands()
 	assert_not_null(sys, "ConsoleSystemCommands module should exist.")
 
 	watch_signals(Events)
@@ -601,7 +585,8 @@ func test_freecam_wheel_scaling_and_teleport() -> void:
 	wheel_up.button_index = MOUSE_BUTTON_WHEEL_UP
 	wheel_up.pressed = true
 	freecam._input(wheel_up)
-	var speed_mult: float = freecam.get("speed_multiplier") as float
+	var raw_speed: Variant = freecam.get("speed_multiplier")
+	var speed_mult: float = raw_speed if raw_speed is float else 1.0
 	assert_gt(speed_mult, 1.0, "Wheel up should increase speed multiplier.")
 
 	var wheel_down: InputEventMouseButton = InputEventMouseButton.new()
@@ -609,7 +594,8 @@ func test_freecam_wheel_scaling_and_teleport() -> void:
 	wheel_down.pressed = true
 	freecam._input(wheel_down)
 	freecam._input(wheel_down)
-	speed_mult = freecam.get("speed_multiplier") as float
+	var raw_speed_down: Variant = freecam.get("speed_multiplier")
+	speed_mult = raw_speed_down if raw_speed_down is float else 1.0
 	assert_lt(speed_mult, 1.1, "Wheel down should decrease speed multiplier.")
 
 	freecam.call(&"teleport_player_and_exit")
@@ -623,7 +609,7 @@ func test_freecam_wheel_scaling_and_teleport() -> void:
 ## Tests that notarget and ai_disable cheats toggle state and emit expected signals.
 func test_notarget_and_ai_disable_commands() -> void:
 	print("TestInGameConsole: Running test_notarget_and_ai_disable_commands().")
-	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	var cheats: ConsoleCheatCommands = _get_cheat_commands()
 	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
 
 	watch_signals(Events)
@@ -652,7 +638,7 @@ func test_notarget_and_ai_disable_commands() -> void:
 ## Tests keybinding engine and shortcut commands.
 func test_shortcuts_and_keybinds() -> void:
 	print("TestInGameConsole: Running test_shortcuts_and_keybinds().")
-	var sys: ConsoleSystemCommands = _console.get("system_commands") as ConsoleSystemCommands
+	var sys: ConsoleSystemCommands = _get_system_commands()
 	assert_not_null(sys, "ConsoleSystemCommands module should exist.")
 
 	sys._cmd_pause(PackedStringArray())
@@ -712,7 +698,37 @@ func _get_console_keybinds() -> Dictionary[String, String]:
 	if is_instance_valid(_console) and _console.has_method(&"get_keybinds"):
 		var raw: Variant = _console.call(&"get_keybinds")
 		if raw is Dictionary:
-			var dict_val: Dictionary = raw as Dictionary
+			var dict_val: Dictionary = raw
 			for k: Variant in dict_val.keys():
 				keybinds[str(k)] = str(dict_val[k])
 	return keybinds
+
+
+## Helper retrieving command registry from console instance safely.
+func _get_registry() -> ConsoleCommandRegistry:
+	var raw: Variant = _console.get("registry")
+	return raw if raw is ConsoleCommandRegistry else null
+
+
+## Helper retrieving cheat commands controller from console instance safely.
+func _get_cheat_commands() -> ConsoleCheatCommands:
+	var raw: Variant = _console.get("cheat_commands")
+	return raw if raw is ConsoleCheatCommands else null
+
+
+## Helper retrieving system commands controller from console instance safely.
+func _get_system_commands() -> ConsoleSystemCommands:
+	var raw: Variant = _console.get("system_commands")
+	return raw if raw is ConsoleSystemCommands else null
+
+
+## Helper retrieving settings commands controller from console instance safely.
+func _get_settings_commands() -> ConsoleSettingsCommands:
+	var raw: Variant = _console.get("settings_commands")
+	return raw if raw is ConsoleSettingsCommands else null
+
+
+## Helper retrieving toggle states dictionary from console instance safely.
+func _get_toggle_states() -> Dictionary:
+	var raw: Variant = _console.get("toggle_states")
+	return raw if raw is Dictionary else {}

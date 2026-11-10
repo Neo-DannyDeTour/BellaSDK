@@ -30,7 +30,8 @@ func test_level_generation_populates_grid() -> void:
 	generator.rooms_per_floor = 2
 	generator.generate_level()
 
-	var grid: Dictionary = generator.get("_grid") as Dictionary
+	var raw_grid: Variant = generator.get("_grid")
+	var grid: Dictionary = raw_grid if raw_grid is Dictionary else {}
 	var room_count: int = 0
 	for coord: Vector3i in grid:
 		if int(generator.get_cell(coord)) == 1:
@@ -46,7 +47,8 @@ func test_radial_room_shape_selection() -> void:
 		assert_true(false, "Generator is invalid")
 		return
 	generator.radial_room_ratio = 1.0
-	var shape: int = int(generator.call("_select_room_shape"))
+	var raw_shape: Variant = generator.call("_select_room_shape")
+	var shape: int = raw_shape if raw_shape is int else -1
 	assert_eq(shape, 4, "Room shape should be RADIAL (4) when radial_room_ratio is 1.0.")
 
 
@@ -109,7 +111,8 @@ func test_inner_area_fully_in_room() -> void:
 	if not is_instance_valid(generator):
 		assert_true(false, "Generator is invalid")
 		return
-	var grid: Dictionary = generator.get("_grid") as Dictionary
+	var raw_grid: Variant = generator.get("_grid")
+	var grid: Dictionary = raw_grid if raw_grid is Dictionary else {}
 	grid[Vector3i(2, 0, 2)] = 1
 	grid[Vector3i(3, 0, 2)] = 1
 	grid[Vector3i(2, 0, 3)] = 1

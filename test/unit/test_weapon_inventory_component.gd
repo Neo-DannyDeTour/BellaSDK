@@ -148,5 +148,6 @@ func test_add_ammo_clamps_at_max_reserve() -> void:
 	var result: bool = inventory.add_ammo(StringName("bullets"), 50)
 	assert_true(result, "Adding ammo should succeed.")
 
-	var res_ammo: int = int(mock_weapon_1.get("reserve_ammo"))
+	var raw_res: Variant = mock_weapon_1.get("reserve_ammo")
+	var res_ammo: int = raw_res if raw_res is int else 0
 	assert_eq(res_ammo, 30, "Reserve ammo should be clamped to 30 (6 * 5).")

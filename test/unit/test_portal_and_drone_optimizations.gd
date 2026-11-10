@@ -16,7 +16,7 @@ func test_state_machine_lock_preserves_captured_mouse_mode() -> void:
 
 	lock_state.enter({"capture_mouse": true})
 	assert_true(
-		bool(lock_state.get("_is_mouse_captured")),
+		lock_state.get("_is_mouse_captured") == true,
 		"_is_mouse_captured should be true when capture_mouse=true."
 	)
 
@@ -29,13 +29,13 @@ func test_state_machine_lock_preserves_captured_mouse_mode() -> void:
 
 	lock_state.enter({"capture_mouse": false})
 	assert_false(
-		bool(lock_state.get("_is_mouse_captured")),
+		lock_state.get("_is_mouse_captured") == true,
 		"_is_mouse_captured should be false when capture_mouse=false."
 	)
 
 	lock_state.exit()
 	assert_false(
-		bool(lock_state.get("_is_mouse_captured")),
+		lock_state.get("_is_mouse_captured") == true,
 		"_is_mouse_captured should reset to false on state exit."
 	)
 

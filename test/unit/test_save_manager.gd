@@ -56,8 +56,10 @@ class MockSaveManager:
 		var b_fav: bool = b.get("is_favorite", false) == true
 		if a_fav != b_fav:
 			return a_fav
-		var a_id: int = int(a.get("id", 0))
-		var b_id: int = int(b.get("id", 0))
+		var raw_a: Variant = a.get("id", 0)
+		var raw_b: Variant = b.get("id", 0)
+		var a_id: int = raw_a if raw_a is int else 0
+		var b_id: int = raw_b if raw_b is int else 0
 		return a_id > b_id
 
 
