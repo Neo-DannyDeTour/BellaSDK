@@ -141,6 +141,14 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
+			"perf_uncap",
+			"Toggles session VSync and FPS cap uncap for performance stress testing.",
+			_cmd_perf_uncap,
+			context.get_toggle_options
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
 			"hidehud", "Toggles HUD visibility.", _cmd_hidehud, context.get_toggle_options
 		)
 	)
@@ -756,6 +764,32 @@ func _cmd_vsync(args: PackedStringArray) -> void:
 	)
 	DisplayServer.window_set_vsync_mode(mode)
 	context.write("V-Sync " + ("enabled." if enable else "disabled."), "green")
+
+
+## Toggles session VSync and max FPS limit without persisting to configuration.
+func _cmd_perf_uncap(args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_perf_uncap called with args: ", args)
+	var currently_uncapped: bool = (
+		DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_DISABLED
+		and Engine.max_fps == 0
+	)
+	var parsed: Variant = context.parse_toggle_arg(args, currently_uncapped, "perf_uncap")
+	if parsed == null:
+		return
+	var should_uncap: bool = parsed == true
+	if should_uncap:
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		Engine.max_fps = 0
+		context.write("Performance uncap ACTIVATED: VSync disabled, Engine.max_fps = 0.", "yellow")
+	else:
+		var vsync_setting: int = GlobalSettings.get_setting_int("Video", "vsync_mode", 1)
+		var fps_setting: int = GlobalSettings.get_setting_int("Video", "fps_limit", 60)
+		DisplayServer.window_set_vsync_mode(vsync_setting as DisplayServer.VSyncMode)
+		Engine.max_fps = fps_setting
+		context.write(
+			"Performance uncap DEACTIVATED: Restored VSync and FPS limit to %d." % fps_setting,
+			"green"
+		)
 
 
 ## Toggles player HUD layer node visibility via event bus.

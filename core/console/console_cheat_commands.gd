@@ -362,6 +362,24 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
+			"contrast_pulse",
+			"Triggers HL2 intro-style harsh black & white contrast pulse.",
+			_cmd_contrast_pulse,
+			func() -> Array[String]: return ["1.4", "0.8", "2.0", "0.5"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"contrast_vfx",
+			"Sets or clears sustained HL2 harsh black & white contrast intensity.",
+			_cmd_contrast_vfx,
+			func() -> Array[String]: return ["0.0", "0.5", "1.0", "off"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
 			"shockwave",
 			"Spawns radial shockwave effect at player position.",
 			_cmd_shockwave,
@@ -825,7 +843,7 @@ func _topup_weapon_ammo(weapon: Node3D, target_reserve: int) -> void:
 		tw.sync_ammo_ui()
 	else:
 		var cap_val: Variant = weapon.get("ammo_capacity")
-		var cap: int = int(cap_val) if cap_val is int else 6
+		var cap: int = cap_val if cap_val is int else 6
 		var max_res: int = cap * 5
 		var res_to_set: int = cap * 2 if target_reserve < 0 else target_reserve
 		weapon.set("current_ammo", cap)
@@ -1024,7 +1042,8 @@ func _cmd_playerspeed(args: PackedStringArray) -> void:
 
 	var loco: Node = player.get_node_or_null("LocomotionComponent")
 	if not is_instance_valid(loco):
-		loco = player.get("locomotion_component") as Node
+		var raw_loco: Variant = player.get("locomotion_component")
+		loco = raw_loco if raw_loco is Node else null
 	if not is_instance_valid(loco):
 		context.write("LocomotionComponent not found on player.", "red")
 		return
@@ -1032,8 +1051,19 @@ func _cmd_playerspeed(args: PackedStringArray) -> void:
 	if args.is_empty():
 		var cur_walk: Variant = loco.get("walking_speed")
 		var cur_sprint: Variant = loco.get("sprinting_speed")
-		var walk_f: float = float(cur_walk) if cur_walk != null else 5.0
-		var sprint_f: float = float(cur_sprint) if cur_sprint != null else 6.5
+		var walk_f: float = 5.0
+		if cur_walk is float:
+			walk_f = cur_walk
+		elif cur_walk is int:
+			var walk_i: int = cur_walk
+			walk_f = float(walk_i)
+
+		var sprint_f: float = 6.5
+		if cur_sprint is float:
+			sprint_f = cur_sprint
+		elif cur_sprint is int:
+			var sprint_i: int = cur_sprint
+			sprint_f = float(sprint_i)
 		context.write(
 			(
 				"Current speeds - Walk: %.1f | Sprint: %.1f. Usage: playerspeed <mult|reset>"
@@ -1113,7 +1143,8 @@ func _cmd_freecam(args: PackedStringArray) -> void:
 	var active: bool = parsed == true
 	context.toggle_states["freecam"] = active
 
-	var existing_cam: Camera3D = context.toggle_states.get("_freecam_instance") as Camera3D
+	var raw_cam: Variant = context.toggle_states.get("_freecam_instance")
+	var existing_cam: Camera3D = raw_cam if raw_cam is Camera3D else null
 
 	if not active:
 		if is_instance_valid(existing_cam) and existing_cam.has_method(&"restore_and_exit"):
@@ -1281,6 +1312,71 @@ func _cmd_psychic_vfx(args: PackedStringArray) -> void:
 	)
 
 
+## Triggers an HL2-style harsh black & white contrast pulse via [Events].
+func _cmd_contrast_pulse(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_contrast_pulse called with args: ", args)
+	var duration: float = 1.4
+	var peak: float = 1.0
+	var threshold: float = 0.45
+	var flash_boost: float = 0.3
+	if args.size() > 0 and args[0].strip_edges().is_valid_float():
+		duration = clampf(args[0].to_float(), 0.1, 10.0)
+	if args.size() > 1 and args[1].strip_edges().is_valid_float():
+		peak = clampf(args[1].to_float(), 0.0, 1.0)
+	if args.size() > 2 and args[2].strip_edges().is_valid_float():
+		threshold = clampf(args[2].to_float(), 0.0, 1.0)
+	if args.size() > 3 and args[3].strip_edges().is_valid_float():
+		flash_boost = clampf(args[3].to_float(), 0.0, 1.0)
+
+	if Events.has_signal(&"harsh_contrast_pulse_requested"):
+		Events.harsh_contrast_pulse_requested.emit(duration, peak, threshold, flash_boost)
+	context.write(
+		(
+			"Harsh contrast pulse triggered (duration: %.2fs, peak: %.2f, threshold: %.2f)."
+			% [duration, peak, threshold]
+		),
+		"green"
+	)
+
+
+## Sets sustained HL2 harsh black & white contrast screen intensity or clears it.
+func _cmd_contrast_vfx(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_contrast_vfx called with args: ", args)
+	var intensity: float = 0.0
+	var threshold: float = 0.45
+	var softness: float = 0.04
+	if not args.is_empty():
+		var token: String = args[0].strip_edges().to_lower()
+		if token in ["0", "off", "false", "stop", "clear"]:
+			intensity = 0.0
+		elif token in ["1", "on", "true"]:
+			intensity = 1.0
+		elif token.is_valid_float():
+			intensity = clampf(token.to_float(), 0.0, 1.0)
+		else:
+			context.write(
+				"Usage: contrast_vfx <0.0..1.0 | off> [threshold=0.45] [softness=0.04]", "yellow"
+			)
+			return
+	else:
+		context.write(
+			"Usage: contrast_vfx <0.0..1.0 | off> [threshold=0.45] [softness=0.04]", "yellow"
+		)
+		return
+
+	if args.size() > 1 and args[1].strip_edges().is_valid_float():
+		threshold = clampf(args[1].to_float(), 0.0, 1.0)
+	if args.size() > 2 and args[2].strip_edges().is_valid_float():
+		softness = clampf(args[2].to_float(), 0.001, 0.5)
+
+	if Events.has_signal(&"harsh_contrast_intensity_requested"):
+		Events.harsh_contrast_intensity_requested.emit(intensity, threshold, softness)
+	context.write(
+		"Harsh contrast VFX intensity set to: %.2f (threshold: %.2f)" % [intensity, threshold],
+		"green" if intensity > 0.0 else "yellow"
+	)
+
+
 ## Spawns a radial shockwave VFX at the player world position.
 func _cmd_shockwave(args: PackedStringArray) -> void:
 	print("ConsoleCheatCommands: _cmd_shockwave called with args: ", args)
@@ -1307,7 +1403,8 @@ func _cmd_shockwave(args: PackedStringArray) -> void:
 func _cmd_freecam_teleport(_args: PackedStringArray) -> void:
 	print("ConsoleCheatCommands: Executing freecam_teleport.")
 	var active: bool = context.get_toggle_state("freecam", false)
-	var cam: Camera3D = context.toggle_states.get("_freecam_instance") as Camera3D
+	var raw_cam: Variant = context.toggle_states.get("_freecam_instance")
+	var cam: Camera3D = raw_cam if raw_cam is Camera3D else null
 	if not active or not is_instance_valid(cam):
 		context.write("Freecam is not currently active.", "yellow")
 		return

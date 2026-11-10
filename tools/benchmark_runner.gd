@@ -87,28 +87,34 @@ func _finish_benchmark() -> void:
 
 	var has_failed: bool = false
 
-	if float(metrics.get("p99_ms", 0.0)) > MAX_ALLOWED_P99_FRAME_MS:
+	var raw_p99: Variant = metrics.get("p99_ms", 0.0)
+	var p99_val: float = raw_p99 if raw_p99 is float else 0.0
+	if p99_val > MAX_ALLOWED_P99_FRAME_MS:
 		printerr(
 			"[FAIL] 99th Percentile frame time exceeded! Got: ",
-			metrics.get("p99_ms", 0.0),
+			p99_val,
 			" ms, Max allowed: ",
 			MAX_ALLOWED_P99_FRAME_MS,
 			" ms"
 		)
 		has_failed = true
 
-	if float(metrics.get("max_spike_ms", 0.0)) > MAX_ALLOWED_FRAME_SPIKE_MS:
+	var raw_spike: Variant = metrics.get("max_spike_ms", 0.0)
+	var spike_val: float = raw_spike if raw_spike is float else 0.0
+	if spike_val > MAX_ALLOWED_FRAME_SPIKE_MS:
 		printerr(
 			"[FAIL] Frame spike exceeded limit! Got: ",
-			metrics.get("max_spike_ms", 0.0),
+			spike_val,
 			" ms, Max allowed: ",
 			MAX_ALLOWED_FRAME_SPIKE_MS,
 			" ms"
 		)
 		has_failed = true
 
-	if int(metrics.get("orphan_nodes", 0)) > 0:
-		printerr("[FAIL] Orphan nodes detected! Count: ", metrics["orphan_nodes"])
+	var raw_orphans: Variant = metrics.get("orphan_nodes", 0)
+	var orphan_val: int = raw_orphans if raw_orphans is int else 0
+	if orphan_val > 0:
+		printerr("[FAIL] Orphan nodes detected! Count: ", orphan_val)
 		Node.print_orphan_nodes()
 		has_failed = true
 

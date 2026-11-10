@@ -8,6 +8,9 @@ const HISTORY_NUM_FRAMES: int = 150
 ## Throttle interval in seconds (5 Hz) preventing per-frame BBCode parsing.
 const METRICS_UPDATE_INTERVAL: float = 0.2
 
+## Target frame time budget for 60 FPS in milliseconds.
+const TARGET_FRAME_BUDGET_MS: float = 16.67
+
 @export_category("Dev Metrics")
 ## Toggles whether the metrics system actively calculates values.
 @export var is_enabled: bool = true
@@ -21,14 +24,20 @@ var _last_tick: int = 0
 ## Accumulation timer throttling RichTextLabel table updates.
 var _update_timer: float = 0.0
 
-## Rolling history array of total frame delta times.
+## Pre-allocated circular ring buffer for total frame delta times.
 var _total_history: Array[float] = []
 
-## Rolling history array of CPU frame times.
+## Pre-allocated circular ring buffer for main-thread CPU frame times.
 var _cpu_history: Array[float] = []
 
-## Rolling history array of GPU frame times.
+## Pre-allocated circular ring buffer for GPU frame times.
 var _gpu_history: Array[float] = []
+
+## Current circular buffer head write index.
+var _ring_index: int = 0
+
+## Total count of recorded frames capped at [constant HISTORY_NUM_FRAMES].
+var _samples_count: int = 0
 
 ## Rolling sum of total frame delta times.
 var _total_sum: float = 0.0
@@ -65,6 +74,7 @@ func _ready() -> void:
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp_rid, true)
 
+	_init_ring_buffers()
 	_cache_hardware_info()
 	_cache_static_settings_info()
 
@@ -86,6 +96,17 @@ func _process(delta: float) -> void:
 func toggle_window() -> void:
 	visible = not visible
 	print("DevMetricsPanel: Visibility toggled to ", visible)
+
+
+## Pre-allocates circular ring buffers with zeroes to avoid runtime allocations.
+func _init_ring_buffers() -> void:
+	_total_history.resize(HISTORY_NUM_FRAMES)
+	_cpu_history.resize(HISTORY_NUM_FRAMES)
+	_gpu_history.resize(HISTORY_NUM_FRAMES)
+	for i: int in range(HISTORY_NUM_FRAMES):
+		_total_history[i] = 0.0
+		_cpu_history[i] = 0.0
+		_gpu_history[i] = 0.0
 
 
 ## Assembles BBCode table strings and updates the HUD label.
@@ -168,12 +189,13 @@ func _render_metrics_text() -> void:
 
 	text += "[table=5]\n"
 	text += "[cell][/cell][cell] [color=gray]Average[/color] [/cell]"
-	text += "[cell] [color=gray]Best[/color] [/cell]"
+	text += "[cell] [color=gray]p99 (1% Low)[/color] [/cell]"
 	text += "[cell] [color=gray]Worst[/color] [/cell][cell] [color=gray]Last[/color] [/cell]\n"
 
-	text += _format_metric_row("Total:", _total_sum, _total_history)
-	text += _format_metric_row("CPU:", _cpu_sum, _cpu_history)
+	text += _format_metric_row("CPU (Main):", _cpu_sum, _cpu_history)
 	text += _format_metric_row("GPU:", _gpu_sum, _gpu_history)
+	text += _format_metric_row("Frame Total:", _total_sum, _total_history)
+	text += _format_headroom_row()
 	text += "[/table]\n"
 
 	text += "[color=gray]" + _hardware_info_str + _settings_info_static_str
@@ -214,7 +236,7 @@ func _render_metrics_text() -> void:
 	metrics_label.text = text
 
 
-## Samples frame times from [RenderingServer] and updates rolling arrays.
+## Samples frame times from [RenderingServer] and updates ring buffers.
 func _update_frametime_history() -> void:
 	var current_tick: int = Time.get_ticks_usec()
 	var frametime_total: float = (current_tick - _last_tick) * 0.001
@@ -222,57 +244,52 @@ func _update_frametime_history() -> void:
 
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	var frame_setup: float = RenderingServer.get_frame_setup_time_cpu()
-	var frametime_cpu: float = (
-		RenderingServer.viewport_get_measured_render_time_cpu(vp_rid) + frame_setup
-	)
+	var render_cpu: float = RenderingServer.viewport_get_measured_render_time_cpu(vp_rid)
+	var proc_script: float = Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+	var proc_phys: float = Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
+
+	var vsync_on: bool = DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED
+	var frametime_cpu: float = 0.0
+	if vsync_on or Engine.max_fps > 0:
+		frametime_cpu = proc_phys + frame_setup + render_cpu
+	else:
+		frametime_cpu = proc_script + proc_phys + frame_setup + render_cpu
+
 	var frametime_gpu: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
 
+	if _samples_count < HISTORY_NUM_FRAMES:
+		_samples_count += 1
+	else:
+		_total_sum -= _total_history[_ring_index]
+		_cpu_sum -= _cpu_history[_ring_index]
+		_gpu_sum -= _gpu_history[_ring_index]
+
+	_total_history[_ring_index] = frametime_total
+	_cpu_history[_ring_index] = frametime_cpu
+	_gpu_history[_ring_index] = frametime_gpu
+
 	_total_sum += frametime_total
-	_total_history.push_back(frametime_total)
-	if _total_history.size() > HISTORY_NUM_FRAMES:
-		_total_sum -= _total_history.pop_front()
-
 	_cpu_sum += frametime_cpu
-	_cpu_history.push_back(frametime_cpu)
-	if _cpu_history.size() > HISTORY_NUM_FRAMES:
-		_cpu_sum -= _cpu_history.pop_front()
-
 	_gpu_sum += frametime_gpu
-	_gpu_history.push_back(frametime_gpu)
-	if _gpu_history.size() > HISTORY_NUM_FRAMES:
-		_gpu_sum -= _gpu_history.pop_front()
+
+	_ring_index = (_ring_index + 1) % HISTORY_NUM_FRAMES
 
 
 ## Formats a metric category into a clean BBCode table row string.
 func _format_metric_row(title: String, sum_val: float, history: Array[float]) -> String:
-	if history.is_empty():
+	if _samples_count == 0:
 		return ""
 
-	var avg_val: float = sum_val / float(history.size())
+	var avg_val: float = sum_val / float(_samples_count)
+	var active_samples: Array[float] = history.slice(0, _samples_count)
+	active_samples.sort()
 
-	var min_val: float = 0.0
-	var raw_min: Variant = history.min()
-	if raw_min is float:
-		min_val = raw_min
-	elif raw_min is int:
-		var int_min: int = raw_min
-		min_val = float(int_min)
+	var p99_idx: int = mini(roundi(_samples_count * 0.99), _samples_count - 1)
+	var p99_val: float = active_samples[p99_idx]
+	var max_val: float = active_samples[_samples_count - 1]
 
-	var max_val: float = 0.0
-	var raw_max: Variant = history.max()
-	if raw_max is float:
-		max_val = raw_max
-	elif raw_max is int:
-		var int_max: int = raw_max
-		max_val = float(int_max)
-
-	var last_val: float = 0.0
-	var raw_last: Variant = history.back()
-	if raw_last is float:
-		last_val = raw_last
-	elif raw_last is int:
-		var int_last: int = raw_last
-		last_val = float(int_last)
+	var last_idx: int = (_ring_index - 1 + HISTORY_NUM_FRAMES) % HISTORY_NUM_FRAMES
+	var last_val: float = history[last_idx]
 
 	var row_format: String = (
 		"[cell]%s [/cell][cell][color=%s]%.2f[/color][/cell]"
@@ -286,14 +303,71 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 			title,
 			_get_ms_color(avg_val),
 			avg_val,
-			_get_ms_color(min_val),
-			min_val,
+			_get_ms_color(p99_val),
+			p99_val,
 			_get_ms_color(max_val),
 			max_val,
 			_get_ms_color(last_val),
 			last_val,
 		]
 	)
+
+
+## Formats remaining frame budget (headroom) into a table row.
+func _format_headroom_row() -> String:
+	if _samples_count == 0:
+		return ""
+
+	var avg_cpu: float = _cpu_sum / float(_samples_count)
+	var avg_gpu: float = _gpu_sum / float(_samples_count)
+	var avg_headroom: float = TARGET_FRAME_BUDGET_MS - maxf(avg_cpu, avg_gpu)
+
+	var last_idx: int = (_ring_index - 1 + HISTORY_NUM_FRAMES) % HISTORY_NUM_FRAMES
+	var last_cpu: float = _cpu_history[last_idx]
+	var last_gpu: float = _gpu_history[last_idx]
+	var last_headroom: float = TARGET_FRAME_BUDGET_MS - maxf(last_cpu, last_gpu)
+
+	var headroom_samples: Array[float] = []
+	headroom_samples.resize(_samples_count)
+	for i: int in range(_samples_count):
+		headroom_samples[i] = TARGET_FRAME_BUDGET_MS - maxf(_cpu_history[i], _gpu_history[i])
+	headroom_samples.sort()
+
+	var worst_headroom: float = headroom_samples[0]
+	var p01_idx: int = mini(roundi(_samples_count * 0.01), _samples_count - 1)
+	var p99_headroom: float = headroom_samples[p01_idx]
+
+	var row_format: String = (
+		"[cell]%s [/cell][cell][color=%s]%.2f[/color][/cell]"
+		+ "[cell][color=%s]%.2f[/color][/cell][cell][color=%s]%.2f[/color][/cell]"
+		+ "[cell][color=%s]%.2f[/color][/cell]\n"
+	)
+
+	return (
+		row_format
+		% [
+			"Headroom (60fps):",
+			_get_headroom_color(avg_headroom),
+			avg_headroom,
+			_get_headroom_color(p99_headroom),
+			p99_headroom,
+			_get_headroom_color(worst_headroom),
+			worst_headroom,
+			_get_headroom_color(last_headroom),
+			last_headroom,
+		]
+	)
+
+
+## Returns a hex color string based on remaining millisecond headroom.
+func _get_headroom_color(headroom_ms: float) -> String:
+	if headroom_ms > 5.0:
+		return "#38bdf8"
+	if headroom_ms > 2.0:
+		return "#80e25f"
+	if headroom_ms >= 0.0:
+		return "#facc15"
+	return "#ef4444"
 
 
 ## Returns a hex color string based on millisecond execution duration.

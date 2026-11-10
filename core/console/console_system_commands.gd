@@ -386,7 +386,7 @@ func _cmd_bind(args: PackedStringArray) -> void:
 		if is_instance_valid(context.host) and context.host.has_method(&"get_keybinds"):
 			var raw_binds: Variant = context.host.call(&"get_keybinds")
 			if raw_binds is Dictionary:
-				var binds_dict: Dictionary = Dictionary(raw_binds)
+				var binds_dict: Dictionary = raw_binds
 				if binds_dict.has(key_name):
 					context.write(
 						'"%s" is bound to: %s' % [key_name, str(binds_dict[key_name])], "cyan"
@@ -438,7 +438,7 @@ func _cmd_bindlist(_args: PackedStringArray) -> void:
 		context.write("No custom keybindings active.", "yellow")
 		return
 
-	var binds_dict: Dictionary = Dictionary(raw_binds)
+	var binds_dict: Dictionary = raw_binds
 	if binds_dict.is_empty():
 		context.write("No custom keybindings currently active.", "yellow")
 		return

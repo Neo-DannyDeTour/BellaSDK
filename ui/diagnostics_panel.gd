@@ -814,7 +814,7 @@ func _audit_sdfgi_instances(p_sub_viewports: Array[SubViewport] = []) -> Array[D
 		var display_name: String = ""
 		if vp == root_vp:
 			var scene_title: String = (
-				current_scene.name if is_instance_valid(current_scene) else "root"
+				String(current_scene.name) if is_instance_valid(current_scene) else "root"
 			)
 			display_name = "Main Window [%s]" % scene_title
 		else:
@@ -918,7 +918,7 @@ func _audit_volumetric_fog_instances(p_sub_viewports: Array[SubViewport] = []) -
 		var display_name: String = ""
 		if vp == root_vp:
 			var scene_title: String = (
-				current_scene.name if is_instance_valid(current_scene) else "root"
+				String(current_scene.name) if is_instance_valid(current_scene) else "root"
 			)
 			display_name = "Main Window [%s]" % scene_title
 		else:
@@ -1031,8 +1031,8 @@ func _build_cloud_record(
 		"max_step_count": clouds_eff.max_step_count,
 		"lighting_steps": clouds_eff.max_lighting_steps,
 		"shadow_steps": clouds_eff.shadow_steps,
-		"dir_lights": int(clouds_eff.directional_lights_data.size() / 4),
-		"point_lights": int(clouds_eff.point_lights_data.size() / 2),
+		"dir_lights": clouds_eff.directional_lights_data.size() >> 2,
+		"point_lights": clouds_eff.point_lights_data.size() >> 1,
 		"effectors": int(clouds_eff.point_effector_data.size()),
 		"blur_power": clouds_eff.blur_power,
 		"blur_quality": clouds_eff.blur_quality,
@@ -1296,20 +1296,30 @@ func _audit_spike_root_causes(
 
 		branch_proc_items.sort_custom(
 			func(a: Dictionary, b: Dictionary) -> bool:
-				return int(a.get("count", 0)) > int(b.get("count", 0))
+				var a_c: Variant = a.get("count", 0)
+				var b_c: Variant = b.get("count", 0)
+				var a_val: int = a_c if a_c is int else 0
+				var b_val: int = b_c if b_c is int else 0
+				return a_val > b_val
 		)
 		branch_mesh_items.sort_custom(
 			func(a: Dictionary, b: Dictionary) -> bool:
-				return int(a.get("meshes", 0)) > int(b.get("meshes", 0))
+				var a_m: Variant = a.get("meshes", 0)
+				var b_m: Variant = b.get("meshes", 0)
+				var a_val: int = a_m if a_m is int else 0
+				var b_val: int = b_m if b_m is int else 0
+				return a_val > b_val
 		)
 
 	var top_mesh_strs: PackedStringArray = PackedStringArray()
 	var max_mesh_show: int = mini(3, branch_mesh_items.size())
 	for i: int in range(max_mesh_show):
 		var m_item: Dictionary = branch_mesh_items[i]
-		top_mesh_strs.append(
-			"%s (%d meshes)" % [str(m_item.get("label", "")), int(m_item.get("meshes", 0))]
-		)
+		var raw_lbl: Variant = m_item.get("label", "")
+		var lbl_str: String = raw_lbl if raw_lbl is String else str(raw_lbl)
+		var raw_m: Variant = m_item.get("meshes", 0)
+		var m_count: int = raw_m if raw_m is int else 0
+		top_mesh_strs.append("%s (%d meshes)" % [lbl_str, m_count])
 	var mesh_scene_suffix: String = (
 		(" | Top scene branches: " + ", ".join(top_mesh_strs))
 		if not top_mesh_strs.is_empty()
@@ -1366,9 +1376,11 @@ func _audit_spike_root_causes(
 		var max_show: int = mini(3, branch_proc_items.size())
 		for i: int in range(max_show):
 			var item: Dictionary = branch_proc_items[i]
-			top_strs.append(
-				"%s (%d nodes)" % [str(item.get("label", "")), int(item.get("count", 0))]
-			)
+			var raw_lbl: Variant = item.get("label", "")
+			var lbl_str: String = raw_lbl if raw_lbl is String else str(raw_lbl)
+			var raw_c: Variant = item.get("count", 0)
+			var node_count: int = raw_c if raw_c is int else 0
+			top_strs.append("%s (%d nodes)" % [lbl_str, node_count])
 
 		if cpu_script_ms > CPU_OVERLOAD_THRESHOLD_MS and gpu_ms <= 20.0:
 			has_findings = true
