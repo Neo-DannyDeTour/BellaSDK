@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://cxvh8qm1a7ypl"]
 
 [ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_base"]
-[ext_resource type="Script" path="res://interactables/breakable_crate.gd" id="2_script"]
+[ext_resource type="Script" uid="uid://cxrmolqlvs7aa" path="res://interactables/breakable_crate.gd" id="2_script"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_outline"]
-[ext_resource type="Shader" path="res://shaders/crate_fade.gdshader" id="4_fade"]
+[ext_resource type="Shader" uid="uid://lq8kv75l4h1c" path="res://shaders/crate_fade.gdshader" id="4_fade"]
 [ext_resource type="PackedScene" path="res://assets/props/crates/wooden_crate_mesh.tscn" id="5_mesh"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_crate_outline"]
@@ -28,6 +28,8 @@ debris_root = NodePath("wooden_crate/Crate_Debris")
 fade_shader = ExtResource("4_fade")
 mesh = NodePath("wooden_crate/Crate_Intact")
 float_force = 1.5
+custom_hold_distance = 1.0
+hold_vertical_offset = 0.15
 
 [node name="HighlightComponent" parent="." index="1" unique_id=1233358358]
 outline_material = SubResource("ShaderMaterial_crate_outline")
@@ -45,4 +47,4 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
 [node name="PromptIcon" parent="." index="5" unique_id=931149645]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
 
-[node name="wooden_crate" parent="." index="7" instance=ExtResource("5_mesh")]
+[node name="wooden_crate" parent="." index="7" unique_id=1591603919 instance=ExtResource("5_mesh")]

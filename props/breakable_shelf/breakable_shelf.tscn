@@ -1,0 +1,176 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://props/breakable_shelf/breakable_shelf.gd" id="1_script"]
+[ext_resource type="Shader" path="res://props/breakable_shelf/breakable_shelf.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_shelf"]
+render_priority = 0
+shader = ExtResource("2_shader")
+
+[sub_resource type="BoxMesh" id="BoxMesh_1"]
+material = SubResource("ShaderMaterial_shelf")
+size = Vector3(0.02, 0.8, 0.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(0.02, 0.8, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_2"]
+material = SubResource("ShaderMaterial_shelf")
+size = Vector3(0.02, 0.8, 0.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2"]
+size = Vector3(0.02, 0.8, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_3"]
+material = SubResource("ShaderMaterial_shelf")
+size = Vector3(0.46, 0.02, 0.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3"]
+size = Vector3(0.46, 0.02, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_4"]
+material = SubResource("ShaderMaterial_shelf")
+size = Vector3(0.46, 0.02, 0.38)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4"]
+size = Vector3(0.46, 0.02, 0.38)
+
+[sub_resource type="BoxMesh" id="BoxMesh_5"]
+material = SubResource("ShaderMaterial_shelf")
+size = Vector3(0.46, 0.02, 0.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5"]
+size = Vector3(0.46, 0.02, 0.4)
+
+[node name="BreakableShelf" type="RigidBody3D"]
+collision_layer = 4
+collision_mask = 23
+mass = 8.0
+contact_monitor = true
+max_contacts_reported = 2
+script = ExtResource("1_script")
+
+[node name="Col_PlankLeft" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.24, 0.4, 0.0)
+shape = SubResource("BoxShape3D_1")
+
+[node name="Col_PlankRight" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0.4, 0.0)
+shape = SubResource("BoxShape3D_2")
+
+[node name="Col_PlankTop" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.79, 0.0)
+shape = SubResource("BoxShape3D_3")
+
+[node name="Col_PlankMid" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.48, 0.0)
+shape = SubResource("BoxShape3D_4")
+
+[node name="Col_PlankBottom" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.03, 0.0)
+shape = SubResource("BoxShape3D_5")
+
+[node name="IntactVisuals" type="Node3D" parent="."]
+
+[node name="Mesh_PlankLeft" type="MeshInstance3D" parent="IntactVisuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.24, 0.4, 0.0)
+layers = 4
+mesh = SubResource("BoxMesh_1")
+
+[node name="Mesh_PlankRight" type="MeshInstance3D" parent="IntactVisuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0.4, 0.0)
+layers = 4
+mesh = SubResource("BoxMesh_2")
+
+[node name="Mesh_PlankTop" type="MeshInstance3D" parent="IntactVisuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.79, 0.0)
+layers = 4
+mesh = SubResource("BoxMesh_3")
+
+[node name="Mesh_PlankMid" type="MeshInstance3D" parent="IntactVisuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.48, 0.0)
+layers = 4
+mesh = SubResource("BoxMesh_4")
+
+[node name="Mesh_PlankBottom" type="MeshInstance3D" parent="IntactVisuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.03, 0.0)
+layers = 4
+mesh = SubResource("BoxMesh_5")
+
+[node name="Gibs" type="Node3D" parent="."]
+visible = false
+
+[node name="Gib_PlankLeft" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.24, 0.4, 0.0)
+collision_layer = 0
+collision_mask = 0
+mass = 1.6
+freeze = true
+
+[node name="Mesh" type="MeshInstance3D" parent="Gibs/Gib_PlankLeft"]
+layers = 4
+mesh = SubResource("BoxMesh_1")
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_PlankLeft"]
+shape = SubResource("BoxShape3D_1")
+disabled = true
+
+[node name="Gib_PlankRight" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0.4, 0.0)
+collision_layer = 0
+collision_mask = 0
+mass = 1.6
+freeze = true
+
+[node name="Mesh" type="MeshInstance3D" parent="Gibs/Gib_PlankRight"]
+layers = 4
+mesh = SubResource("BoxMesh_2")
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_PlankRight"]
+shape = SubResource("BoxShape3D_2")
+disabled = true
+
+[node name="Gib_PlankTop" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.79, 0.0)
+collision_layer = 0
+collision_mask = 0
+mass = 1.6
+freeze = true
+
+[node name="Mesh" type="MeshInstance3D" parent="Gibs/Gib_PlankTop"]
+layers = 4
+mesh = SubResource("BoxMesh_3")
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_PlankTop"]
+shape = SubResource("BoxShape3D_3")
+disabled = true
+
+[node name="Gib_PlankMid" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.48, 0.0)
+collision_layer = 0
+collision_mask = 0
+mass = 1.6
+freeze = true
+
+[node name="Mesh" type="MeshInstance3D" parent="Gibs/Gib_PlankMid"]
+layers = 4
+mesh = SubResource("BoxMesh_4")
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_PlankMid"]
+shape = SubResource("BoxShape3D_4")
+disabled = true
+
+[node name="Gib_PlankBottom" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.03, 0.0)
+collision_layer = 0
+collision_mask = 0
+mass = 1.6
+freeze = true
+
+[node name="Mesh" type="MeshInstance3D" parent="Gibs/Gib_PlankBottom"]
+layers = 4
+mesh = SubResource("BoxMesh_5")
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_PlankBottom"]
+shape = SubResource("BoxShape3D_5")
+disabled = true

@@ -141,7 +141,8 @@ func is_character_standing_inside() -> bool:
 			if not loco.crouching:
 				return true
 		elif "crouching" in character:
-			if not bool(character.get("crouching")):
+			var cr_val: Variant = character.get("crouching")
+			if cr_val != true:
 				return true
 		else:
 			return true
