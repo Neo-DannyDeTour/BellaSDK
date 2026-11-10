@@ -401,7 +401,7 @@ vec4 sampleAllAtmospherics(
 	}
 
 	float AtmosphericsDistancePower = length(vec3(RayleighScatteringCoef * totalRlh + MieScatteringCoef * totalMie));
-	vec3 atmospherics = 22.0 * (ambientLight * RayleighScatteringCoef * totalRlh + pMie * MieScatteringCoef * sunlightColor * totalMie) / sampleCount;
+	vec3 atmospherics = 22.0 * (ambientLight * RayleighScatteringCoef * totalRlh + pMie * MieScatteringCoef * sunlightColor * totalMie) / max(sampleCount, 1.0);
 	return vec4(atmospherics, AtmosphericsDistancePower);
 }
 
@@ -634,8 +634,9 @@ void main() {
 				newStep = maxstep;
 			}
 
-			if (i == 0){
-				newdensity = mix(newdensity, 0.0, traveledDistance / maxstep);
+			// Near-camera fade only valid when ray starts at origin (camera inside layer).
+			if (i == 0 && cloudLayerBounds.x <= 0.0){
+				newdensity = mix(newdensity, 0.0, clamp(traveledDistance / maxstep, 0.0, 1.0));
 			}
 
 			density += newdensity;
@@ -662,8 +663,8 @@ void main() {
 
 	density *= clamp(smoothstep(maxstep * stepCount, minstep * stepCount, traveledDistance), 0.0, 1.0);
 
-	ambient = clamp(ambient / lightingSamples, 0.0, 1.0);
-	paintedColor = clamp(paintedColor / lightingSamples, 0.0, 1.0);
+	ambient = clamp(ambient / max(lightingSamples, 1.0), 0.0, 1.0);
+	paintedColor = clamp(paintedColor / max(lightingSamples, 1.0), 0.0, 1.0);
 
 	vec3 ambientLight = genericData.data.ambientLightColor.rgb * totalLightPower;
 	ambientLight = mix(ambientLight, ambientLight * aobase.rgb, ambient * aobase.a) * paintedColor;
@@ -673,6 +674,8 @@ void main() {
 	vec3 physicalFogColor = lightColor.rgb;
 	float fogweight = 0.0;
 
+	// Slab entry can push traveledDistance far past depth; fog must stop at geometry.
+	float atmoDistance = min(traveledDistance, linear_depth);
 	if (linear_depth > maxstep && directionalLightCount > 0.0){
 		for (float i = 0.0; i < directionalLightCount; i++){
 			DirectionalLight light = directionalLights[int(i)];
@@ -680,7 +683,7 @@ void main() {
 			float sunUpWeight = smoothstep(0.0, 0.4, dot(sundir, vec3(0.0, 1.0, 0.0)));
 			float sundensityaffect = 1.0 - clamp(dot(sundir, raydirection) * density, 0.0, 1.0);
 			float lightPower = light.color.a * sunUpWeight * sundensityaffect;
-			vec4 atmosphericData = sampleAllAtmospherics(rayOrigin, raydirection, linear_depth, traveledDistance, 0.0, traveledDistance / 10.0, 10.0, atmosphericDensity, sundir, light.color.rgb * lightPower, ambientfogdistancecolor);
+			vec4 atmosphericData = sampleAllAtmospherics(rayOrigin, raydirection, linear_depth, atmoDistance, 0.0, atmoDistance / 10.0, 10.0, atmosphericDensity, sundir, light.color.rgb * lightPower, ambientfogdistancecolor);
 
 			physicalFogColor = mix(physicalFogColor, atmosphericData.rgb, atmosphericData.a);
 			fogweight += atmosphericData.a;
