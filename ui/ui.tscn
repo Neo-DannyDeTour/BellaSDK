@@ -43,6 +43,8 @@
 [ext_resource type="Shader" uid="uid://drg4qmix2luaa" path="res://ui/anime_speed_lines.gdshader" id="37_speed"]
 [ext_resource type="Shader" path="res://vfx/advisor_psychic.gdshader" id="38_advsh"]
 [ext_resource type="Script" path="res://ui/advisor_psychic_effect.gd" id="39_advfx"]
+[ext_resource type="Shader" path="res://vfx/harsh_contrast_transition.gdshader" id="40_hcntsh"]
+[ext_resource type="Script" path="res://ui/harsh_contrast_effect.gd" id="41_hcntfx"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -126,6 +128,16 @@ shader_parameter/blur_strength = 0.08
 shader_parameter/aberration_strength = 0.03
 shader_parameter/jitter_amount = 0.008
 shader_parameter/vignette_power = 2.2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hcnt01"]
+shader = ExtResource("40_hcntsh")
+shader_parameter/intensity = 0.0
+shader_parameter/threshold = 0.45
+shader_parameter/softness = 0.04
+shader_parameter/jitter_strength = 0.005
+shader_parameter/flash_boost = 0.0
+shader_parameter/light_color = Color(1, 1, 1, 1)
+shader_parameter/dark_color = Color(0, 0, 0, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
@@ -304,6 +316,18 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("39_advfx")
+
+[node name="HarshContrastOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1584920399]
+visible = false
+material = SubResource("ShaderMaterial_hcnt01")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("41_hcntfx")
 
 [node name="FadeOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1066162705]
 visible = false

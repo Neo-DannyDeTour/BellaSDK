@@ -135,6 +135,22 @@ signal advisor_psychic_intensity_requested(intensity: float)
 @warning_ignore("unused_signal")
 signal advisor_psychic_pulse_finished
 
+## Emitted to trigger an HL2-style harsh black & white contrast transition pulse across the screen.
+@warning_ignore("unused_signal")
+signal harsh_contrast_pulse_requested(
+	duration: float, peak: float, target_threshold: float, peak_flash: float
+)
+
+## Emitted to set sustained harsh black & white contrast [param intensity] directly.
+@warning_ignore("unused_signal")
+signal harsh_contrast_intensity_requested(
+	intensity: float, custom_threshold: float, custom_softness: float
+)
+
+## Emitted when a harsh black & white contrast pulse animation finishes.
+@warning_ignore("unused_signal")
+signal harsh_contrast_pulse_finished
+
 # --------------------------------------
 # CHEAT & DEBUG SIGNALS
 # --------------------------------------

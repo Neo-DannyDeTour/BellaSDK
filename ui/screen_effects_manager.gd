@@ -128,6 +128,10 @@ var _current_edge_condensation: float = 0.0
 @onready
 var advisor_psychic_overlay: ColorRect = get_node_or_null("AdvisorPsychicOverlay") as ColorRect
 
+## ColorRect applying HL2-style harsh black & white dynamic contrast effect.
+@onready
+var harsh_contrast_overlay: ColorRect = get_node_or_null("HarshContrastOverlay") as ColorRect
+
 ## ColorRect applying full-screen fade transitions and color flashes.
 @onready var fade_overlay: ColorRect = $FadeOverlay
 
@@ -387,6 +391,7 @@ func _setup_fullscreen_layout() -> void:
 		speed_lines_overlay,
 		condensation_overlay,
 		advisor_psychic_overlay,
+		harsh_contrast_overlay,
 		fade_overlay
 	]
 
@@ -454,6 +459,9 @@ func _initialize_overlays() -> void:
 
 	if is_instance_valid(advisor_psychic_overlay):
 		advisor_psychic_overlay.hide()
+
+	if is_instance_valid(harsh_contrast_overlay):
+		harsh_contrast_overlay.hide()
 
 
 ## Verifies material presence and instantiates fallback transition shader.
