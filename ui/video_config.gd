@@ -15,7 +15,7 @@ const DEFAULT_FSR_MODE: String = "Disabled (Native)"
 const DEFAULT_AA_MODE: String = "MSAA 4x"
 
 ## Default vertical synchronization mode.
-const DEFAULT_VSYNC: int = DisplayServer.VSYNC_ENABLED
+const DEFAULT_VSYNC: int = DisplayServer.VSYNC_DISABLED
 
 ## Default master quality preset name.
 const DEFAULT_PRESET: String = "Ultra"
@@ -252,6 +252,7 @@ const SSAO_MODES: Dictionary = {
 	"Low": {"enabled": true, "quality": 0, "half_size": true},
 	"Medium": {"enabled": true, "quality": 1, "half_size": false},
 	"High": {"enabled": true, "quality": 2, "half_size": false},
+	"Ultra": {"enabled": true, "quality": 3, "half_size": false},
 }
 
 ## Map of SSIL quality tiers to engine rendering parameters.
@@ -260,6 +261,7 @@ const SSI_MODES: Dictionary = {
 	"Low": {"enabled": true, "quality": 0, "half_size": true},
 	"Medium": {"enabled": true, "quality": 1, "half_size": false},
 	"High": {"enabled": true, "quality": 2, "half_size": false},
+	"Ultra": {"enabled": true, "quality": 3, "half_size": false},
 }
 
 ## Map of SSR quality tiers to raymarch step limits.
@@ -413,8 +415,8 @@ const PRESETS: Dictionary = {
 		"dof_enabled": false,
 		"dof_amount": 0.0,
 		"motion_blur": 0.0,
-		"ssao": "High",
-		"ssi": "High",
+		"ssao": "Ultra",
+		"ssi": "Ultra",
 		"ssr": "High",
 		"sdfgi": "High",
 		"volumetric_fog": "High",

@@ -339,17 +339,24 @@ static func _apply_server_filter_qualities(config: Dictionary, is_diorama: bool)
 		ssi_q as RenderingServer.EnvironmentSSILQuality, ssi_half, 0.5, 2, 1.0, 50.0
 	)
 
-	RenderingServer.gi_set_use_half_resolution(true)
+	var is_ultra: bool = _get_str(config, "preset", VideoConfig.DEFAULT_PRESET) == "Ultra"
+	RenderingServer.gi_set_use_half_resolution(not is_ultra)
 
 	var target_depth: int = DIORAMA_FOG_DEPTH
+	var target_width: int = 64
 	if not is_diorama:
 		var fog_key: String = _get_str(config, "volumetric_fog", VideoConfig.DEFAULT_FOG)
 		var fog_dict: Dictionary = _get_dict(VideoConfig.FOG_MODES, fog_key)
 		target_depth = _get_int(fog_dict, "depth", 64)
+		if is_ultra:
+			var proj_fog_size: Variant = ProjectSettings.get_setting(
+				"rendering/environment/volumetric_fog/volume_size"
+			)
+			target_width = proj_fog_size if proj_fog_size is int else 128
 
 	if _cached_fog_depth != target_depth:
 		_cached_fog_depth = target_depth
-		RenderingServer.environment_set_volumetric_fog_volume_size(64, target_depth)
+		RenderingServer.environment_set_volumetric_fog_volume_size(target_width, target_depth)
 
 
 ## Applies shadow atlas, scaling, AA, VRS, and LOD settings to the primary gameplay [Viewport].
@@ -581,7 +588,15 @@ static func _populate_environment(env: Environment, config: Dictionary, is_previ
 	if sdfgi_on:
 		var cascades: int = _get_int(sdfgi_dict, "cascades", 2)
 		env.sdfgi_cascades = mini(cascades, 2) if is_preview else cascades
-		env.sdfgi_min_cell_size = 0.5 if is_preview else maxf(env.sdfgi_min_cell_size, 1.0)
+		var is_ultra_preset: bool = (
+			_get_str(config, "preset", VideoConfig.DEFAULT_PRESET) == "Ultra"
+		)
+		if is_preview:
+			env.sdfgi_min_cell_size = 0.5
+		elif is_ultra_preset:
+			env.sdfgi_min_cell_size = env.sdfgi_min_cell_size
+		else:
+			env.sdfgi_min_cell_size = maxf(env.sdfgi_min_cell_size, 1.0)
 		env.sdfgi_y_scale = Environment.SDFGI_Y_SCALE_75_PERCENT
 		env.sdfgi_energy = 1.0
 		env.sdfgi_use_occlusion = true

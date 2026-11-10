@@ -120,7 +120,9 @@ func _reset_camera() -> void:
 
 ## Registers an active [Camera3D] node as recipient of shake transform updates.
 func register_camera(camera: Camera3D) -> void:
-	print("CameraShakeManager: Registering active camera: ", camera.name if camera else "null")
+	print(
+		"CameraShakeManager: Registering active camera: ", String(camera.name) if camera else "null"
+	)
 	if is_instance_valid(_active_camera) and _active_camera != camera:
 		_reset_camera()
 

@@ -72,9 +72,10 @@ func _extract_scene_materials(scene: PackedScene, array_ref: Array[Material]) ->
 		for prop_idx: int in range(state.get_node_property_count(node_idx)):
 			var prop_val: Variant = state.get_node_property_value(node_idx, prop_idx)
 			if prop_val is Material:
-				_append_unique_material(prop_val as Material, array_ref)
+				var mat: Material = prop_val
+				_append_unique_material(mat, array_ref)
 			elif prop_val is Mesh:
-				var mesh: Mesh = prop_val as Mesh
+				var mesh: Mesh = prop_val
 				for surf_idx: int in range(mesh.get_surface_count()):
 					var surf_mat: Material = mesh.surface_get_material(surf_idx)
 					if surf_mat:
