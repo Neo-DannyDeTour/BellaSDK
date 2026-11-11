@@ -19,6 +19,7 @@
 [ext_resource type="Texture2D" uid="uid://b4f2b7k40v4gb" path="res://environment/lex_partizan_rain/cobblestone-curved_normal-ogl.png" id="17_cob_norm"]
 [ext_resource type="Texture2D" uid="uid://br14evs748vfl" path="res://environment/lex_partizan_rain/cobblestone-curved_roughness.png" id="18_cob_rough"]
 [ext_resource type="Texture2D" uid="uid://cgwhy8mpfmk7a" path="res://environment/lex_partizan_rain/cobblestone-curved_height.png" id="19_cob_height"]
+[ext_resource type="PackedScene" uid="uid://c8w4r00fwtr01" path="res://vfx/roof_water_wall/roof_water_wall.tscn" id="20_waterwall"]
 
 [sub_resource type="World3D" id="World3D_tfbbj"]
 environment = ExtResource("6_env")
@@ -229,6 +230,11 @@ mesh = SubResource("BoxMesh_wall")
 transform = Transform3D(0.99999756, -0.002370216, 0, 0.002370216, 0.99999756, 0, 0, 0, 1, -0.2, 3.4, -1.8)
 material_override = SubResource("ShaderMaterial_cobble")
 mesh = SubResource("PlaneMesh_rk188")
+
+[node name="RoofWaterWall" parent="RoofOccluderMesh" instance=ExtResource("20_waterwall")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.5)
+curtain_width = 3.0
+curtain_height = 3.4
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=2078979036]
 
