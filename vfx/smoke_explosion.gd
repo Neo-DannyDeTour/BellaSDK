@@ -1,4 +1,5 @@
-## Event-driven non-volumetric smoke explosion controller.
+@tool
+## Event-driven non-volumetric smoke explosion controller with editor loop audition.
 ## Orchestrates soft-billboard [GPUParticles3D] passes, 1-shot [RayCast3D] containment,
 ## synchronous [ShapeCast3D] blast impulse on Physics Layers 3/4/5, refractive
 ## [MeshInstance3D] shockwave, floor [Decal] scorch, and [OmniLight3D] decay.
@@ -71,15 +72,24 @@ const RAY_DIRS: PackedVector3Array = [
 	Vector3(0.0, 1.0, 0.0),
 ]
 
-## Automatically triggers detonation upon entering the scene tree.
+## Automatically triggers detonation upon entering the scene tree outside editor.
 @export var auto_play: bool = true
+## Repeats detonation sequence continuously at runtime and editor preview.
+@export var loop: bool = false
+## Delay in seconds between plume completion and subsequent looped detonation.
+@export_range(0.0, 10.0, 0.1) var loop_interval: float = 1.0
+## Editor-only toggle to audition continuous explosion loops in scene viewport.
+@export var preview_loop: bool = false:
+	set = _set_preview_loop
 ## Maximum radial distance in meters when evaluating containment clamping.
 @export var max_containment_radius: float = 4.5
-## Automatically calls [method Node.queue_free] once plume finishes emission.
+## Automatically calls [method Node.queue_free] once plume finishes emission outside editor.
 @export var free_on_finish: bool = true
 
 ## Active [Tween] driving light decay, shockwave expansion, and scorch fade.
 var _flash_tween: Tween = null
+## Dedicated [Tween] timer governing loop interval delays between detonations.
+var _loop_tween: Tween = null
 ## Cached list of child particle emitters for batch operations.
 var _emitters: Array[GPUParticles3D] = []
 
@@ -149,13 +159,17 @@ func _ready() -> void:
 	Utilities.safe_connect(_screen_notifier.screen_entered, _on_screen_entered)
 	Utilities.safe_connect(_screen_notifier.screen_exited, _on_screen_exited)
 
-	if auto_play:
+	if Engine.is_editor_hint():
+		if preview_loop:
+			detonate(global_position)
+	elif auto_play:
 		detonate(global_position)
 
 
 ## Cleans up active [Tween] instances on tree exit.
 func _exit_tree() -> void:
 	Utilities.safe_kill_tween(_flash_tween)
+	Utilities.safe_kill_tween(_loop_tween)
 
 
 ## Triggers the 4-phase smoke detonation, physics blast, shockwave, and scorch
@@ -163,6 +177,8 @@ func _exit_tree() -> void:
 func detonate(world_pos: Vector3 = Vector3.INF) -> void:
 	if not is_inside_tree():
 		return
+
+	Utilities.safe_kill_tween(_loop_tween)
 
 	var target_pos: Vector3 = global_position if not world_pos.is_finite() else world_pos
 	global_position = target_pos
@@ -188,6 +204,46 @@ func detonate(world_pos: Vector3 = Vector3.INF) -> void:
 		_flying_debris_sparks.emitting = true
 
 	_trigger_flash(has_scorch)
+
+
+## Property setter toggling editor preview loop execution in viewport.
+func _set_preview_loop(value: bool) -> void:
+	preview_loop = value
+	if not is_inside_tree() or not is_node_ready():
+		return
+	if preview_loop:
+		detonate(global_position)
+	else:
+		_stop_all_vfx()
+
+
+## Immediately aborts particle emissions, kills active tweens, and resets lights.
+func _stop_all_vfx() -> void:
+	Utilities.safe_kill_tween(_flash_tween)
+	Utilities.safe_kill_tween(_loop_tween)
+
+	for emitter: GPUParticles3D in _emitters:
+		if is_instance_valid(emitter):
+			emitter.emitting = false
+
+	if is_instance_valid(_flash_light):
+		_flash_light.light_energy = 0.0
+		_flash_light.visible = false
+
+	if is_instance_valid(_shockwave_sphere):
+		_shockwave_sphere.visible = false
+
+	if is_instance_valid(_scorch_decal):
+		_scorch_decal.visible = false
+
+
+## Schedules subsequent detonation via dedicated tween timer.
+func _schedule_loop() -> void:
+	_loop_tween = Utilities.reset_tween(self, _loop_tween)
+	if not is_instance_valid(_loop_tween):
+		return
+	_loop_tween.tween_interval(loop_interval)
+	_loop_tween.tween_callback(detonate)
 
 
 ## Sweeps Physics Layers 3, 4, and 5 via [member _blast_cast] and applies LoS-checked impulses.
@@ -356,7 +412,15 @@ func _on_plume_finished() -> void:
 		return
 	print("SmokeExplosionVfx: plume finished at ", global_position)
 	detonation_completed.emit(global_position)
-	if free_on_finish:
+
+	if Engine.is_editor_hint():
+		if preview_loop:
+			_schedule_loop()
+		return
+
+	if loop:
+		_schedule_loop()
+	elif free_on_finish:
 		call_deferred(&"queue_free")
 
 
