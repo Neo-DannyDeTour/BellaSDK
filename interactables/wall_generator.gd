@@ -58,6 +58,12 @@ var _is_animating: bool = false
 ## Tracks cooldown flag preventing immediate re-entry on grab.
 var _is_reinsert_locked: bool = false
 
+## Dynamic material controlling red indicator button glow state.
+var _red_indicator_mat: StandardMaterial3D = null
+
+## Dynamic material controlling green indicator button glow state.
+var _green_indicator_mat: StandardMaterial3D = null
+
 
 ## Sets up transmitter targets, connections, and hides initial label.
 func _ready() -> void:
@@ -92,7 +98,9 @@ func _ready() -> void:
 	if is_instance_valid(status_label):
 		status_label.hide()
 
+	_setup_indicator_materials()
 	_update_label()
+	_update_indicator_lights()
 
 
 ## Reveals floating label when focused by player crosshair.
@@ -223,6 +231,7 @@ func insert_cell(cell: EnergyCell) -> void:
 				if is_instance_valid(transmitter):
 					transmitter.power_on()
 				_update_label()
+				_update_indicator_lights()
 				cell_inserted.emit(cell)
 			else:
 				print("WallGenerator: Uncharged cell inserted. Tilted out.")
@@ -233,6 +242,7 @@ func insert_cell(cell: EnergyCell) -> void:
 					cell.interact_comp.is_currently_focused = false
 				if is_instance_valid(status_label):
 					status_label.text = "Cell Depleted - Recharge Required"
+				_update_indicator_lights()
 
 				if not Events.item_picked_up.is_connected(_on_cell_picked_up):
 					Events.item_picked_up.connect(_on_cell_picked_up)
@@ -247,6 +257,7 @@ func _on_cell_picked_up(item: PickableObject, _holder: Node3D) -> void:
 		current_cell = null
 		_is_reinsert_locked = true
 		_update_label()
+		_update_indicator_lights()
 
 		if Events.item_picked_up.is_connected(_on_cell_picked_up):
 			Events.item_picked_up.disconnect(_on_cell_picked_up)
@@ -326,3 +337,38 @@ func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
 				return cell
 
 	return null
+
+
+## Initializes dynamic indicator materials for hood button status feedback.
+func _setup_indicator_materials() -> void:
+	var mesh_inst: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
+	if not is_instance_valid(mesh_inst):
+		return
+
+	_red_indicator_mat = StandardMaterial3D.new()
+	_red_indicator_mat.albedo_color = Color(0.95, 0.08, 0.08, 1.0)
+	_red_indicator_mat.metallic = 0.2
+	_red_indicator_mat.roughness = 0.2
+	_red_indicator_mat.emission_enabled = true
+	_red_indicator_mat.emission = Color(1.0, 0.08, 0.08, 1.0)
+	_red_indicator_mat.emission_energy_multiplier = 3.0
+
+	_green_indicator_mat = StandardMaterial3D.new()
+	_green_indicator_mat.albedo_color = Color(0.15, 0.95, 0.25, 1.0)
+	_green_indicator_mat.metallic = 0.2
+	_green_indicator_mat.roughness = 0.2
+	_green_indicator_mat.emission_enabled = true
+	_green_indicator_mat.emission = Color(0.15, 0.95, 0.25, 1.0)
+	_green_indicator_mat.emission_energy_multiplier = 0.0
+
+	mesh_inst.set_surface_override_material(4, _red_indicator_mat)
+	mesh_inst.set_surface_override_material(5, _green_indicator_mat)
+
+
+## Updates hood button indicator light emissions based on power state.
+func _update_indicator_lights() -> void:
+	var is_online: bool = is_instance_valid(current_cell) and current_cell.is_charged
+	if is_instance_valid(_red_indicator_mat):
+		_red_indicator_mat.emission_energy_multiplier = 0.0 if is_online else 3.0
+	if is_instance_valid(_green_indicator_mat):
+		_green_indicator_mat.emission_energy_multiplier = 3.0 if is_online else 0.0

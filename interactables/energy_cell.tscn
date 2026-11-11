@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_8h0al"]
 [ext_resource type="Script" uid="uid://bcmaglss3ivsl" path="res://interactables/energy_cell.gd" id="2_b3mxu"]
 [ext_resource type="Shader" uid="uid://p5vvkb1mlxfe" path="res://interactables/energy_cell_fill.gdshader" id="3_dv72c"]
+[ext_resource type="ArrayMesh" path="res://interactables/energy_cell.mesh" id="4_cell_mesh"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1lwv0"]
 render_priority = 0
@@ -15,14 +16,6 @@ shader_parameter/max_height = 0.5
 shader_parameter/edge_softness = 0.02
 shader_parameter/glow_energy = 2.5
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_1lwv0"]
-material = SubResource("ShaderMaterial_1lwv0")
-top_radius = 0.25
-bottom_radius = 0.25
-height = 1.0
-radial_segments = 8
-rings = 0
-
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_8h0al"]
 height = 1.0
 radius = 0.25
@@ -30,6 +23,8 @@ radius = 0.25
 [node name="EnergyCell" unique_id=594279821 instance=ExtResource("1_8h0al")]
 mass = 5.0
 script = ExtResource("2_b3mxu")
+held_transparency = 0.0
+heavy_held_transparency = 0.0
 fill_shader = ExtResource("3_dv72c")
 discharged_color = Color(1, 0, 0, 1)
 charged_color = Color(0, 1, 0, 1)
@@ -38,7 +33,8 @@ is_charged = null
 vision_assist_material = null
 
 [node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
-mesh = SubResource("CylinderMesh_1lwv0")
+mesh = ExtResource("4_cell_mesh")
+surface_material_override/0 = SubResource("ShaderMaterial_1lwv0")
 
 [node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
 shape = SubResource("CylinderShape3D_8h0al")
