@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://dvhvmyhp3jy1a"]
+
+[ext_resource type="PackedScene" uid="uid://buib6nd2t8eij" path="res://props/gothic_arch/gothic_arch.glb" id="1_glb"]
+
+[node name="GothicArch" unique_id=332996175 instance=ExtResource("1_glb")]
+
+[node name="ArchMesh" parent="." index="0" unique_id=278979091]
+instance_shader_parameters/instance_tint = Vector3(1, 1, 1)
+instance_shader_parameters/moss_coverage = 0.0
+instance_shader_parameters/wear_intensity = 0.25

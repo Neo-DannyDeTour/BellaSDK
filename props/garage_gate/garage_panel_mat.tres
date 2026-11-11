@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dl33g5s5eygh0"]
+
+[ext_resource type="Shader" uid="uid://bx5qc6b7i1uf1" path="res://props/garage_gate/garage_panel.gdshader" id="1_shdr"]
+[ext_resource type="Texture2D" uid="uid://b4anxsgqy53y5" path="res://props/garage_gate/textures/gate_albedo.png" id="2_alb"]
+[ext_resource type="Texture2D" uid="uid://m7h2t2daal4b" path="res://props/garage_gate/textures/gate_orm.png" id="3_orm"]
+[ext_resource type="Texture2D" uid="uid://bcjlydrnsisxd" path="res://props/garage_gate/textures/gate_normal.png" id="4_nrm"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_shdr")
+shader_parameter/albedo_texture = ExtResource("2_alb")
+shader_parameter/orm_texture = ExtResource("3_orm")
+shader_parameter/normal_texture = ExtResource("4_nrm")
+shader_parameter/base_tint = Color(1, 1, 1, 1)
+shader_parameter/uv_scale = 1.0

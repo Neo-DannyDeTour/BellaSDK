@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://c5it061c4fhjj"]
+
+[ext_resource type="Shader" uid="uid://bpdrxaj5hwx73" path="res://props/gothic_arch/gothic_arch_stone.gdshader" id="1_rpr74"]
+[ext_resource type="Texture2D" uid="uid://br5ai6hrvn2yr" path="res://props/gothic_arch/arch_albedo.png" id="2_7v6ir"]
+[ext_resource type="Texture2D" uid="uid://btl4lb5l2hojb" path="res://props/gothic_arch/arch_normal.png" id="3_dxkbh"]
+[ext_resource type="Texture2D" uid="uid://ckwa0ecvkujlo" path="res://props/gothic_arch/arch_orm.png" id="4_gxq6w"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_rpr74")
+shader_parameter/albedo_texture = ExtResource("2_7v6ir")
+shader_parameter/orm_texture = ExtResource("4_gxq6w")
+shader_parameter/normal_texture = ExtResource("3_dxkbh")
+shader_parameter/normal_scale = 1.0
+shader_parameter/moss_color = Color(0.18, 0.24, 0.14, 1)
+shader_parameter/moss_sharpness = 4.0

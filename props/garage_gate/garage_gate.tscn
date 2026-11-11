@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://props/garage_gate/garage_gate.gd" id="1_gate"]
+[ext_resource type="ArrayMesh" path="res://props/garage_gate/sm_garage_panel.res" id="2_panel"]
+[ext_resource type="ArrayMesh" path="res://props/garage_gate/sm_garage_frame.res" id="3_frame"]
+[ext_resource type="Material" path="res://props/garage_gate/garage_panel_mat.tres" id="4_mat"]
+
+[node name="GarageGate" type="Node3D"]
+script = ExtResource("1_gate")
+panel_mesh = ExtResource("2_panel")
+frame_mesh = ExtResource("3_frame")
+panel_material = ExtResource("4_mat")
