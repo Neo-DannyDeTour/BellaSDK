@@ -19,6 +19,15 @@ Trigger this skill when creating or tuning game-ready PBR materials:
 
 ## Algorithm & Execution Workflow
 
+### Pipeline Pre-Flight: 4-Gate Interrogator Pipeline
+When invoked via `/pbr`, `@pbr`, or prompt to generate 3D models, props, materials, or textures, enforce the 4-Gate Interrogator Pipeline defined in `GEMINI.md`:
+- **Gate 1**: Engine Spec & Topology Lock (Layer role, sub-mesh split, silhouette, tri/texel budget). Wait for user confirmation at Gate 1 before proceeding.
+- **Gate 2**: Orthographic Concept Prompt (Industrial CMF, #808080 neutral gray, diffuse studio lighting, zero cast shadows).
+- **Gate 3**: Mesh Generation & Retopo Harness (Decimate/QuadRemesh, UV seams > 60 deg, collision primitives).
+- **Gate 4**: Delighted PBR & Shader Spec (Planar tileable/delighted albedo, ORM packing [AO=R, Roughness=G, Metallic=B], +Y Normal, instance uniforms).
+
+For purely planar/tileable texture generation without a 3D mesh, execute Phase 1 through Phase 5 below (incorporating Gate 4 delighting and ORM specs).
+
 ### Phase 1: Surface Grilling Protocol (Mandatory)
 Before generating any image or prompt, stress-test the material specification with the user. Ask 1 tight round covering the 4 core surface attributes (always provide recommended values):
 1. **Material Taxonomy & Identity**: Exact surface type (e.g. weathered concrete, dark herringbone oak parquet, chipped limestone bricks, hammered copper).

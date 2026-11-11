@@ -84,3 +84,6 @@ assets/models/
 environment/lex_partizan_rain/bethnal_green_entrance_2k.hdr
 /shmup_env/
 extension_api.json
+gut_test_results.xml
+__pycache__/
+*.pyc
