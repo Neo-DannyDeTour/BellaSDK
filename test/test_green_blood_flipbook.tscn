@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://c6bxkq5n8m0p4"]
+
+[ext_resource type="Shader" path="res://vfx/green_blood.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" uid="uid://c7hrtm4x57vnf" path="res://assets/vfx/green_blood_atlas.png" id="2_atlas"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_blood"]
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/columns = 4
+shader_parameter/rows = 4
+shader_parameter/emissive_tint = Color(0.2, 1.5, 0.3, 1)
+shader_parameter/alpha_discard_threshold = 0.1
+shader_parameter/atlas_texture = ExtResource("2_atlas")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_blood"]
+emission_shape = 1
+emission_sphere_radius = 0.1
+direction = Vector3(0, 1, 0)
+spread = 45.0
+initial_velocity_min = 3.0
+initial_velocity_max = 6.0
+gravity = Vector3(0, -9.8, 0)
+anim_speed_min = 1.0
+anim_speed_max = 1.0
+anim_offset_min = 0.0
+anim_offset_max = 0.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_blood"]
+size = Vector2(0.5, 0.5)
+
+[node name="TestGreenBloodFlipbook" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 1.8, 3.5)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 5, 0)
+light_energy = 1.2
+
+[node name="GreenBloodParticles" type="GPUParticles3D" parent="."]
+layers = 4
+material_override = SubResource("ShaderMaterial_blood")
+amount = 16
+lifetime = 0.8
+explosiveness = 0.85
+process_material = SubResource("ParticleProcessMaterial_blood")
+draw_pass_1 = SubResource("QuadMesh_blood")

@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://d3x1lensd1rt"]
+
+[ext_resource type="Shader" uid="uid://b23e12rh22tgl" path="res://shaders/lens_dirt_billboard.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" uid="uid://b2x7d1rt1ens8" path="res://shaders/lens_dirt_texture.tres" id="2_texture"]
+
+[resource]
+render_priority = 10
+shader = ExtResource("1_shader")
+shader_parameter/dirt_texture = ExtResource("2_texture")
+shader_parameter/falloff_power = 2.0
+shader_parameter/vignette_inner = 1.0
+shader_parameter/vignette_outer = 1.7000000774901203
+shader_parameter/dirt_strength = 2.0
+shader_parameter/proximity_fade_distance = 0.5
+shader_parameter/distance_fade_min = 0.0
+shader_parameter/distance_fade_max = 0.0
