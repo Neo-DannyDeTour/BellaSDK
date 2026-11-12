@@ -1,4 +1,4 @@
-## Single sequence step executing method calls or property assignments with flow control.
+## Single sequence step executing method calls, property assignments, or cinematic commands.
 @tool
 class_name EventStep
 extends Resource
@@ -7,6 +7,17 @@ extends Resource
 enum StepType {
 	CALL_METHOD,
 	SET_PROPERTY,
+	PLAYER_LOCK,
+	LOOK_AT,
+	MOVE_TOWARDS,
+	MOVE_OFFSET,
+	CAMERA_TILT,
+	CAMERA_FOV,
+	SCREEN_DRUNK,
+	SCREEN_ROAR,
+	SCREEN_FADE,
+	PLAY_AUDIO,
+	TELEPORT_PLAYER,
 }
 
 ## Flow control mode determining whether the sequence waits or continues immediately.
@@ -43,6 +54,36 @@ enum ExecMode {
 
 ## Serialized parameter passed to method call or property assignment.
 @export var parameter: String = ""
+
+## Duration in seconds for tweened cinematic steps or effect transitions.
+@export var duration: float = 1.0
+
+## Distance in meters for [constant StepType.MOVE_TOWARDS] steps.
+@export var distance: float = 3.0
+
+## World-space displacement vector for [constant StepType.MOVE_OFFSET] steps.
+@export var offset_vector: Vector3 = Vector3(0.0, 3.7, 0.0)
+
+## Target angle in degrees for [constant StepType.CAMERA_TILT] or [constant StepType.CAMERA_FOV].
+@export var angle_deg: float = 20.0
+
+## Normalized effect strength for [constant StepType.SCREEN_DRUNK] in range [0.0, 1.0].
+@export_range(0.0, 1.0, 0.05) var effect_intensity: float = 1.0
+
+## Sustain hold duration in seconds for [constant StepType.SCREEN_FADE].
+@export var fade_hold_duration: float = 0.5
+
+## Fade-out recovery duration in seconds for [constant StepType.SCREEN_FADE].
+@export var fade_out_duration: float = 0.8
+
+## Target color overlay for [constant StepType.SCREEN_FADE].
+@export var fade_color: Color = Color.BLACK
+
+## Audio resource played when [member step_type] is [constant StepType.PLAY_AUDIO].
+@export var audio_stream: AudioStream = null
+
+## Playback start offset in seconds for [constant StepType.PLAY_AUDIO].
+@export var audio_start_offset: float = 0.0
 
 ## Delay in seconds before this step executes its action.
 @export var delay: float = 0.0

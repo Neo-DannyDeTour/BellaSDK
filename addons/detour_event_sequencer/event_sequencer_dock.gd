@@ -21,6 +21,23 @@ const MASK_ENEMIES: int = 16
 ## Combined mask for all standard activator layers.
 const MASK_ALL: int = 30
 
+## Display labels for [enum EventStep.StepType] rows in the sequence table.
+const STEP_TYPE_LABELS: Dictionary[int, String] = {
+	EventStep.StepType.CALL_METHOD: "CALL",
+	EventStep.StepType.SET_PROPERTY: "SET",
+	EventStep.StepType.PLAYER_LOCK: "LOCK",
+	EventStep.StepType.LOOK_AT: "LOOK AT",
+	EventStep.StepType.MOVE_TOWARDS: "MOVE TO",
+	EventStep.StepType.MOVE_OFFSET: "OFFSET",
+	EventStep.StepType.CAMERA_TILT: "TILT",
+	EventStep.StepType.CAMERA_FOV: "FOV",
+	EventStep.StepType.SCREEN_DRUNK: "DRUNK",
+	EventStep.StepType.SCREEN_ROAR: "ROAR",
+	EventStep.StepType.SCREEN_FADE: "FADE",
+	EventStep.StepType.PLAY_AUDIO: "AUDIO",
+	EventStep.StepType.TELEPORT_PLAYER: "TELEPORT",
+}
+
 ## Currently inspected trigger instance.
 var current_trigger: EventSequenceTrigger = null
 
@@ -90,6 +107,8 @@ var _use_selected_target_btn: Button = null
 var _engine_chk: CheckBox = null
 ## Checkbox toggling fire_once on step.
 var _fire_once_chk: CheckBox = null
+## Label preceding action dropdown.
+var _action_label: Label = null
 ## Dropdown listing script methods or properties on step target.
 var _action_opt: OptionButton = null
 ## Label preceding active parameter input control.
@@ -106,6 +125,50 @@ var _param_num_spin: SpinBox = null
 var _param_node_btn: Button = null
 ## Button assigning currently selected editor node to step parameter.
 var _use_selected_param_btn: Button = null
+
+## Label preceding distance spinbox.
+var _dist_label: Label = null
+## SpinBox configuring MOVE_TOWARDS distance in meters.
+var _dist_spin: SpinBox = null
+## Label preceding Vector3 offset spinboxes.
+var _offset_label: Label = null
+## SpinBox configuring X offset in meters.
+var _offset_x_spin: SpinBox = null
+## SpinBox configuring Y offset in meters.
+var _offset_y_spin: SpinBox = null
+## SpinBox configuring Z offset in meters.
+var _offset_z_spin: SpinBox = null
+## Label preceding angle spinbox.
+var _angle_label: Label = null
+## SpinBox configuring CAMERA_TILT or CAMERA_FOV angle in degrees.
+var _angle_spin: SpinBox = null
+## Label preceding effect intensity spinbox.
+var _intensity_label: Label = null
+## SpinBox configuring SCREEN_DRUNK normalized intensity.
+var _intensity_spin: SpinBox = null
+## Label preceding audio picker button.
+var _audio_label: Label = null
+## Button opening audio file dialog.
+var _audio_btn: Button = null
+## Label preceding audio start offset spinbox.
+var _audio_offset_label: Label = null
+## SpinBox configuring PLAY_AUDIO seek offset in seconds.
+var _audio_offset_spin: SpinBox = null
+## Label preceding step duration spinbox.
+var _duration_label: Label = null
+## SpinBox configuring step tween or effect duration in seconds.
+var _duration_spin: SpinBox = null
+## Label preceding fade hold duration spinbox.
+var _fade_hold_label: Label = null
+## SpinBox configuring SCREEN_FADE hold duration in seconds.
+var _fade_hold_spin: SpinBox = null
+## Label preceding fade out duration spinbox.
+var _fade_out_label: Label = null
+## SpinBox configuring SCREEN_FADE fade-out duration in seconds.
+var _fade_out_spin: SpinBox = null
+## ColorPickerButton configuring SCREEN_FADE color.
+var _fade_color_btn: ColorPickerButton = null
+
 ## Label preceding wait signal dropdown.
 var _wait_sig_label: Label = null
 ## Dropdown listing signals on target when mode is WAIT_SIGNAL.
@@ -127,6 +190,8 @@ var _node_picker_dialog: ConfirmationDialog = null
 var _node_search_edit: LineEdit = null
 ## Tree inside modal dialog displaying current edited scene hierarchy.
 var _node_picker_tree: Tree = null
+## Modal file dialog for selecting [AudioStream] assets.
+var _audio_file_dialog: FileDialog = null
 
 
 ## Builds dock layout and disables per-frame processing.
@@ -135,6 +200,7 @@ func _ready() -> void:
 	set_physics_process(false)
 	_build_ui()
 	_build_picker_dialog()
+	_build_audio_file_dialog()
 
 
 ## Binds dock to [param trigger] and refreshes tables.
@@ -403,6 +469,17 @@ func _build_step_detail_editor(parent: VBoxContainer) -> void:
 	_type_opt = OptionButton.new()
 	_type_opt.add_item("Call Method", int(EventStep.StepType.CALL_METHOD))
 	_type_opt.add_item("Set Property", int(EventStep.StepType.SET_PROPERTY))
+	_type_opt.add_item("Player Lock", int(EventStep.StepType.PLAYER_LOCK))
+	_type_opt.add_item("Look At", int(EventStep.StepType.LOOK_AT))
+	_type_opt.add_item("Move Towards", int(EventStep.StepType.MOVE_TOWARDS))
+	_type_opt.add_item("Move Offset", int(EventStep.StepType.MOVE_OFFSET))
+	_type_opt.add_item("Camera Tilt (Dutch)", int(EventStep.StepType.CAMERA_TILT))
+	_type_opt.add_item("Camera FOV (Jaws)", int(EventStep.StepType.CAMERA_FOV))
+	_type_opt.add_item("Screen Drunk", int(EventStep.StepType.SCREEN_DRUNK))
+	_type_opt.add_item("Screen Roar", int(EventStep.StepType.SCREEN_ROAR))
+	_type_opt.add_item("Screen Fade", int(EventStep.StepType.SCREEN_FADE))
+	_type_opt.add_item("Play Audio", int(EventStep.StepType.PLAY_AUDIO))
+	_type_opt.add_item("Teleport Player", int(EventStep.StepType.TELEPORT_PLAYER))
 	_type_opt.item_selected.connect(_on_type_opt_selected)
 	row1.add_child(_type_opt)
 
@@ -435,16 +512,16 @@ func _build_step_detail_editor(parent: VBoxContainer) -> void:
 	var row2: HBoxContainer = HBoxContainer.new()
 	_detail_box.add_child(row2)
 
-	_add_label(row2, "Action:")
+	_action_label = _add_label(row2, "Action:")
 	_action_opt = OptionButton.new()
-	_action_opt.custom_minimum_size = Vector2(210, 0)
+	_action_opt.custom_minimum_size = Vector2(180, 0)
 	_action_opt.item_selected.connect(_on_action_opt_selected)
 	row2.add_child(_action_opt)
 
 	_param_label = _add_label(row2, "Value:")
 
 	_param_edit = LineEdit.new()
-	_param_edit.custom_minimum_size = Vector2(130, 0)
+	_param_edit.custom_minimum_size = Vector2(110, 0)
 	_param_edit.text_changed.connect(_on_param_string_changed)
 	row2.add_child(_param_edit)
 
@@ -475,34 +552,126 @@ func _build_step_detail_editor(parent: VBoxContainer) -> void:
 	_use_selected_param_btn.pressed.connect(_on_use_selected_param_pressed)
 	row2.add_child(_use_selected_param_btn)
 
-	_wait_sig_label = _add_label(row2, "Await Signal:")
+	_build_cinematic_step_widgets(row2)
+	_build_timing_step_widgets(row2)
+
+
+## Builds specialized parameter controls for cinematic step types on [param row].
+func _build_cinematic_step_widgets(row: HBoxContainer) -> void:
+	_dist_label = _add_label(row, "Dist (m):")
+	_dist_spin = SpinBox.new()
+	_dist_spin.min_value = -500.0
+	_dist_spin.max_value = 500.0
+	_dist_spin.step = 0.1
+	_dist_spin.value_changed.connect(_on_dist_changed)
+	row.add_child(_dist_spin)
+
+	_offset_label = _add_label(row, "Offset (X/Y/Z):")
+	_offset_x_spin = _create_offset_spin(row, 0)
+	_offset_y_spin = _create_offset_spin(row, 1)
+	_offset_z_spin = _create_offset_spin(row, 2)
+
+	_angle_label = _add_label(row, "Deg:")
+	_angle_spin = SpinBox.new()
+	_angle_spin.min_value = -180.0
+	_angle_spin.max_value = 180.0
+	_angle_spin.step = 0.5
+	_angle_spin.value_changed.connect(_on_angle_changed)
+	row.add_child(_angle_spin)
+
+	_intensity_label = _add_label(row, "Intensity:")
+	_intensity_spin = SpinBox.new()
+	_intensity_spin.min_value = 0.0
+	_intensity_spin.max_value = 1.0
+	_intensity_spin.step = 0.05
+	_intensity_spin.value_changed.connect(_on_intensity_changed)
+	row.add_child(_intensity_spin)
+
+	_audio_label = _add_label(row, "Stream:")
+	_audio_btn = Button.new()
+	_audio_btn.text = "[Pick Audio...]"
+	_audio_btn.pressed.connect(_on_pick_audio_pressed)
+	row.add_child(_audio_btn)
+
+	_audio_offset_label = _add_label(row, "Seek (s):")
+	_audio_offset_spin = SpinBox.new()
+	_audio_offset_spin.min_value = 0.0
+	_audio_offset_spin.max_value = 600.0
+	_audio_offset_spin.step = 0.1
+	_audio_offset_spin.value_changed.connect(_on_audio_offset_changed)
+	row.add_child(_audio_offset_spin)
+
+	_duration_label = _add_label(row, "Dur (s):")
+	_duration_spin = SpinBox.new()
+	_duration_spin.min_value = 0.0
+	_duration_spin.max_value = 600.0
+	_duration_spin.step = 0.05
+	_duration_spin.value_changed.connect(_on_duration_changed)
+	row.add_child(_duration_spin)
+
+	_fade_hold_label = _add_label(row, "Hold (s):")
+	_fade_hold_spin = SpinBox.new()
+	_fade_hold_spin.min_value = 0.0
+	_fade_hold_spin.max_value = 120.0
+	_fade_hold_spin.step = 0.1
+	_fade_hold_spin.value_changed.connect(_on_fade_hold_changed)
+	row.add_child(_fade_hold_spin)
+
+	_fade_out_label = _add_label(row, "Out (s):")
+	_fade_out_spin = SpinBox.new()
+	_fade_out_spin.min_value = 0.0
+	_fade_out_spin.max_value = 120.0
+	_fade_out_spin.step = 0.1
+	_fade_out_spin.value_changed.connect(_on_fade_out_changed)
+	row.add_child(_fade_out_spin)
+
+	_fade_color_btn = ColorPickerButton.new()
+	_fade_color_btn.custom_minimum_size = Vector2(36, 0)
+	_fade_color_btn.color_changed.connect(_on_fade_color_changed)
+	row.add_child(_fade_color_btn)
+
+
+## Builds wait-signal, wait-look, and delay spinboxes on [param row].
+func _build_timing_step_widgets(row: HBoxContainer) -> void:
+	_wait_sig_label = _add_label(row, "Await Signal:")
 	_wait_sig_opt = OptionButton.new()
 	_wait_sig_opt.item_selected.connect(_on_wait_sig_selected)
-	row2.add_child(_wait_sig_opt)
+	row.add_child(_wait_sig_opt)
 
-	_look_time_label = _add_label(row2, "Look (s):")
+	_look_time_label = _add_label(row, "Look (s):")
 	_look_time_spin = SpinBox.new()
 	_look_time_spin.min_value = 0.1
 	_look_time_spin.max_value = 60.0
 	_look_time_spin.step = 0.1
 	_look_time_spin.value_changed.connect(_on_look_time_changed)
-	row2.add_child(_look_time_spin)
+	row.add_child(_look_time_spin)
 
-	_look_tol_label = _add_label(row2, "Tol:")
+	_look_tol_label = _add_label(row, "Tol:")
 	_look_tol_spin = SpinBox.new()
 	_look_tol_spin.min_value = 0.0
 	_look_tol_spin.max_value = 1.0
 	_look_tol_spin.step = 0.01
 	_look_tol_spin.value_changed.connect(_on_look_tol_changed)
-	row2.add_child(_look_tol_spin)
+	row.add_child(_look_tol_spin)
 
-	_add_label(row2, "Delay (s):")
+	_add_label(row, "Delay (s):")
 	_delay_spin = SpinBox.new()
 	_delay_spin.min_value = 0.0
 	_delay_spin.max_value = 999.0
-	_delay_spin.step = 0.1
+	_delay_spin.step = 0.05
 	_delay_spin.value_changed.connect(_on_delay_changed)
-	row2.add_child(_delay_spin)
+	row.add_child(_delay_spin)
+
+
+## Helper creating a single axis [SpinBox] for [member EventStep.offset_vector].
+func _create_offset_spin(parent: HBoxContainer, axis: int) -> SpinBox:
+	var spin: SpinBox = SpinBox.new()
+	spin.min_value = -1000.0
+	spin.max_value = 1000.0
+	spin.step = 0.1
+	spin.value_changed.connect(_on_offset_axis_changed.bind(axis))
+	parent.add_child(spin)
+	return spin
 
 
 ## Helper adding a [Label] to [param parent] and returning it.
@@ -536,6 +705,18 @@ func _build_picker_dialog() -> void:
 	vbox.add_child(_node_picker_tree)
 
 	add_child(_node_picker_dialog)
+
+
+## Builds modal [FileDialog] for selecting audio assets in `res://`.
+func _build_audio_file_dialog() -> void:
+	_audio_file_dialog = FileDialog.new()
+	_audio_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	_audio_file_dialog.access = FileDialog.ACCESS_RESOURCES
+	_audio_file_dialog.filters = PackedStringArray(
+		["*.mp3, *.wav, *.ogg ; Audio Files"]
+	)
+	_audio_file_dialog.file_selected.connect(_on_audio_file_selected)
+	add_child(_audio_file_dialog)
 
 
 ## Populates conditions tree and loads active condition into inline editor.
@@ -640,14 +821,9 @@ func _refresh_steps_tree() -> void:
 			flow_txt = "LOOK(" + str(step.look_time) + "s)"
 		item.set_text(1, flow_txt)
 
-		item.set_text(2, "CALL" if step.step_type == EventStep.StepType.CALL_METHOD else "SET")
-		item.set_text(3, "[Activator]" if step.target_is_activator else str(step.target_path))
-
-		var act_str: String = String(step.method_name)
-		if not step.parameter.is_empty():
-			var display_param: String = _format_step_param_display(step)
-			act_str += "(" + display_param + ")"
-		item.set_text(4, act_str)
+		item.set_text(2, STEP_TYPE_LABELS.get(step.step_type, "STEP"))
+		item.set_text(3, _format_step_target_cell(step))
+		item.set_text(4, _format_step_action_cell(step))
 		item.set_text(5, str(step.delay))
 
 	if active_editing_idx >= 0 and active_editing_idx < current_trigger.steps.size():
@@ -656,18 +832,97 @@ func _refresh_steps_tree() -> void:
 		_detail_box.visible = false
 
 
+## Formats the Target column string for [param step] in the steps table.
+func _format_step_target_cell(step: EventStep) -> String:
+	match step.step_type:
+		EventStep.StepType.PLAYER_LOCK, EventStep.StepType.CAMERA_TILT, EventStep.StepType.CAMERA_FOV:
+			return "[Player]"
+		EventStep.StepType.SCREEN_DRUNK, EventStep.StepType.SCREEN_ROAR, EventStep.StepType.SCREEN_FADE:
+			return "[Screen]"
+		EventStep.StepType.TELEPORT_PLAYER:
+			return "[Trigger Start]" if step.target_path.is_empty() else str(step.target_path)
+		EventStep.StepType.PLAY_AUDIO:
+			return "2D Global" if step.target_path.is_empty() else str(step.target_path)
+		_:
+			return "[Activator]" if step.target_is_activator else str(step.target_path)
+
+
+## Formats the Action / Value column string for [param step] in the steps table.
+func _format_step_action_cell(step: EventStep) -> String:
+	match step.step_type:
+		EventStep.StepType.CALL_METHOD, EventStep.StepType.SET_PROPERTY:
+			var act_str: String = String(step.method_name)
+			if not step.parameter.is_empty():
+				act_str += "(" + _format_step_param_display(step) + ")"
+			return act_str
+		EventStep.StepType.PLAYER_LOCK:
+			var locked: bool = step.parameter.strip_edges().to_lower() != "false"
+			return "Lock Controls" if locked else "Unlock Controls"
+		EventStep.StepType.LOOK_AT:
+			return "Look (" + str(step.duration) + "s)"
+		EventStep.StepType.MOVE_TOWARDS:
+			return str(step.distance) + "m (" + str(step.duration) + "s)"
+		EventStep.StepType.MOVE_OFFSET:
+			return str(step.offset_vector) + " (" + str(step.duration) + "s)"
+		EventStep.StepType.CAMERA_TILT:
+			return str(step.angle_deg) + "° (" + str(step.duration) + "s)"
+		EventStep.StepType.CAMERA_FOV:
+			return "FOV " + str(step.angle_deg) + "° (" + str(step.duration) + "s)"
+		EventStep.StepType.SCREEN_DRUNK:
+			return "Int " + str(step.effect_intensity) + " (" + str(step.duration) + "s)"
+		EventStep.StepType.SCREEN_ROAR:
+			return "Roar (" + str(step.duration) + "s)"
+		EventStep.StepType.SCREEN_FADE:
+			return (
+				"In:"
+				+ str(step.duration)
+				+ "s Hold:"
+				+ str(step.fade_hold_duration)
+				+ "s Out:"
+				+ str(step.fade_out_duration)
+				+ "s"
+			)
+		EventStep.StepType.PLAY_AUDIO:
+			var stream_name: String = (
+				step.audio_stream.resource_path.get_file()
+				if is_instance_valid(step.audio_stream)
+				else "(None)"
+			)
+			return stream_name + " @" + str(step.audio_start_offset) + "s"
+		EventStep.StepType.TELEPORT_PLAYER:
+			return "Teleport"
+	return ""
+
+
 ## Populates bottom editor controls from step at [param idx].
 func _load_step_into_editor(idx: int) -> void:
 	var step: EventStep = current_trigger.steps[idx]
 	_detail_box.visible = true
 	_mode_opt.selected = int(step.exec_mode)
 	_type_opt.selected = int(step.step_type)
+
+	var is_call_or_set: bool = (
+		step.step_type == EventStep.StepType.CALL_METHOD
+		or step.step_type == EventStep.StepType.SET_PROPERTY
+	)
+	var uses_target_node: bool = (
+		is_call_or_set
+		or step.step_type == EventStep.StepType.LOOK_AT
+		or step.step_type == EventStep.StepType.MOVE_TOWARDS
+		or step.step_type == EventStep.StepType.MOVE_OFFSET
+		or step.step_type == EventStep.StepType.PLAY_AUDIO
+		or step.step_type == EventStep.StepType.TELEPORT_PLAYER
+	)
+
+	_step_act_chk.visible = is_call_or_set or step.step_type == EventStep.StepType.MOVE_OFFSET
 	_step_act_chk.button_pressed = step.target_is_activator
-	_target_btn.visible = not step.target_is_activator
-	_use_selected_target_btn.visible = not step.target_is_activator
+	var show_target_pick: bool = uses_target_node and not step.target_is_activator
+	_target_btn.visible = show_target_pick
+	_use_selected_target_btn.visible = show_target_pick
 	_target_btn.text = (
 		str(step.target_path) if not step.target_path.is_empty() else "[Pick Target...]"
 	)
+	_engine_chk.visible = is_call_or_set
 	_fire_once_chk.button_pressed = step.fire_once
 	_delay_spin.value = step.delay
 
@@ -683,7 +938,147 @@ func _load_step_into_editor(idx: int) -> void:
 	_look_tol_spin.visible = wait_look_vis
 	_look_tol_spin.value = step.look_tolerance
 
-	_populate_step_actions_and_signals(step)
+	_hide_all_step_type_widgets()
+
+	if is_call_or_set:
+		_action_label.visible = true
+		_action_opt.visible = true
+		_populate_step_actions_and_signals(step)
+	else:
+		_configure_cinematic_widgets(step)
+
+
+## Hides all step-specific row2 parameter widgets prior to reconfiguring.
+func _hide_all_step_type_widgets() -> void:
+	_action_label.visible = false
+	_action_opt.visible = false
+	_param_label.visible = false
+	_param_edit.visible = false
+	_param_bool_chk.visible = false
+	_param_enum_opt.visible = false
+	_param_num_spin.visible = false
+	_param_node_btn.visible = false
+	_use_selected_param_btn.visible = false
+	_dist_label.visible = false
+	_dist_spin.visible = false
+	_offset_label.visible = false
+	_offset_x_spin.visible = false
+	_offset_y_spin.visible = false
+	_offset_z_spin.visible = false
+	_angle_label.visible = false
+	_angle_spin.visible = false
+	_intensity_label.visible = false
+	_intensity_spin.visible = false
+	_audio_label.visible = false
+	_audio_btn.visible = false
+	_audio_offset_label.visible = false
+	_audio_offset_spin.visible = false
+	_duration_label.visible = false
+	_duration_spin.visible = false
+	_fade_hold_label.visible = false
+	_fade_hold_spin.visible = false
+	_fade_out_label.visible = false
+	_fade_out_spin.visible = false
+	_fade_color_btn.visible = false
+
+
+## Displays and populates controls for built-in cinematic [enum EventStep.StepType]s.
+func _configure_cinematic_widgets(step: EventStep) -> void:
+	match step.step_type:
+		EventStep.StepType.PLAYER_LOCK:
+			_param_label.visible = true
+			_param_bool_chk.visible = true
+			_param_bool_chk.text = "Lock Player"
+			if step.parameter.is_empty():
+				step.parameter = "true"
+			_param_bool_chk.button_pressed = (step.parameter.to_lower() != "false")
+		EventStep.StepType.LOOK_AT:
+			_duration_label.visible = true
+			_duration_spin.visible = true
+			_duration_spin.value = step.duration
+		EventStep.StepType.MOVE_TOWARDS:
+			_dist_label.visible = true
+			_dist_spin.visible = true
+			_dist_spin.value = step.distance
+			_duration_label.visible = true
+			_duration_spin.visible = true
+			_duration_spin.value = step.duration
+		EventStep.StepType.MOVE_OFFSET:
+			_offset_label.visible = true
+			_offset_x_spin.visible = true
+			_offset_y_spin.visible = true
+			_offset_z_spin.visible = true
+			_offset_x_spin.value = step.offset_vector.x
+			_offset_y_spin.value = step.offset_vector.y
+			_offset_z_spin.value = step.offset_vector.z
+			_duration_label.visible = true
+			_duration_spin.visible = true
+			_duration_spin.value = step.duration
+		EventStep.StepType.CAMERA_TILT:
+			_angle_label.text = "Tilt (deg):"
+			_angle_label.visible = true
+			_angle_spin.visible = true
+			_angle_spin.value = step.angle_deg
+			_duration_label.visible = true
+			_duration_spin.visible = true
+			_duration_spin.value = step.duration
+		EventStep.StepType.CAMERA_FOV:
+			_angle_label.text = "FOV (deg):"
+			_angle_label.visible = true
+			_angle_spin.visible = true
+			_angle_spin.value = step.angle_deg
+			_duration_label.visible = true
+			_duration_spin.visible = true
+			_duration_spin.value = step.duration
+		EventStep.StepType.SCREEN_DRUNK:
+			_intensity_label.visible = true
+			_intensity_spin.visible = true
+			_intensity_spin.value = step.effect_intensity
+			_duration_label.visible = true
+			_duration_spin.visible = true
+			_duration_spin.value = step.duration
+		EventStep.StepType.SCREEN_ROAR:
+			_duration_label.text = "Sustain (s):"
+			_duration_label.visible = true
+			_duration_spin.visible = true
+			_duration_spin.value = step.duration
+		EventStep.StepType.SCREEN_FADE:
+			_duration_label.text = "Fade In (s):"
+			_duration_label.visible = true
+			_duration_spin.visible = true
+			_duration_spin.value = step.duration
+			_fade_hold_label.visible = true
+			_fade_hold_spin.visible = true
+			_fade_hold_spin.value = step.fade_hold_duration
+			_fade_out_label.visible = true
+			_fade_out_spin.visible = true
+			_fade_out_spin.value = step.fade_out_duration
+			_fade_color_btn.visible = true
+			_fade_color_btn.color = step.fade_color
+		EventStep.StepType.PLAY_AUDIO:
+			_audio_label.visible = true
+			_audio_btn.visible = true
+			_audio_btn.text = (
+				step.audio_stream.resource_path.get_file()
+				if is_instance_valid(step.audio_stream)
+				else "[Pick Audio...]"
+			)
+			_audio_offset_label.visible = true
+			_audio_offset_spin.visible = true
+			_audio_offset_spin.value = step.audio_start_offset
+			_duration_label.text = "Wait (s):"
+			_duration_label.visible = true
+			_duration_spin.visible = true
+			_duration_spin.value = step.duration
+		EventStep.StepType.TELEPORT_PLAYER:
+			pass
+
+	if (
+		step.step_type != EventStep.StepType.SCREEN_ROAR
+		and step.step_type != EventStep.StepType.SCREEN_FADE
+		and step.step_type != EventStep.StepType.PLAY_AUDIO
+	):
+		_duration_label.text = "Dur (s):"
 
 
 ## Inspects step target script to populate methods/properties, signals, and typed parameter input.
@@ -807,6 +1202,7 @@ func _configure_param_widget(arg_meta: Dictionary, target: Node = null) -> void:
 
 	match v_type:
 		TYPE_BOOL:
+			_param_bool_chk.text = "Enabled"
 			_param_bool_chk.visible = true
 			_param_bool_chk.button_pressed = (step.parameter.to_lower() == "true")
 		TYPE_INT, TYPE_FLOAT:
@@ -951,6 +1347,23 @@ func _open_node_picker(mode: PickerMode) -> void:
 	_node_picker_dialog.popup_centered(Vector2i(460, 520))
 	if is_instance_valid(_node_search_edit):
 		_node_search_edit.grab_focus()
+
+
+## Opens audio file picker modal dialog.
+func _on_pick_audio_pressed() -> void:
+	if is_instance_valid(_audio_file_dialog):
+		_audio_file_dialog.popup_centered(Vector2i(600, 460))
+
+
+## Assigns selected audio file resource to active step.
+func _on_audio_file_selected(path: String) -> void:
+	if not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	var res: Resource = ResourceLoader.load(path)
+	if res is AudioStream:
+		current_trigger.steps[active_editing_idx].audio_stream = res as AudioStream
+		EditorInterface.mark_scene_as_unsaved()
+		refresh_view()
 
 
 ## Filters node picker tree based on user search input.
@@ -1242,14 +1655,18 @@ func _on_mode_opt_selected(idx: int) -> void:
 	refresh_view()
 
 
-## Updates step action type (Call Method vs Set Property).
+## Updates step action type and resets default parameters when switching modes.
 func _on_type_opt_selected(idx: int) -> void:
 	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
 		return
 	var step: EventStep = current_trigger.steps[active_editing_idx]
 	step.step_type = idx as EventStep.StepType
 	step.method_name = &""
-	step.parameter = ""
+	step.parameter = "true" if step.step_type == EventStep.StepType.PLAYER_LOCK else ""
+	if step.step_type == EventStep.StepType.CAMERA_FOV:
+		step.angle_deg = 110.0
+	elif step.step_type == EventStep.StepType.CAMERA_TILT:
+		step.angle_deg = 20.0
 	EditorInterface.mark_scene_as_unsaved()
 	refresh_view()
 
@@ -1323,6 +1740,93 @@ func _on_param_num_changed(value: float) -> void:
 	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
 		return
 	current_trigger.steps[active_editing_idx].parameter = str(value)
+	EditorInterface.mark_scene_as_unsaved()
+
+
+## Updates distance value on active step.
+func _on_dist_changed(value: float) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].distance = value
+	EditorInterface.mark_scene_as_unsaved()
+	_refresh_steps_tree()
+
+
+## Updates single axis of offset_vector on active step.
+func _on_offset_axis_changed(value: float, axis: int) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	var vec: Vector3 = current_trigger.steps[active_editing_idx].offset_vector
+	if axis == 0:
+		vec.x = value
+	elif axis == 1:
+		vec.y = value
+	else:
+		vec.z = value
+	current_trigger.steps[active_editing_idx].offset_vector = vec
+	EditorInterface.mark_scene_as_unsaved()
+	_refresh_steps_tree()
+
+
+## Updates angle_deg value on active step.
+func _on_angle_changed(value: float) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].angle_deg = value
+	EditorInterface.mark_scene_as_unsaved()
+	_refresh_steps_tree()
+
+
+## Updates effect_intensity value on active step.
+func _on_intensity_changed(value: float) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].effect_intensity = value
+	EditorInterface.mark_scene_as_unsaved()
+	_refresh_steps_tree()
+
+
+## Updates audio_start_offset value on active step.
+func _on_audio_offset_changed(value: float) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].audio_start_offset = value
+	EditorInterface.mark_scene_as_unsaved()
+	_refresh_steps_tree()
+
+
+## Updates duration value on active step.
+func _on_duration_changed(value: float) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].duration = value
+	EditorInterface.mark_scene_as_unsaved()
+	_refresh_steps_tree()
+
+
+## Updates fade_hold_duration value on active step.
+func _on_fade_hold_changed(value: float) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].fade_hold_duration = value
+	EditorInterface.mark_scene_as_unsaved()
+	_refresh_steps_tree()
+
+
+## Updates fade_out_duration value on active step.
+func _on_fade_out_changed(value: float) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].fade_out_duration = value
+	EditorInterface.mark_scene_as_unsaved()
+	_refresh_steps_tree()
+
+
+## Updates fade_color value on active step.
+func _on_fade_color_changed(color: Color) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].fade_color = color
 	EditorInterface.mark_scene_as_unsaved()
 
 

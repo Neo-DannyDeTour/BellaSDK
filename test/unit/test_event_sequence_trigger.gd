@@ -139,3 +139,73 @@ func test_inspector_bounds_and_visualizer_synchronization() -> void:
 	assert_not_null(visual, "EditorTriggerVisualizer must be present.")
 	assert_eq(visual.trigger_size, Vector3(4.0, 5.0, 6.0), "Visualizer size must match.")
 	assert_eq(visual.position, Vector3(1.0, 2.0, 3.0), "Visualizer position must match.")
+
+
+## Verifies cutscene step types (LOOK_AT, MOVE_TOWARDS, MOVE_OFFSET, CAMERA_TILT, CAMERA_FOV).
+func test_cutscene_steps_execution() -> void:
+	print("TestEventSequenceTrigger: test_cutscene_steps_execution() executing.")
+	_player.position = Vector3(10.0, 0.0, 0.0)
+	_camera.position = Vector3(10.0, 1.5, 0.0)
+	_look_marker.position = Vector3(0.0, 1.5, 0.0)
+	_action_target.position = Vector3(0.0, -3.7, 0.0)
+
+	var step_look: EventStep = EventStep.new()
+	step_look.step_type = EventStep.StepType.LOOK_AT
+	step_look.exec_mode = EventStep.ExecMode.PARALLEL
+	step_look.target_path = NodePath("LookMarker")
+	step_look.duration = 0.0
+
+	var step_move: EventStep = EventStep.new()
+	step_move.step_type = EventStep.StepType.MOVE_TOWARDS
+	step_move.exec_mode = EventStep.ExecMode.SEQUENTIAL
+	step_move.target_path = NodePath("LookMarker")
+	step_move.distance = 3.0
+	step_move.duration = 0.05
+
+	var step_raise: EventStep = EventStep.new()
+	step_raise.step_type = EventStep.StepType.MOVE_OFFSET
+	step_raise.exec_mode = EventStep.ExecMode.SEQUENTIAL
+	step_raise.target_path = NodePath("ActionTarget")
+	step_raise.offset_vector = Vector3(0.0, 3.7, 0.0)
+	step_raise.duration = 0.05
+
+	var step_tilt: EventStep = EventStep.new()
+	step_tilt.step_type = EventStep.StepType.CAMERA_TILT
+	step_tilt.exec_mode = EventStep.ExecMode.PARALLEL
+	step_tilt.angle_deg = 20.0
+	step_tilt.duration = 0.0
+
+	var step_fov: EventStep = EventStep.new()
+	step_fov.step_type = EventStep.StepType.CAMERA_FOV
+	step_fov.exec_mode = EventStep.ExecMode.PARALLEL
+	step_fov.angle_deg = 110.0
+	step_fov.duration = 0.0
+
+	var step_tp: EventStep = EventStep.new()
+	step_tp.step_type = EventStep.StepType.TELEPORT_PLAYER
+	step_tp.exec_mode = EventStep.ExecMode.SEQUENTIAL
+	step_tp.target_path = NodePath("")
+	step_tp.delay = 0.05
+
+	_trigger.steps = [step_look, step_move, step_raise, step_tilt, step_fov, step_tp]
+	_trigger.trigger_sequence(_player)
+
+	await wait_seconds(0.08)
+	assert_almost_eq(
+		_player.global_position.x, 7.0, 0.2, "Player must move 3m towards LookMarker along -X."
+	)
+
+	await wait_seconds(0.15)
+	assert_almost_eq(
+		_action_target.global_position.y, 0.0, 0.1, "ActionTarget must raise by +3.7m on Y axis."
+	)
+	assert_almost_eq(
+		rad_to_deg(_camera.rotation.z), 20.0, 0.5, "Camera must tilt to 20 degrees Dutch angle."
+	)
+	assert_almost_eq(_camera.fov, 110.0, 0.5, "Camera FOV must expand to 110 degrees.")
+	assert_almost_eq(
+		_player.global_position.x,
+		10.0,
+		0.1,
+		"Player must teleport back to entry position (10, 0, 0)."
+	)
