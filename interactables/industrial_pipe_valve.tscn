@@ -1,0 +1,69 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://interactables/valve_base.gd" id="1_valve"]
+[ext_resource type="Script" path="res://interactables/output_transmitter_3d.gd" id="2_trans"]
+[ext_resource type="Shader" path="res://vfx/unlit_outline_material.gdshader" id="3_shader"]
+[ext_resource type="Script" path="res://interactables/interact_component.gd" id="4_interact"]
+[ext_resource type="Script" path="res://environment/highlight_component.gd" id="5_highlight"]
+[ext_resource type="PackedScene" path="res://assets/props/industrial_pipe_valve/industrial_pipe_valve_wheel.glb" id="6_wheel"]
+[ext_resource type="PackedScene" path="res://assets/props/industrial_pipe_valve/industrial_pipe_valve_base.glb" id="7_base"]
+[ext_resource type="AudioStream" path="res://assets/sounds/Valve_Move.wav" id="8_audio"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_valve"]
+render_priority = 0
+shader = ExtResource("3_shader")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_valve"]
+height = 0.32
+radius = 0.28
+
+[node name="IndustrialPipeValve" type="StaticBody3D" node_paths=PackedStringArray("label", "prompt_icon")]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("1_valve")
+spin_axis = Vector3(0, 0, 1)
+is_back_and_forth = false
+label = NodePath("Label3D")
+prompt_icon = NodePath("PromptIcon")
+
+[node name="OutputTransmitter3D" type="Node3D" parent="."]
+script = ExtResource("2_trans")
+
+[node name="InteractComponent" type="Node" parent="."]
+script = ExtResource("4_interact")
+
+[node name="HighlightComponent" type="Node" parent="." node_paths=PackedStringArray("interact_component")]
+script = ExtResource("5_highlight")
+outline_material = SubResource("ShaderMaterial_valve")
+interact_component = NodePath("../InteractComponent")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.2, 0.2)
+visible = false
+billboard = 1
+no_depth_test = true
+
+[node name="Valve" parent="." instance=ExtResource("6_wheel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.24)
+
+[node name="valve_base" parent="." instance=ExtResource("7_base")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0.14)
+shape = SubResource("CylinderShape3D_valve")
+
+[node name="ValveAudio" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("8_audio")
+
+[node name="PromptIcon" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0, 0.2)
+visible = false
+pixel_size = 0.002
+billboard = 1
+double_sided = false
+no_depth_test = true
