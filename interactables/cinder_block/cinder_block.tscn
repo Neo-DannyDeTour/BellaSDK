@@ -1,45 +1,45 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cluepmjpt6nt0"]
 
 [ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_pickable"]
-[ext_resource type="Script" path="res://interactables/cinder_block/cinder_block.gd" id="2_cinder_script"]
+[ext_resource type="Script" uid="uid://coqolokn3n58m" path="res://interactables/cinder_block/cinder_block.gd" id="2_cinder_script"]
 [ext_resource type="PackedScene" uid="uid://devn5n6bqukfh" path="res://assets/props/cinder_block.glb" id="3_cinder_glb"]
-[ext_resource type="Material" path="res://interactables/cinder_block/cinder_block_material.tres" id="4_material"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_cinder"]
 size = Vector3(0.39, 0.19, 0.19)
 
-[node name="CinderBlock" node_paths=PackedStringArray("mesh_instance", "collision_shape") instance=ExtResource("1_pickable")]
-mass = 17.0
+[node name="CinderBlock" unique_id=2025267670 node_paths=PackedStringArray("mesh_instance", "collision_shape") instance=ExtResource("1_pickable")]
+mass = 5.0
 script = ExtResource("2_cinder_script")
 mesh_instance = NodePath("cinder_block/CinderBlock")
 collision_shape = NodePath("CollisionShape3D")
+hold_at_chest = true
+custom_hold_distance = 0.25
+hold_vertical_offset = 0.15
+hold_rotation_offset_deg = Vector3(35, 0, -35)
 held_transparency = 0.55
 
-[node name="MeshInstance3D" parent="." index="2"]
+[node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
 visible = false
 
-[node name="CollisionShape3D" parent="." index="3"]
+[node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
 shape = SubResource("BoxShape3D_cinder")
 
-[node name="Label3D" parent="." index="4"]
+[node name="Label3D" parent="." index="4" unique_id=1035008069]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
 
-[node name="PromptIcon" parent="." index="5"]
+[node name="PromptIcon" parent="." index="5" unique_id=931149645]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
 
-[node name="Marker3D" parent="ProbeContainer" index="0"]
+[node name="Marker3D" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="0" unique_id=1977258969]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0, 0.08)
 
-[node name="Marker3D2" parent="ProbeContainer" index="1"]
+[node name="Marker3D2" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="1" unique_id=1466183085]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.18, 0, 0.08)
 
-[node name="Marker3D3" parent="ProbeContainer" index="2"]
+[node name="Marker3D3" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="2" unique_id=865436627]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0, -0.08)
 
-[node name="Marker3D4" parent="ProbeContainer" index="3"]
+[node name="Marker3D4" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="3" unique_id=1857240385]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.18, 0, -0.08)
 
-[node name="cinder_block" parent="." index="7" instance=ExtResource("3_cinder_glb")]
-
-[node name="CinderBlock" parent="cinder_block" index="0"]
-material_override = ExtResource("4_material")
+[node name="cinder_block" parent="." index="7" unique_id=2133952557 instance=ExtResource("3_cinder_glb")]

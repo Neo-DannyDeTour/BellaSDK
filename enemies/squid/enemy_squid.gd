@@ -25,6 +25,12 @@ enum SpillMode {
 ## Preloaded tentacle and mantle spatial shader.
 const SQUID_SHADER: Shader = preload("res://shaders/squid_tentacle.gdshader")
 
+## Preloaded green blood flipbook spatial shader.
+const GREEN_BLOOD_SHADER: Shader = preload("res://vfx/green_blood.gdshader")
+
+## Preloaded green blood 4x4 atlas texture.
+const GREEN_BLOOD_ATLAS: Texture2D = preload("res://assets/vfx/green_blood_atlas.png")
+
 ## Per-instance shader parameter name for accumulated wave phase.
 const PARAM_WAVE_PHASE: StringName = &"wave_phase"
 
@@ -96,6 +102,9 @@ const HEADCRAB_TARGET_HEIGHT: float = 1.25
 
 ## Shared [ShaderMaterial] reused across all squid instances to avoid duplication.
 static var _shared_squid_material: ShaderMaterial = null
+
+## Shared [ShaderMaterial] for acid green blood particles across all squids.
+static var _shared_blood_material: ShaderMaterial = null
 
 ## Shared unit [CylinderMesh] scaled per tentacle to produce uneven dimensions.
 static var _shared_tentacle_mesh: CylinderMesh = null
@@ -298,7 +307,15 @@ func take_damage(
 		)
 		_ichor_particles.position = local_pos
 		if not dir.is_zero_approx():
-			_ichor_particles.rotation.y = atan2(dir.x, dir.z)
+			var spray_dir: Vector3 = (-dir.normalized() * 0.75 + Vector3.UP * 0.35).normalized()
+			var look_target: Vector3 = _ichor_particles.global_position + spray_dir
+			if absf(spray_dir.dot(Vector3.UP)) < 0.99:
+				_ichor_particles.look_at(look_target, Vector3.UP)
+			else:
+				_ichor_particles.look_at(look_target, Vector3.FORWARD)
+		else:
+			var default_up: Vector3 = _ichor_particles.global_position + Vector3.UP
+			_ichor_particles.look_at(default_up, Vector3.FORWARD)
 		_ichor_particles.restart()
 		_ichor_particles.emitting = true
 
@@ -550,34 +567,40 @@ func _build_ink_particles() -> void:
 
 ## Builds a greenish-yellow ichor particle burst emitted on bullet and melee impacts.
 func _build_ichor_particles() -> void:
+	if not is_instance_valid(_shared_blood_material):
+		_shared_blood_material = ShaderMaterial.new()
+		_shared_blood_material.shader = GREEN_BLOOD_SHADER
+		_shared_blood_material.set_shader_parameter(&"atlas_texture", GREEN_BLOOD_ATLAS)
+		_shared_blood_material.set_shader_parameter(&"columns", 4)
+		_shared_blood_material.set_shader_parameter(&"rows", 4)
+		_shared_blood_material.set_shader_parameter(&"emissive_tint", Vector3(0.2, 1.5, 0.3))
+		_shared_blood_material.set_shader_parameter(&"alpha_discard_threshold", 0.1)
+
 	_ichor_particles = GPUParticles3D.new()
 	_ichor_particles.name = "IchorBloodParticles"
+	_ichor_particles.layers = 4
+	_ichor_particles.material_override = _shared_blood_material
 	_ichor_particles.emitting = false
 	_ichor_particles.one_shot = true
-	_ichor_particles.explosiveness = 0.92
+	_ichor_particles.explosiveness = 0.95
 	_ichor_particles.amount = 16
-	_ichor_particles.lifetime = 0.45
+	_ichor_particles.lifetime = 0.6
 	_ichor_particles.position = Vector3(0.0, 0.55, 0.0)
 
 	var proc_mat: ParticleProcessMaterial = ParticleProcessMaterial.new()
-	proc_mat.direction = Vector3(0.0, 0.35, 1.0)
-	proc_mat.spread = 50.0
-	proc_mat.initial_velocity_min = 3.0
-	proc_mat.initial_velocity_max = 6.5
+	proc_mat.direction = Vector3(0.0, 0.0, -1.0)
+	proc_mat.spread = 45.0
+	proc_mat.initial_velocity_min = 2.5
+	proc_mat.initial_velocity_max = 5.5
 	proc_mat.gravity = Vector3(0.0, -9.8, 0.0)
-	proc_mat.scale_min = 0.15
-	proc_mat.scale_max = 0.4
-	proc_mat.color = Color(0.68, 0.85, 0.14, 0.95)
+	proc_mat.anim_speed_min = 1.0
+	proc_mat.anim_speed_max = 1.0
+	proc_mat.anim_offset_min = 0.0
+	proc_mat.anim_offset_max = 0.0
 	_ichor_particles.process_material = proc_mat
 
 	var quad: QuadMesh = QuadMesh.new()
-	quad.size = Vector2(0.25, 0.25)
-	var mat: StandardMaterial3D = StandardMaterial3D.new()
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.albedo_color = Color(0.68, 0.85, 0.14, 0.95)
-	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	mat.roughness = 0.1
-	quad.material = mat
+	quad.size = Vector2(0.45, 0.45)
 	_ichor_particles.draw_pass_1 = quad
 
 	add_child(_ichor_particles)
@@ -704,6 +727,8 @@ func _start_leap_windup() -> void:
 	_set_state(SquidState.WINDUP)
 	_can_leap = false
 	_spill_puddle()
+	if is_instance_valid(Events):
+		Events.monster_roared.emit(0.24)
 
 	_active_tween = Utilities.reset_tween(self, _active_tween)
 	if is_instance_valid(_active_tween):
