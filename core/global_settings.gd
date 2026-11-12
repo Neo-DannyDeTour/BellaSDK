@@ -78,6 +78,13 @@ const SCREEN_FILTER_REGISTRY: Array[Dictionary] = [
 	{"id": "80sfantasy", "name": "80sFantasy", "index": 24, "path": "res://vfx/80sfantasy.gdshader"}
 ]
 
+## Default ordered chord definitions mapping debug actions to [modifier, trigger] keys.
+const DEFAULT_DEBUG_CHORDS: Dictionary[String, Array] = {
+	"debug_toggle_metrics": [KEY_QUOTELEFT, KEY_1],
+	"debug_toggle_ui": [KEY_QUOTELEFT, KEY_2],
+	"debug_toggle_diagnostics": [KEY_QUOTELEFT, KEY_3]
+}
+
 ## The configuration object used to read, cache, and write save file data.
 var config: ConfigFile = ConfigFile.new()
 
@@ -99,7 +106,7 @@ func _ready() -> void:
 	print("System: GlobalSettings Autoload initialized.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_debounce_timer()
-	_ensure_default_weapon_actions()
+	ensure_default_actions()
 	_apply_input_mappings()
 	call_deferred("_apply_boot_settings")
 
@@ -109,6 +116,12 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
 		print("System: Application termination requested. Flushing settings.")
 		flush_to_disk()
+
+
+## Ensures weapon slot and debug chord bindings exist in [InputMap].
+func ensure_default_actions() -> void:
+	_ensure_default_weapon_actions()
+	_ensure_default_debug_chord_actions()
 
 
 ## Writes setting to memory and queues debounced disk write.
@@ -241,6 +254,36 @@ func get_font_resource(font_id: String) -> Font:
 	return null
 
 
+## Retrieves a boolean setting from the cached config file.
+func get_setting_bool(category: String, key: String, default_value: bool = false) -> bool:
+	var val: Variant = get_setting(category, key, default_value)
+	if val is bool:
+		return val
+	return default_value
+
+
+## Retrieves an integer setting from the cached config file.
+func get_setting_int(category: String, key: String, default_value: int = 0) -> int:
+	var val: Variant = get_setting(category, key, default_value)
+	if val is int:
+		return val
+	if val is float:
+		var float_val: float = val
+		return int(float_val)
+	return default_value
+
+
+## Retrieves a floating point setting from the cached config file.
+func get_setting_float(category: String, key: String, default_value: float = 0.0) -> float:
+	var val: Variant = get_setting(category, key, default_value)
+	if val is float:
+		return val
+	if val is int:
+		var int_val: int = val
+		return float(int_val)
+	return default_value
+
+
 ## Initializes the internal debounce timer node for lazy disk persistence.
 func _setup_debounce_timer() -> void:
 	print("GlobalSettings: Setting up debounce timer.")
@@ -364,8 +407,9 @@ func _ensure_default_weapon_actions() -> void:
 	}
 
 	for action: String in defaults:
-		if not InputMap.has_action(action):
-			InputMap.add_action(action)
+		if not InputMap.has_action(action) or InputMap.action_get_events(action).is_empty():
+			if not InputMap.has_action(action):
+				InputMap.add_action(action)
 			var key_ev: InputEventKey = InputEventKey.new()
 			var key_val: Key = defaults[action]
 			key_ev.keycode = key_val
@@ -375,34 +419,24 @@ func _ensure_default_weapon_actions() -> void:
 			InputMap.action_add_event(action, key_ev)
 
 
-## Retrieves a boolean setting from the cached config file.
-func get_setting_bool(category: String, key: String, default_value: bool = false) -> bool:
-	#print("GlobalSettings: Fetching bool setting -> [", category, "] ", key)
-	var val: Variant = get_setting(category, key, default_value)
-	if val is bool:
-		return val
-	return default_value
-
-
-## Retrieves an integer setting from the cached config file.
-func get_setting_int(category: String, key: String, default_value: int = 0) -> int:
-	#print("GlobalSettings: Fetching int setting -> [", category, "] ", key)
-	var val: Variant = get_setting(category, key, default_value)
-	if val is int:
-		return val
-	if val is float:
-		var float_val: float = val
-		return int(float_val)
-	return default_value
-
-
-## Retrieves a floating point setting from the cached config file.
-func get_setting_float(category: String, key: String, default_value: float = 0.0) -> float:
-	#print("GlobalSettings: Fetching float setting -> [", category, "] ", key)
-	var val: Variant = get_setting(category, key, default_value)
-	if val is float:
-		return val
-	if val is int:
-		var int_val: int = val
-		return float(int_val)
-	return default_value
+## Ensures default Tilde + 1..3 ordered chord actions exist in [InputMap].
+func _ensure_default_debug_chord_actions() -> void:
+	print("System: Registering default debug chord actions.")
+	for action: String in DEFAULT_DEBUG_CHORDS.keys():
+		if not InputMap.has_action(action) or InputMap.action_get_events(action).is_empty():
+			if not InputMap.has_action(action):
+				InputMap.add_action(action)
+			var chord_seq: Array = DEFAULT_DEBUG_CHORDS[action]
+			if chord_seq.size() < 2:
+				continue
+			var trigger_raw: Variant = chord_seq[chord_seq.size() - 1]
+			var trigger_key: Key = KEY_NONE
+			if trigger_raw is int:
+				var trigger_int: int = trigger_raw
+				trigger_key = trigger_int as Key
+			var key_ev: InputEventKey = InputEventKey.new()
+			key_ev.keycode = trigger_key
+			key_ev.physical_keycode = trigger_key
+			key_ev.set_meta("gesture", "ordered_chord")
+			key_ev.set_meta("chord_keys", chord_seq.duplicate())
+			InputMap.action_add_event(action, key_ev)

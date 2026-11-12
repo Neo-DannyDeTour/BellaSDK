@@ -129,4 +129,23 @@ func get_action_key_label(action: StringName) -> String:
 	var events: Array[InputEvent] = InputMap.action_get_events(action)
 	if events.is_empty():
 		return "???"
-	return sanitize_key_name(events[0].as_text())
+	var primary_ev: InputEvent = events[0]
+	if primary_ev.has_meta("chord_keys"):
+		var raw_keys: Variant = primary_ev.get_meta("chord_keys")
+		if raw_keys is Array:
+			var keys_arr: Array = raw_keys
+			var parts: PackedStringArray = PackedStringArray()
+			for item: Variant in keys_arr:
+				if item is int:
+					var key_id: int = item
+					if key_id >= 100000:
+						var mb: InputEventMouseButton = InputEventMouseButton.new()
+						mb.button_index = (key_id - 100000) as MouseButton
+						parts.append(sanitize_key_name(mb.as_text()))
+					else:
+						parts.append(sanitize_key_name(OS.get_keycode_string(key_id as Key)))
+			if not parts.is_empty():
+				var gesture_meta: Variant = primary_ev.get_meta("gesture", "")
+				var sep: String = " → " if str(gesture_meta) == "ordered_chord" else " + "
+				return sep.join(parts)
+	return sanitize_key_name(primary_ev.as_text())

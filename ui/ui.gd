@@ -2,6 +2,33 @@
 class_name UIController
 extends CanvasLayer
 
+## Action name for toggling the metrics panel via chord.
+const ACTION_DEBUG_METRICS: StringName = &"debug_toggle_metrics"
+
+## Action name for toggling UI visibility via chord.
+const ACTION_DEBUG_UI: StringName = &"debug_toggle_ui"
+
+## Action name for toggling render diagnostics via chord.
+const ACTION_DEBUG_DIAGNOSTICS: StringName = &"debug_toggle_diagnostics"
+
+## Action name for opening the developer console.
+const ACTION_CONSOLE: StringName = &"console"
+
+## Action name for opening the debug menu.
+const ACTION_DEBUG_MENU: StringName = &"debug_menu"
+
+## Tracks whether the user interface is currently hidden for clean screenshots.
+var is_ui_hidden: bool = false
+
+## Security variable: Indicates if debug commands are allowed via input or events.
+var is_debug_allowed: bool = OS.has_feature("debug")
+
+## Tracks whether a chord combination was triggered while Tilde was held down.
+var _tilde_chord_used: bool = false
+
+## Tracks whether the Tilde/console key is currently held down.
+var _tilde_held: bool = false
+
 ## Reference to the screen post-processing manager [ScreenEffectsManager].
 @onready var screen_effects: ScreenEffectsManager = $ScreenEffectsManager
 
@@ -26,12 +53,6 @@ extends CanvasLayer
 ## Reference to the render diagnostics panel [RenderDiagnosticsPanel].
 @onready var diagnostics_panel: RenderDiagnosticsPanel = %DiagnosticsPanel
 
-## Tracks whether the user interface is currently hidden for clean screenshots.
-var is_ui_hidden: bool = false
-
-## Security variable: Indicates if debug commands are allowed via input or events.
-var is_debug_allowed: bool = OS.has_feature("debug")
-
 
 ## Initializes UI processing modes, connects signals, and checks testbed status.
 func _ready() -> void:
@@ -48,6 +69,15 @@ func _ready() -> void:
 	call_deferred(&"_check_if_testbed")
 
 
+## Disconnects global signals when exiting the scene tree.
+func _exit_tree() -> void:
+	if (
+		is_instance_valid(GestureInputManager)
+		and GestureInputManager.action_triggered.is_connected(_on_gesture_action_triggered)
+	):
+		GestureInputManager.action_triggered.disconnect(_on_gesture_action_triggered)
+
+
 ## Binds top-level event bus listeners to handle UI and gameplay state changes.
 func _connect_signals() -> void:
 	print("UIController: Connecting top-level event bus signals.")
@@ -61,6 +91,11 @@ func _connect_signals() -> void:
 		Events.metrics_panel_toggle_requested.connect(_toggle_metrics_panel)
 	if not Events.render_diagnostics_toggle_requested.is_connected(_toggle_diagnostics_panel):
 		Events.render_diagnostics_toggle_requested.connect(_toggle_diagnostics_panel)
+	if (
+		is_instance_valid(GestureInputManager)
+		and not GestureInputManager.action_triggered.is_connected(_on_gesture_action_triggered)
+	):
+		GestureInputManager.action_triggered.connect(_on_gesture_action_triggered)
 
 
 ## Intercepts global debug hotkeys and blocked movement inputs.
@@ -69,21 +104,7 @@ func _input(event: InputEvent) -> void:
 	if not is_debug_allowed:
 		return
 
-	var is_hotkey_pressed: bool = false
-	if (
-		(InputMap.has_action(&"console") and event.is_action_pressed(&"console"))
-		or (InputMap.has_action(&"debug_menu") and event.is_action_pressed(&"debug_menu"))
-	):
-		is_hotkey_pressed = true
-	elif event is InputEventKey and (event as InputEventKey).is_pressed():
-		var key_ev: InputEventKey = event if event is InputEventKey else null
-		if key_ev.keycode in [KEY_QUOTELEFT, KEY_ASCIITILDE, KEY_F3]:
-			is_hotkey_pressed = true
-
-	if is_hotkey_pressed and not event.is_echo():
-		print("UIController: Console toggle requested. Emitting console_toggle_requested.")
-		Events.console_toggle_requested.emit()
-		get_viewport().set_input_as_handled()
+	if _handle_console_and_debug_hotkeys(event):
 		return
 
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
@@ -96,14 +117,88 @@ func _input(event: InputEvent) -> void:
 				or event.is_action_pressed(&"jump")
 				or event.is_action_pressed(&"sprint")
 			):
-				# print("UIController: Movement blocked - immobilized.")
 				if is_instance_valid(notification_hud):
 					notification_hud.show_warning_message("Can't move!", 2.0)
 		elif is_instance_valid(player_status_hud) and player_status_hud.is_sprint_blocked:
 			if event.is_action_pressed(&"sprint"):
-				# print("UIController: Movement blocked - sprint cooldown.")
 				if is_instance_valid(notification_hud):
 					notification_hud.show_warning_message("Can't sprint", 2.0)
+
+
+## Dispatches console toggle on unchorded Tilde release so Tilde+1..3 chords can fire.
+func _handle_console_and_debug_hotkeys(event: InputEvent) -> bool:
+	var is_f3_or_debug_menu: bool = false
+	if InputMap.has_action(ACTION_DEBUG_MENU) and event.is_action_pressed(ACTION_DEBUG_MENU):
+		is_f3_or_debug_menu = true
+	elif event is InputEventKey:
+		var k_ev: InputEventKey = event as InputEventKey
+		if k_ev.is_pressed() and not k_ev.is_echo() and k_ev.keycode == KEY_F3:
+			is_f3_or_debug_menu = true
+
+	if is_f3_or_debug_menu:
+		print("UIController: Debug menu key pressed. Emitting console_toggle_requested.")
+		Events.console_toggle_requested.emit()
+		get_viewport().set_input_as_handled()
+		return true
+
+	var is_tilde_event: bool = false
+	var is_pressed: bool = false
+	if event is InputEventKey:
+		var key_ev: InputEventKey = event as InputEventKey
+		if key_ev.is_echo():
+			return false
+		var code: Key = (
+			key_ev.physical_keycode if key_ev.physical_keycode != KEY_NONE else key_ev.keycode
+		)
+		if code in [KEY_QUOTELEFT, KEY_ASCIITILDE]:
+			is_tilde_event = true
+			is_pressed = key_ev.is_pressed()
+		elif InputMap.has_action(ACTION_CONSOLE) and event.is_action(ACTION_CONSOLE):
+			is_tilde_event = true
+			is_pressed = event.is_pressed()
+
+	if not is_tilde_event:
+		return false
+
+	# Let press pass through to GestureInputManager so _held_keys tracks KEY_QUOTELEFT.
+	if is_pressed:
+		_tilde_held = true
+		_tilde_chord_used = false
+		return false
+
+	# On release: open/close console only if no chord was triggered while held.
+	var should_toggle_console: bool = _tilde_held and not _tilde_chord_used
+	_tilde_held = false
+	_tilde_chord_used = false
+	if should_toggle_console:
+		print("UIController: Unchorded console key released. Toggling console.")
+		Events.console_toggle_requested.emit()
+		get_viewport().set_input_as_handled()
+		return true
+	return false
+
+
+## Routes debug actions and marks chord consumption when triggered via [GestureInputManager].
+func _on_gesture_action_triggered(action: String, gesture: String) -> void:
+	if not is_debug_allowed:
+		return
+
+	if gesture in ["chord", "ordered_chord"] and _tilde_held:
+		_tilde_chord_used = true
+
+	match action:
+		"debug_toggle_metrics":
+			_tilde_chord_used = true
+			print("UIController: Chord triggered -> debug_toggle_metrics")
+			Events.metrics_panel_toggle_requested.emit()
+		"debug_toggle_ui":
+			_tilde_chord_used = true
+			print("UIController: Chord triggered -> debug_toggle_ui")
+			Events.ui_visibility_toggle_requested.emit()
+		"debug_toggle_diagnostics":
+			_tilde_chord_used = true
+			print("UIController: Chord triggered -> debug_toggle_diagnostics")
+			Events.render_diagnostics_toggle_requested.emit()
 
 
 ## Handles damage signals by triggering the screen pain flash effect.

@@ -571,8 +571,15 @@ func _cmd_visionassist(args: PackedStringArray) -> void:
 ## [param args] Command argument tokens.
 func _cmd_lensdirt(args: PackedStringArray) -> void:
 	print("ConsoleSettingsCommands: _cmd_lensdirt called with args: ", args)
-	var cur_enabled: bool = bool(GraphicsManager.get_setting("lens_dirt_enabled", true))
-	var cur_intensity: float = float(GraphicsManager.get_setting("lens_dirt_intensity", 1.0))
+	var raw_enabled: Variant = GraphicsManager.get_setting("lens_dirt_enabled", true)
+	var cur_enabled: bool = raw_enabled if raw_enabled is bool else true
+	var raw_intensity: Variant = GraphicsManager.get_setting("lens_dirt_intensity", 1.0)
+	var cur_intensity: float = 1.0
+	if raw_intensity is float:
+		cur_intensity = raw_intensity
+	elif raw_intensity is int:
+		var intensity_int: int = raw_intensity
+		cur_intensity = float(intensity_int)
 
 	if args.is_empty():
 		var status_str: String = "ON" if cur_enabled else "OFF"
@@ -1139,10 +1146,10 @@ func _cmd_volume(args: PackedStringArray) -> void:
 		var count: int = AudioServer.bus_count
 		for i: int in range(count):
 			var b_name: String = AudioServer.get_bus_name(i)
-			var is_muted: bool = AudioServer.is_bus_mute(i)
+			var bus_muted: bool = AudioServer.is_bus_mute(i)
 			var db: float = AudioServer.get_bus_volume_db(i)
-			var pct: float = db_to_linear(db) * 100.0 if not is_muted else 0.0
-			var mute_str: String = " [MUTED]" if is_muted else ""
+			var pct: float = db_to_linear(db) * 100.0 if not bus_muted else 0.0
+			var mute_str: String = " [MUTED]" if bus_muted else ""
 			context.write("  - %s: %.0f%% (%.1f dB)%s" % [b_name, pct, db, mute_str], "white")
 		return
 
@@ -1161,9 +1168,9 @@ func _cmd_volume(args: PackedStringArray) -> void:
 
 	var canonical_name: String = AudioServer.get_bus_name(bus_idx)
 	if args.size() == 1:
-		var is_muted: bool = AudioServer.is_bus_mute(bus_idx)
+		var query_muted: bool = AudioServer.is_bus_mute(bus_idx)
 		var db: float = AudioServer.get_bus_volume_db(bus_idx)
-		var pct: float = db_to_linear(db) * 100.0 if not is_muted else 0.0
+		var pct: float = db_to_linear(db) * 100.0 if not query_muted else 0.0
 		context.write("%s volume: %.0f%% (%.1f dB)" % [canonical_name, pct, db], "cyan")
 		return
 

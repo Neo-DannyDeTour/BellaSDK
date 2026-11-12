@@ -25,7 +25,15 @@ const ACTION_CATEGORIES: Dictionary = {
 		"grenade_throw"
 	],
 	"UI & Navigation": ["exit"],
-	"Developer Stuff": ["noclip", "console", "debug_menu"]
+	"Developer Stuff":
+	[
+		"noclip",
+		"console",
+		"debug_menu",
+		"debug_toggle_metrics",
+		"debug_toggle_ui",
+		"debug_toggle_diagnostics"
+	]
 }
 
 ## Directory path for Kenney prompt icons.
@@ -49,6 +57,42 @@ const CHORD_COMPLETION_WINDOW: float = 0.25
 ## Display size for prompt textures inside buttons.
 @export var prompt_icon_size: Vector2 = Vector2(36.0, 36.0)
 
+## Indicates active remapping state.
+var is_remapping: bool = false
+
+## Action key currently being remapped.
+var action_to_remap: String = ""
+
+## Active slot being edited (0 or 1).
+var target_slot_index: int = 0
+
+## Reference to active remapping button.
+var remapping_button: Button = null
+
+## Pending candidate event being tested.
+var _pending_event: InputEvent = null
+
+## List of chord input events.
+var _chord_events: Array[InputEvent] = []
+
+## Flag indicating candidate key press.
+var _is_candidate_pressed: bool = false
+
+## Hold detection timer accumulator.
+var _hold_timer: float = 0.0
+
+## Multi-tap detection timer accumulator.
+var _multi_tap_timer: float = 0.0
+
+## Chord completion timer accumulator.
+var _chord_timer: float = 0.0
+
+## Count of recorded sequential presses.
+var _press_count: int = 0
+
+## Cache mapping paths to loaded textures.
+var _icon_cache: Dictionary = {}
+
 ## Slider for mouse look sensitivity.
 @onready var mouse_sens_slider: HSlider = %MouseSensitivitySlider
 
@@ -58,9 +102,13 @@ const CHORD_COMPLETION_WINDOW: float = 0.25
 ## CheckButton for vertical axis inversion.
 @onready var invert_y_toggle: CheckButton = %InvertYToggle
 
-## Buttons for selecting aim assist mode.
+## Button for disabling aim assist.
 @onready var aim_assist_off_button: Button = %AimAssistOffButton
+
+## Button for medium aim assist.
 @onready var aim_assist_mid_button: Button = %AimAssistMidButton
+
+## Button for full aim assist.
 @onready var aim_assist_full_button: Button = %AimAssistFullButton
 
 ## Slider for adjusting aim assist strength.
@@ -99,42 +147,6 @@ const CHORD_COMPLETION_WINDOW: float = 0.25
 ## OptionButton for valve turn mode.
 @onready var valve_mode_option: OptionButton = %ValveModeOption
 
-## Indicates active remapping state.
-var is_remapping: bool = false
-
-## Action key currently being remapped.
-var action_to_remap: String = ""
-
-## Active slot being edited (0 or 1).
-var target_slot_index: int = 0
-
-## Reference to active remapping button.
-var remapping_button: Button = null
-
-## Pending candidate event being tested.
-var _pending_event: InputEvent = null
-
-## List of chord input events.
-var _chord_events: Array[InputEvent] = []
-
-## Flag indicating candidate key press.
-var _is_candidate_pressed: bool = false
-
-## Hold detection timer accumulator.
-var _hold_timer: float = 0.0
-
-## Multi-tap detection timer accumulator.
-var _multi_tap_timer: float = 0.0
-
-## Chord completion timer accumulator.
-var _chord_timer: float = 0.0
-
-## Count of recorded sequential presses.
-var _press_count: int = 0
-
-## Cache mapping paths to loaded textures.
-var _icon_cache: Dictionary = {}
-
 
 ## Configures UI listeners and builds the action rebind list in [method _ready].
 func _ready() -> void:
@@ -161,7 +173,6 @@ func _process(delta: float) -> void:
 	if _chord_timer > 0.0:
 		_chord_timer -= delta
 		if _chord_timer <= 0.0 and _chord_events.size() > 1:
-			# print("System: Chord combination finalized.")
 			_finalize_chord_remap()
 			return
 
@@ -169,25 +180,70 @@ func _process(delta: float) -> void:
 		_hold_timer += delta
 		if _hold_timer >= HOLD_TIME_THRESHOLD:
 			if _press_count >= 2:
-				# print("System: Double-Tap & Hold recognized.")
 				_pending_event.set_meta("gesture", "double_tap_hold")
 			else:
-				# print("System: Hold recognized.")
 				_pending_event.set_meta("gesture", "hold")
 			_finalize_gesture_remap(_pending_event)
 	elif _multi_tap_timer > 0.0:
 		_multi_tap_timer -= delta
 		if _multi_tap_timer <= 0.0:
 			if _press_count >= MASH_THRESHOLD_COUNT:
-				# print("System: Mash gesture recognized.")
 				_pending_event.set_meta("gesture", "mash")
 			elif _press_count == 2:
-				# print("System: Double-tap recognized.")
 				_pending_event.set_meta("gesture", "double_tap")
 			else:
-				# print("System: Single tap recognized.")
 				_pending_event.set_meta("gesture", "single_tap")
 			_finalize_gesture_remap(_pending_event)
+
+
+## Captures incoming input events during remapping.
+func _input(event: InputEvent) -> void:
+	if not visible or not is_remapping:
+		return
+
+	if event is InputEventKey:
+		var key_event: InputEventKey = event
+		if key_event.is_echo():
+			return
+		var clean_key: InputEventKey = InputEventKey.new()
+		clean_key.physical_keycode = key_event.physical_keycode
+		clean_key.keycode = key_event.keycode
+		_process_gesture_event(clean_key, key_event.is_pressed())
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event
+		var clean_mouse: InputEventMouseButton = InputEventMouseButton.new()
+		clean_mouse.button_index = mouse_event.button_index
+		_process_gesture_event(clean_mouse, mouse_event.is_pressed())
+		get_viewport().set_input_as_handled()
+
+
+## Resets all bindings to ProjectSettings and procedural defaults.
+func reset_to_defaults() -> void:
+	print("UI: ControlsPanel -> Executing reset to default.")
+	InputMap.load_from_project_settings()
+	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method(&"ensure_default_actions"):
+		GlobalSettings.ensure_default_actions()
+	for category: String in ACTION_CATEGORIES.keys():
+		for action: String in ACTION_CATEGORIES[category]:
+			_save_action_mapping(action)
+	if is_instance_valid(action_list_container):
+		var grids: Array[Node] = action_list_container.find_children(
+			"", "GridContainer", true, false
+		)
+		for grid: Node in grids:
+			for child: Node in grid.get_children():
+				if child is Button and child.has_meta("slot"):
+					var btn: Button = child
+					var action_meta: Variant = btn.get_meta("action")
+					var slot_meta: Variant = btn.get_meta("slot")
+					var action_name: String = ""
+					if action_meta is String:
+						action_name = action_meta
+					var slot_id: int = 0
+					if slot_meta is int:
+						slot_id = slot_meta
+					_update_slot_button_text(btn, action_name, slot_id)
 
 
 ## Connects and synchronizes mouse and aim input widgets.
@@ -451,14 +507,16 @@ func _format_header_grid() -> void:
 
 	if is_instance_valid(reset_secondary_header):
 		header_grid.move_child(reset_secondary_header, 4)
-		reset_secondary_header.size_flags_horizontal = (Control.SIZE_SHRINK_CENTER)
+		reset_secondary_header.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		reset_secondary_header.custom_minimum_size = Vector2(40.0, 0.0)
-		reset_secondary_header.horizontal_alignment = (HORIZONTAL_ALIGNMENT_CENTER)
+		reset_secondary_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 ## Ensures all defined actions exist in [InputMap].
 func _ensure_all_actions_registered() -> void:
 	print("ControlsPanel: Verifying action mappings in InputMap.")
+	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method(&"ensure_default_actions"):
+		GlobalSettings.ensure_default_actions()
 	for category: String in ACTION_CATEGORIES.keys():
 		for action: String in ACTION_CATEGORIES[category]:
 			if not InputMap.has_action(action):
@@ -810,28 +868,6 @@ func _get_unique_event_id(event: InputEvent) -> int:
 	return -1
 
 
-## Captures incoming input events during remapping.
-func _input(event: InputEvent) -> void:
-	if not visible or not is_remapping:
-		return
-
-	if event is InputEventKey:
-		var key_event: InputEventKey = event
-		if key_event.is_echo():
-			return
-		var clean_key: InputEventKey = InputEventKey.new()
-		clean_key.physical_keycode = key_event.physical_keycode
-		clean_key.keycode = key_event.keycode
-		_process_gesture_event(clean_key, key_event.is_pressed())
-		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event
-		var clean_mouse: InputEventMouseButton = InputEventMouseButton.new()
-		clean_mouse.button_index = mouse_event.button_index
-		_process_gesture_event(clean_mouse, mouse_event.is_pressed())
-		get_viewport().set_input_as_handled()
-
-
 ## Feeds cleaned input event into gesture detection pipeline.
 func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 	if is_pressed:
@@ -923,32 +959,6 @@ func _assign_event_to_action_slot(action: String, slot_index: int, new_event: In
 			InputMap.action_erase_events(action)
 			for ev: InputEvent in events:
 				InputMap.action_add_event(action, ev)
-
-
-## Resets all bindings to ProjectSettings defaults.
-func reset_to_defaults() -> void:
-	print("UI: ControlsPanel -> Executing reset to default.")
-	InputMap.load_from_project_settings()
-	for category: String in ACTION_CATEGORIES.keys():
-		for action: String in ACTION_CATEGORIES[category]:
-			_save_action_mapping(action)
-	if is_instance_valid(action_list_container):
-		var grids: Array[Node] = action_list_container.find_children(
-			"", "GridContainer", true, false
-		)
-		for grid: Node in grids:
-			for child: Node in grid.get_children():
-				if child is Button and child.has_meta("slot"):
-					var btn: Button = child
-					var action_meta: Variant = btn.get_meta("action")
-					var slot_meta: Variant = btn.get_meta("slot")
-					var action_name: String = ""
-					if action_meta is String:
-						action_name = action_meta
-					var slot_id: int = 0
-					if slot_meta is int:
-						slot_id = slot_meta
-					_update_slot_button_text(btn, action_name, slot_id)
 
 
 ## Persists a single modified action mapping.

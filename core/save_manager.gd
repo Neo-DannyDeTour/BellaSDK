@@ -6,6 +6,8 @@ signal save_completed
 
 ## Encryption password string for binary save payloads.
 const ENCRYPTION_KEY: String = "bella_sec_v1_99238"
+## Magic 32-bit header ("GTEC" little-endian) identifying Godot encrypted files.
+const ENCRYPTED_MAGIC: int = 0x43455447
 ## Directory storing serialized save files.
 const SAVES_DIR: String = "user://saves/"
 ## Thumbnail pixel width for save slots.
@@ -199,24 +201,41 @@ func _threaded_write_data(path: String, data: Dictionary, count: int) -> void:
 		push_error("SaveManager: Encrypted write failed: " + path)
 
 
+## Verifies the 4-byte Godot encrypted file magic header before decryption.
+func _has_encrypted_magic(path: String) -> bool:
+	var probe: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if not probe:
+		return false
+	if probe.get_length() < 4:
+		probe.close()
+		return false
+	var magic: int = probe.get_32()
+	probe.close()
+	return magic == ENCRYPTED_MAGIC
+
+
 ## Reads encrypted file and applies state back to nodes.
 func _load_game_state(path: String) -> void:
 	if not FileAccess.file_exists(path):
-		push_error("SaveManager: Target save missing: " + path)
+		push_warning("SaveManager: Target save missing: " + path)
+		return
+
+	if not _has_encrypted_magic(path):
+		push_warning("SaveManager: Unrecognized or unencrypted save header: " + path)
 		return
 
 	var file: FileAccess = FileAccess.open_encrypted_with_pass(
 		path, FileAccess.READ, ENCRYPTION_KEY
 	)
 	if not file:
-		push_error("SaveManager: Failed opening encrypted save file: " + path)
+		push_warning("SaveManager: Failed opening encrypted save file: " + path)
 		return
 
 	var loaded_data: Variant = file.get_var()
 	file.close()
 
 	if not validate_state_dictionary(loaded_data):
-		push_error("SaveManager: Corrupted or invalid state data structure in: " + path)
+		push_warning("SaveManager: Corrupted or invalid state data structure in: " + path)
 		return
 
 	var total_state: Dictionary = loaded_data if loaded_data is Dictionary else {}
@@ -314,7 +333,7 @@ func load_save_game(base_path: String) -> void:
 	var dat_path: String = clean_base + ".dat"
 
 	if not FileAccess.file_exists(meta_path) or not FileAccess.file_exists(dat_path):
-		push_error("SaveManager: Missing save file set for: " + clean_base)
+		push_warning("SaveManager: Missing save file set for: " + clean_base)
 		return
 
 	var file: FileAccess = FileAccess.open(meta_path, FileAccess.READ)
@@ -325,23 +344,23 @@ func load_save_game(base_path: String) -> void:
 
 	var parsed: Variant = JSON.parse_string(raw_text)
 	if not (parsed is Dictionary):
-		push_error("SaveManager: Invalid metadata JSON schema in: " + meta_path)
+		push_warning("SaveManager: Invalid metadata JSON schema in: " + meta_path)
 		return
 	var meta_data: Dictionary = parsed if parsed is Dictionary else {}
 
 	var expected_checksum: String = str(meta_data.get("checksum", ""))
 	if expected_checksum.is_empty():
-		push_error("SaveManager: Missing or empty checksum in metadata: " + meta_path)
+		push_warning("SaveManager: Missing or empty checksum in metadata: " + meta_path)
 		return
 
 	var actual_checksum: String = compute_file_sha256(dat_path)
 	if actual_checksum != expected_checksum:
-		push_error("SaveManager: Checksum mismatch. Save file tampered or corrupted: " + dat_path)
+		push_warning("SaveManager: Checksum mismatch. Save file tampered or corrupted: " + dat_path)
 		return
 
 	var level_path: String = str(meta_data.get("level_path", ""))
 	if not is_valid_level_path(level_path):
-		push_error("SaveManager: Rejected invalid or external level_path: " + level_path)
+		push_warning("SaveManager: Rejected invalid or external level_path: " + level_path)
 		return
 
 	var current_scene: Node = get_tree().current_scene
