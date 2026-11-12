@@ -12,5 +12,6 @@ shader_parameter/albedo_texture = ExtResource("2_7v6ir")
 shader_parameter/orm_texture = ExtResource("4_gxq6w")
 shader_parameter/normal_texture = ExtResource("3_dxkbh")
 shader_parameter/normal_scale = 1.0
+shader_parameter/micro_grain_strength = null
 shader_parameter/moss_color = Color(0.18, 0.24, 0.14, 1)
 shader_parameter/moss_sharpness = 4.0

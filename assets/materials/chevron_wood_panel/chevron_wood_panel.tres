@@ -1,0 +1,19 @@
+[gd_resource type="ORMMaterial3D" format=3 uid="uid://fw2d1desrv1p"]
+
+[ext_resource type="Texture2D" uid="uid://bnq5fanmqhfon" path="res://assets/materials/chevron_wood_panel/textures/chevron_wood_panel_albedo.png" id="1_albedo"]
+[ext_resource type="Texture2D" uid="uid://cu1gvfh0k0dbg" path="res://assets/materials/chevron_wood_panel/textures/chevron_wood_panel_orm.png" id="2_orm"]
+[ext_resource type="Texture2D" uid="uid://dm7jl6hf1o8my" path="res://assets/materials/chevron_wood_panel/textures/chevron_wood_panel_normal.png" id="3_normal"]
+[ext_resource type="Texture2D" uid="uid://1owpibrk2kjw" path="res://assets/materials/chevron_wood_panel/textures/chevron_wood_panel_height.png" id="4_height"]
+
+[resource]
+resource_name = "chevron_wood_panel"
+albedo_texture = ExtResource("1_albedo")
+orm_texture = ExtResource("2_orm")
+normal_enabled = true
+normal_scale = 0.0
+normal_texture = ExtResource("3_normal")
+heightmap_enabled = true
+heightmap_scale = 0.05
+heightmap_texture = ExtResource("4_height")
+uv1_offset = Vector3(1.56, 0, 0)
+uv1_triplanar = true
