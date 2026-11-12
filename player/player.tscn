@@ -73,6 +73,13 @@
 [ext_resource type="Script" uid="uid://nmq3xe2f3kq1" path="res://player/state_wolf_climb.gd" id="71_utr5e"]
 [ext_resource type="Script" uid="uid://p5dlbr1nqemi" path="res://player/state_jib_crane.gd" id="72_jibcr"]
 [ext_resource type="Script" path="res://player/weapon_procedural_animator.gd" id="73_animator"]
+[ext_resource type="Material" uid="uid://d3x1lensd1rt" path="res://shaders/mat_lens_dirt_billboard.tres" id="74_lensdirt"]
+[ext_resource type="PackedScene" uid="uid://b8drnkeffct01" path="res://player/drunk_effect.tscn" id="75_drunk"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_lensdirt"]
+material = ExtResource("74_lensdirt")
+size = Vector2(2, 2)
+
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -507,6 +514,14 @@ cast_shadow = 0
 extra_cull_margin = 10000.0
 mesh = SubResource("QuadMesh_534t5")
 
+[node name="LensDirtMesh" type="MeshInstance3D" parent="Head/Eyes/Camera3D" unique_id=1562936127]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+layers = 512
+cast_shadow = 0
+extra_cull_margin = 10000.0
+mesh = SubResource("QuadMesh_lensdirt")
+
+
 [node name="NoteReader" type="Marker3D" parent="Head/Eyes/Camera3D" unique_id=693307965]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, -0.5)
 script = ExtResource("6_7l6ig")
@@ -553,6 +568,9 @@ double_sided = false
 texture = ExtResource("7_cw2d6")
 
 [node name="UI" parent="." unique_id=1944889716 groups=["player"] instance=ExtResource("2_k2mo6")]
+
+[node name="DrunkEffect" parent="." unique_id=1944889799 node_paths=PackedStringArray("target_camera") instance=ExtResource("75_drunk")]
+target_camera = NodePath("../Head/Eyes/Camera3D")
 
 [node name="WaterDetector" type="Area3D" parent="." unique_id=1554540487]
 

@@ -2,6 +2,9 @@
 class_name ExtendedCamera3D
 extends Camera3D
 
+## Pre-allocated uniform StringName for lens dirt intensity instance shader parameter.
+const PARAM_INTENSITY: StringName = &"intensity"
+
 @export_category("Camera Role")
 ## Activates the child [AudioListener3D] and enables camera process ticks when true.
 @export var is_player_camera: bool = true
@@ -29,6 +32,8 @@ var _noise: FastNoiseLite = FastNoiseLite.new()
 
 ## Full-screen accessibility quad [MeshInstance3D] hosting high-contrast shaders.
 var vision_assist_mesh: MeshInstance3D = null
+## Camera-facing quad [MeshInstance3D] displaying additive volumetric lens dirt.
+var lens_dirt_mesh: MeshInstance3D = null
 ## Legacy mesh reference retained for cleanup if spawned in older scene setups.
 var motion_blur_mesh: MeshInstance3D = null
 ## Dedicated [AudioListener3D] instance attached as a child node for 3D panning.
@@ -53,6 +58,7 @@ var _has_prev_rot: bool = false
 func _ready() -> void:
 	#print("ExtendedCamera3D: Initializing camera components for: ", name)
 	_resolve_vision_mesh()
+	_resolve_lens_dirt_mesh()
 	_cache_vision_material()
 	_setup_motion_blur_quad()
 	_setup_camera_attributes()
@@ -91,6 +97,8 @@ func _ready() -> void:
 			Utilities.safe_connect(
 				Signal(events, &"vision_assist_mode_changed"), set_vision_assist_mode
 			)
+		if events.has_signal("lens_dirt_changed"):
+			Utilities.safe_connect(Signal(events, &"lens_dirt_changed"), set_lens_dirt)
 
 
 ## Configures [CameraAttributesPractical] and ensures DoF is disabled on boot.
@@ -182,6 +190,34 @@ func set_motion_blur_strength(strength: float) -> void:
 		_motion_blur_material.set_shader_parameter(
 			"motion_blur_strength", strength if is_active else 0.0
 		)
+
+
+## Sets lens dirt enabled state and instance shader intensity.
+## [param enabled] Whether the lens dirt effect is visible.
+## [param intensity_val] Intensity multiplier for the dirt and halo effect.
+func set_lens_dirt(enabled: bool, intensity_val: float) -> void:
+	print(
+		"ExtendedCamera3D: Setting lens dirt -> enabled: ", enabled, ", intensity: ", intensity_val
+	)
+	_resolve_lens_dirt_mesh()
+	if not is_instance_valid(lens_dirt_mesh):
+		return
+	var is_active: bool = enabled and (intensity_val > 0.001)
+	lens_dirt_mesh.visible = is_active
+	if is_active:
+		lens_dirt_mesh.set_instance_shader_parameter(PARAM_INTENSITY, intensity_val)
+
+
+## Discovers and caches [member lens_dirt_mesh] child node in the scene tree.
+func _resolve_lens_dirt_mesh() -> void:
+	if is_instance_valid(lens_dirt_mesh):
+		return
+	lens_dirt_mesh = get_node_or_null("LensDirtMesh")
+	if not is_instance_valid(lens_dirt_mesh):
+		for child: Node in get_children():
+			if child is MeshInstance3D and child.name.begins_with("LensDirtMesh"):
+				lens_dirt_mesh = child as MeshInstance3D
+				break
 
 
 ## Discovers and caches [member vision_assist_mesh] child node in the scene tree.

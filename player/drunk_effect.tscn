@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://b8drnkeffct01"]
+
+[ext_resource type="Shader" path="res://shaders/drunk_post.gdshader" id="1_shader"]
+[ext_resource type="Script" path="res://player/drunk_effect.gd" id="2_script"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_drunk"]
+shader = ExtResource("1_shader")
+shader_parameter/intensity = 0.0
+shader_parameter/enable_desaturation = true
+shader_parameter/desaturation_amount = 0.65
+shader_parameter/trail_decay = 0.9
+shader_parameter/zoom_amount = 0.005
+shader_parameter/drunk_speed = 3.5
+shader_parameter/drunk_amplitude = 0.003
+shader_parameter/blur_radius = 1.5
+shader_parameter/chromatic_aberration = 0.003
+
+[node name="DrunkEffect" type="CanvasLayer" node_paths=PackedStringArray("post_rect")]
+visible = false
+layer = 10
+script = ExtResource("2_script")
+post_rect = NodePath("PostRect")
+
+[node name="PostRect" type="ColorRect" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_drunk")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

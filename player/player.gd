@@ -151,6 +151,9 @@ var is_wolf_mode: bool = false
 	get_node_or_null("Components/WeaponInventoryComponent") as WeaponInventoryComponent
 )
 
+## Local reference to the screen drunk effect controller.
+@onready var drunk_effect: CanvasLayer = get_node_or_null("DrunkEffect") as CanvasLayer
+
 
 ## Initializes groups, subcomponents, and global singleton bindings.
 func _ready() -> void:
@@ -598,6 +601,15 @@ func exit_rain_volume() -> void:
 	print("Player: Exiting rain volume.")
 	if is_instance_valid(environment_component):
 		environment_component.exit_rain_volume()
+
+
+## Sets or transitions screen drunk distortion and camera sway weight.
+func set_drunk_intensity(intensity: float, duration: float = 0.6) -> void:
+	print("Player: Setting drunk intensity -> ", intensity, " over ", duration, "s.")
+	if is_instance_valid(drunk_effect) and drunk_effect.has_method(&"transition_intensity"):
+		drunk_effect.call(&"transition_intensity", intensity, duration)
+	elif Events.has_signal(&"drunk_intensity_changed"):
+		Events.drunk_intensity_changed.emit(intensity, duration)
 
 
 ## Starts guide rail slide movement along target spline [param stick].

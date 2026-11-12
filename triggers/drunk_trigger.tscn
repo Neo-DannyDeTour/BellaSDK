@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://c8drnktrig01"]
+
+[ext_resource type="Script" path="res://triggers/drunk_trigger.gd" id="1_script"]
+[ext_resource type="Script" path="res://triggers/editor_trigger_visualizer.gd" id="2_visualizer"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_drunk"]
+resource_local_to_scene = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_drunk"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.2, 0.8, 0.6, 0.25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_drunk"]
+material = SubResource("StandardMaterial3D_drunk")
+
+[node name="DrunkTrigger" type="Area3D" unique_id=74829103]
+script = ExtResource("1_script")
+trigger_size = Vector3(2, 2, 2)
+show_orientation = false
+trigger_text = "DRUNK TRIGGER"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=102938475]
+shape = SubResource("BoxShape3D_drunk")
+debug_color = Color(0.2, 0.8, 0.6, 0.4)
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=203948576]
+mesh = SubResource("BoxMesh_drunk")
+script = ExtResource("2_visualizer")
+trigger_size = Vector3(2, 2, 2)
+show_orientation = false
+trigger_text = "DRUNK TRIGGER"
