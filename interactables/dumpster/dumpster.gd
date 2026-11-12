@@ -52,10 +52,6 @@ var _initial_lid_rot_x: float = 0.0
 @onready var _body_mesh: MeshInstance3D = _find_body_mesh()
 ## Cached reference to imported lid [MeshInstance3D].
 @onready var _lid_mesh: MeshInstance3D = _find_lid_mesh()
-## Child [InteractComponent] dispatching player crosshair raycast interactions.
-@onready var _interact_comp: InteractComponent = _find_interact_component()
-## Child [HighlightComponent] applying outline materials on focus.
-@onready var _highlight_comp: HighlightComponent = _find_highlight_component()
 ## Child [Area3D] monitoring occupant bodies inside container interior.
 @onready var _interior_area: Area3D = _find_interior_area()
 
@@ -168,24 +164,6 @@ func _find_lid_mesh() -> MeshInstance3D:
 		if lid != null:
 			return lid
 	return find_child("Dumpster_Lid", true, false) as MeshInstance3D
-
-
-## Resolves reference to the attached [InteractComponent].
-func _find_interact_component() -> InteractComponent:
-	var comp: InteractComponent = get_node_or_null(^"InteractComponent") as InteractComponent
-	if comp == null:
-		comp = get_node_or_null(^"InteractArea/InteractComponent") as InteractComponent
-	if comp == null:
-		comp = find_child("InteractComponent", true, false) as InteractComponent
-	return comp
-
-
-## Resolves reference to the attached [HighlightComponent].
-func _find_highlight_component() -> HighlightComponent:
-	var comp: HighlightComponent = get_node_or_null(^"HighlightComponent") as HighlightComponent
-	if comp == null:
-		comp = find_child("HighlightComponent", true, false) as HighlightComponent
-	return comp
 
 
 ## Resolves reference to the attached [Area3D] monitoring occupant bodies.

@@ -365,7 +365,8 @@ func _extract_prop_tag(target: Object) -> StringName:
 	if target.has_meta(META_PROP_TAG):
 		var tag_val: Variant = target.get_meta(META_PROP_TAG)
 		if tag_val is StringName and tag_val != &"":
-			return StringName(String(tag_val).strip_edges())
+			var tag_sn: StringName = tag_val
+			return StringName(String(tag_sn).strip_edges())
 		if tag_val is String:
 			var clean_meta: String = str(tag_val).strip_edges()
 			if not clean_meta.is_empty():
@@ -373,7 +374,8 @@ func _extract_prop_tag(target: Object) -> StringName:
 
 	var prop_val: Variant = target.get(PROP_TAG_PROPERTY)
 	if prop_val is StringName and prop_val != &"":
-		return StringName(String(prop_val).strip_edges())
+		var prop_sn: StringName = prop_val
+		return StringName(String(prop_sn).strip_edges())
 	if prop_val is String:
 		var clean_prop: String = str(prop_val).strip_edges()
 		if not clean_prop.is_empty():

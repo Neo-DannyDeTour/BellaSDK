@@ -138,7 +138,7 @@ const PARAM_FOAM_NOISE: StringName = &"foam_noise"
 ## Shader uniform identifier for surface foam albedo color.
 const PARAM_FOAM_COLOR: StringName = &"foam_color"
 
-## Shader uniform identifier for shoreline intersection foam width.
+## Shader uniform identifier for shoreline intersection depth width.
 const PARAM_FOAM_DISTANCE: StringName = &"foam_distance"
 
 ## Shader uniform identifier for wave crest foam height threshold.
@@ -172,10 +172,21 @@ const SWIM_COLLISION_MASK: int = 6
 ## Dimensions of the water volume box in meters.
 @export var water_size: Vector3 = Vector3(1.0, 1.0, 1.0):
 	set(value):
-		water_size = Vector3(maxf(value.x, 0.1), maxf(value.y, 0.1), maxf(value.z, 0.1))
+		var clamped: Vector3 = Vector3(maxf(value.x, 0.1), maxf(value.y, 0.1), maxf(value.z, 0.1))
+		if clamped.is_equal_approx(water_size):
+			return
+		var footprint_changed: bool = (
+			not is_equal_approx(clamped.x, water_size.x)
+			or not is_equal_approx(clamped.z, water_size.z)
+		)
+		water_size = clamped
 		if is_inside_tree():
-			_sync_volume_geometry()
+			if footprint_changed:
+				_sync_mesh_subdivisions()
+			_update_culling_bounds()
 			_set_shader_param(PARAM_WATER_SIZE, water_size)
+			if is_level_transition_complete():
+				_sync_volume_geometry()
 
 ## Subdivision density per meter used to cap reusable unit mesh subdivisions.
 @export_range(0.5, 16.0, 0.5) var vertex_density: float = 4.0:
@@ -542,6 +553,9 @@ var _surface_audio: AudioStreamPlayer3D = get_node_or_null("%SurfaceAudio") as A
 
 ## Initializes ripple buffers, node invariants, signals, and initial shader state.
 func _ready() -> void:
+	if is_instance_valid(_collision_shape) and _collision_shape.shape is BoxShape3D:
+		_collision_shape.shape = (_collision_shape.shape as BoxShape3D).duplicate() as BoxShape3D
+
 	_init_ripple_buffer()
 	_cache_material_rid()
 	_sync_volume_geometry()
@@ -782,6 +796,7 @@ func change_water_level(to_lowered: bool) -> void:
 	var target_size: Vector3 = Vector3(water_size.x, target_size_y, water_size.z)
 
 	_level_tween = create_tween()
+	_level_tween.set_ignore_time_scale(true)
 	_level_tween.set_trans(level_transition_type)
 	_level_tween.set_ease(level_ease_type)
 	_level_tween.tween_property(self, "position:y", target_pos_y, active_duration)
@@ -995,14 +1010,17 @@ func _sync_volume_geometry() -> void:
 	)
 	if is_instance_valid(col_node) and col_node.shape is BoxShape3D:
 		var box_shape: BoxShape3D = col_node.shape as BoxShape3D
-		if box_shape.size != water_size:
+		if not box_shape.size.is_equal_approx(water_size):
 			box_shape.set_deferred(&"size", water_size)
+
+	if DisplayServer.get_name() == "headless":
+		return
 
 	var fog_node: FogVolume = (
 		_fog_volume if is_instance_valid(_fog_volume) else get_node_or_null("%FogVolume")
 		as FogVolume
 	)
-	if is_instance_valid(fog_node):
+	if is_instance_valid(fog_node) and not fog_node.size.is_equal_approx(water_size):
 		fog_node.size = water_size
 
 
@@ -1353,8 +1371,9 @@ func _restore_fallback_environment_fog() -> void:
 	_fallback_fog_active = false
 
 
-## Emits completion signal and cleans up active tween reference.
+## Emits completion signal, syncs final volume bounds, and cleans up active tween reference.
 func _on_level_tween_finished(is_lowered: bool) -> void:
 	_level_tween = null
+	_sync_volume_geometry()
 	water_level_transition_finished.emit(is_lowered)
 	print("WaterBody: Water level transition complete -> is_lowered=", is_lowered)

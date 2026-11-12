@@ -61,7 +61,6 @@ var _is_on_screen: bool = true
 var _is_sloshing: bool = false
 
 @onready var _bottle_mesh: MeshInstance3D = $BottleMesh
-@onready var _cap_mesh: MeshInstance3D = $BottleMesh/CapMesh
 @onready var _liquid_notifier: VisibleOnScreenNotifier3D = $LiquidVisibilityNotifier
 
 

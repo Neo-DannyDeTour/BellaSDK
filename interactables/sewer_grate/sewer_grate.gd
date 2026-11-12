@@ -212,14 +212,16 @@ func _convert_leaf_to_rigidbody(mesh_inst: MeshInstance3D, body_name: StringName
 func _apply_detach_state(
 	body: RigidBody3D, is_left: bool, impulse: Vector3, hit_global_pos: Vector3
 ) -> void:
-	if not is_instance_valid(body):
+	if not is_instance_valid(body) or not body.is_inside_tree():
 		return
 	body.collision_layer = PHY_LAYER_DEBRIS
 	body.collision_mask = PHY_MASK_DEBRIS
 	body.freeze = false
 
-	var offset: Vector3 = Vector3.ZERO
-	if hit_global_pos != Vector3.ZERO:
-		offset = hit_global_pos - body.global_position
-	body.apply_impulse(impulse, offset)
+	var world_3d: World3D = body.get_world_3d()
+	if is_instance_valid(world_3d) and world_3d.space.is_valid():
+		var offset: Vector3 = Vector3.ZERO
+		if hit_global_pos != Vector3.ZERO:
+			offset = hit_global_pos - body.global_position
+		body.apply_impulse(impulse, offset)
 	leaf_detached.emit(is_left, body)

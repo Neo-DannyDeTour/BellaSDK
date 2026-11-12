@@ -26,6 +26,18 @@ const STATE_ZIPLINE: StringName = &"Zipline"
 ## State identifier for rope swinging.
 const STATE_ROPE: StringName = &"Rope"
 
+## State identifier for terminal interaction.
+const STATE_TERMINAL: StringName = &"Terminal"
+
+## Input action identifier for forward movement.
+const ACTION_FORWARD: StringName = &"forward"
+
+## Payload key identifying target ladder node on state entry.
+const KEY_LADDER_NODE: StringName = &"ladder_node"
+
+## Minimum upward look pitch Y component (~30 deg) required to grab a ladder from ground.
+const LADDER_GROUND_ATTACH_PITCH: float = 0.50
+
 ## Method identifier for per-frame VFX updates.
 const METHOD_PROCESS_VFX: StringName = &"process_vfx"
 
@@ -88,6 +100,9 @@ var _head: Node3D = null
 ## Cached list of bound waterfall [Area3D] nodes for clean exit disconnection.
 var _bound_waterfalls: Array[Area3D] = []
 
+## Currently overlapping ladder trigger volumes awaiting or holding attachment.
+var _overlapping_ladders: Array[Node3D] = []
+
 
 ## Disables per-frame processing callbacks on initialization.
 func _ready() -> void:
@@ -130,6 +145,8 @@ func process_environment_physics(delta: float) -> void:
 	if is_instance_valid(vfx_manager) and is_instance_valid(_head):
 		vfx_manager.call(METHOD_PROCESS_VFX, delta, _head.rotation.x)
 
+	_process_overlapping_ladders()
+
 
 ## Begins the cooldown period for zipline re-attachment.
 func start_zipline_cooldown(duration: float = 0.5) -> void:
@@ -137,24 +154,29 @@ func start_zipline_cooldown(duration: float = 0.5) -> void:
 	zipline_cooldown = duration
 
 
-## Triggers state machine transition to the ladder state if conditions are met.
+## Registers overlapping ladder and attaches when air or ground look-up conditions pass.
 func enter_ladder(ladder_node: Node3D) -> void:
 	print("EnvironmentComponent: enter_ladder() called.")
-	if is_instance_valid(vault_controller) and vault_controller.get(&"is_vaulting") == true:
+	if not is_instance_valid(ladder_node):
 		return
-
-	if ladder_node == last_ladder and ladder_cooldown > 0.0:
-		return
-
-	if is_instance_valid(state_machine):
-		state_machine.transition_to(STATE_LADDER, {"ladder_node": ladder_node})
+	if not _overlapping_ladders.has(ladder_node):
+		_overlapping_ladders.append(ladder_node)
+	_try_attach_ladder(ladder_node)
 
 
-## Releases the player from the ladder and returns them to an air state.
-func exit_ladder(_ladder_node: Node3D) -> void:
+## Unregisters exited ladder and releases the player if no ladder remains overlapped.
+func exit_ladder(ladder_node: Node3D) -> void:
 	print("EnvironmentComponent: exit_ladder() called.")
+	_overlapping_ladders.erase(ladder_node)
 	if is_instance_valid(state_machine) and state_machine.is_in_state(STATE_LADDER):
-		state_machine.transition_to(STATE_AIR)
+		if _overlapping_ladders.is_empty():
+			state_machine.transition_to(STATE_AIR)
+			return
+		var current_state: State = state_machine.get_current_state()
+		if current_state is StateLadder:
+			var ladder_state: StateLadder = current_state
+			if ladder_state.current_ladder == ladder_node:
+				ladder_state.current_ladder = _overlapping_ladders.back()
 
 
 ## Processes entry into a swimmable water volume, initiating swim state.
@@ -267,3 +289,67 @@ func _on_waterfall_exited(body: Node3D, area: Area3D) -> void:
 	overlapping_waterfall_areas.erase(area)
 	if overlapping_waterfall_areas.is_empty() and is_instance_valid(vfx_manager):
 		vfx_manager.call(METHOD_EXIT_WATERFALL)
+
+
+## Polls overlapping ladders to attach when airborne or looking up with forward input.
+func _process_overlapping_ladders() -> void:
+	if _overlapping_ladders.is_empty():
+		return
+
+	var valid_idx: int = _overlapping_ladders.size() - 1
+	while valid_idx >= 0:
+		if not is_instance_valid(_overlapping_ladders[valid_idx]):
+			_overlapping_ladders.remove_at(valid_idx)
+		valid_idx -= 1
+
+	if _overlapping_ladders.is_empty():
+		return
+
+	for ladder_node: Node3D in _overlapping_ladders:
+		if _try_attach_ladder(ladder_node):
+			return
+
+
+## Attempts to enter [StateLadder] for [param ladder_node] when conditions permit.
+func _try_attach_ladder(ladder_node: Node3D) -> bool:
+	if not _can_attach_ladder(ladder_node):
+		return false
+
+	print("EnvironmentComponent: Attaching player to ladder: ", ladder_node.name)
+	return state_machine.transition_to(STATE_LADDER, {KEY_LADDER_NODE: ladder_node})
+
+
+## Evaluates state locks, cooldowns, ground look-up, and air jump attachment rules.
+func _can_attach_ladder(ladder_node: Node3D) -> bool:
+	if not is_instance_valid(ladder_node) or not is_instance_valid(state_machine):
+		return false
+	if is_instance_valid(vault_controller) and vault_controller.get(&"is_vaulting") == true:
+		return false
+	if ladder_node == last_ladder and ladder_cooldown > 0.0:
+		return false
+
+	var blocked_by_state: bool = (
+		state_machine.is_in_state(STATE_LADDER)
+		or state_machine.is_in_state(STATE_VAULT)
+		or state_machine.is_in_state(STATE_ZIPLINE)
+		or state_machine.is_in_state(STATE_ROPE)
+		or state_machine.is_in_state(STATE_TERMINAL)
+	)
+	if blocked_by_state:
+		return false
+
+	var is_grounded: bool = (
+		is_instance_valid(player)
+		and player.is_on_floor()
+		and not state_machine.is_in_state(STATE_AIR)
+	)
+	if is_grounded:
+		if not is_instance_valid(_head):
+			return false
+		var look_up_y: float = -_head.global_transform.basis.z.y
+		if look_up_y <= LADDER_GROUND_ATTACH_PITCH:
+			return false
+		if not GestureInputManager.is_action_pressed(ACTION_FORWARD):
+			return false
+
+	return true

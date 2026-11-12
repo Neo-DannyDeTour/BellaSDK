@@ -119,8 +119,8 @@ func _on_held_item_changed(is_holding: bool) -> void:
 
 
 ## Casts rays using [method Utilities.raycast_3d] to identify ledge geometry.
-## [param max_reach] Maximum reach distance in meters.
-func process_vault_scan(max_reach: float = 2.1) -> void:
+## [param reach_limit] Maximum reach distance in meters.
+func process_vault_scan(reach_limit: float = 2.1) -> void:
 	can_vault_current_ledge = false
 
 	if is_vaulting or is_holding_item:
@@ -172,8 +172,8 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 	var down_offsets: Array[float] = [0.15, 0.08]
 	for offset: float in down_offsets:
 		var down_start: Vector3 = highest_hit - (hit_normal * offset)
-		down_start.y = player_body.global_position.y + max_reach
-		var down_end: Vector3 = down_start + Vector3(0.0, -max_reach - 0.5, 0.0)
+		down_start.y = player_body.global_position.y + reach_limit
+		var down_end: Vector3 = down_start + Vector3(0.0, -reach_limit - 0.5, 0.0)
 
 		var candidate: Dictionary = Utilities.raycast_3d(
 			space_state, down_start, down_end, mask, exclude_rids
@@ -182,7 +182,7 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 		if not candidate.is_empty() and norm.y >= 0.7:
 			var candidate_pos: Vector3 = candidate.get("position", Vector3.ZERO)
 			var h: float = candidate_pos.y - player_body.global_position.y
-			if h > max_step_height and h <= max_reach:
+			if h > max_step_height and h <= reach_limit:
 				down_result = candidate
 				break
 

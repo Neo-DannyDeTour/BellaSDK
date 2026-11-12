@@ -301,7 +301,8 @@ func _apply_simulation_and_impulse(
 	if _simulator == null:
 		return
 
-	if not is_ragdoll_active:
+	var was_inactive: bool = not is_ragdoll_active
+	if was_inactive:
 		is_ragdoll_active = true
 		_simulator.active = true
 		_simulator.physical_bones_start_simulation()
@@ -318,7 +319,7 @@ func _apply_simulation_and_impulse(
 			if hit_position.length_squared() > 0.0001
 			else Vector3.ZERO
 		)
-		if PhysicsServer3D.body_get_space(pb.get_rid()).is_valid():
+		if not was_inactive and PhysicsServer3D.body_get_space(pb.get_rid()).is_valid():
 			pb.apply_impulse(impulse, offset)
 		else:
 			_apply_impulse_on_physics_frame(pb, impulse, offset)

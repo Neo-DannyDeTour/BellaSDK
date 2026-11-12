@@ -67,15 +67,21 @@ func _check_initial_water_overlap_deferred() -> void:
 		if not is_instance_valid(area):
 			continue
 
-		var water_parent: Node3D = area.get_parent() as Node3D
+		var water_parent: Node3D = _resolve_water_body_root(area)
 		if not is_instance_valid(water_parent):
 			continue
 
 		var is_inside: bool = false
 		if water_parent.has_method(&"get_wave_height_at_pos"):
-			var surface_y: float = float(
-				water_parent.call(&"get_wave_height_at_pos", global_position)
+			var raw_surface_y: Variant = water_parent.call(
+				&"get_wave_height_at_pos", global_position
 			)
+			var surface_y: float = 0.0
+			if raw_surface_y is float:
+				surface_y = raw_surface_y
+			elif raw_surface_y is int:
+				var surface_int: int = raw_surface_y
+				surface_y = float(surface_int)
 			var raw_water_size: Variant = water_parent.get(&"water_size")
 			var half_size: Vector3 = Vector3(500.0, 500.0, 500.0)
 			if raw_water_size is Vector3:
@@ -106,6 +112,16 @@ func _check_initial_water_overlap_deferred() -> void:
 
 			_update_process_state()
 			break
+
+
+## Walks up from [param area] to locate the owning [WaterBody] root node.
+func _resolve_water_body_root(area: Area3D) -> Node3D:
+	var current: Node = area.get_parent()
+	while is_instance_valid(current):
+		if current is WaterBody or current.has_method(&"get_wave_height_at_pos"):
+			return current as Node3D
+		current = current.get_parent()
+	return area.get_parent() as Node3D
 
 
 ## Solves carry spring velocities while preserving exact grab yaw to prevent 180 flip.
