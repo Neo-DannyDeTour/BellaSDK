@@ -14,7 +14,7 @@ material = ExtResource("2_dhcj5")
 [node name="Ladder" type="Area3D" unique_id=273226209]
 collision_mask = 2
 script = ExtResource("1_y6w7a")
-ladder_size = Vector3(1, 1, 1)
+ladder_size = Vector3(1, 1, 0.1)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=262164524]
 shape = SubResource("BoxShape3D_wwku2")

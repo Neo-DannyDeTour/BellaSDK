@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://bndmct2r04js0"]
+
+[ext_resource type="Script" uid="uid://pma2pjuuqnrl" path="res://interactables/ladder_4m.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://d3qhhkbnkski5" path="res://assets/models/ladder_4m/ladder_4m.glb" id="2_mesh"]
+[ext_resource type="PackedScene" uid="uid://wmyjhovjnea4" path="res://interactables/ladder.tscn" id="3_trigger"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ladder4m"]
+size = Vector3(0.8, 4, 0.57)
+
+[node name="Ladder4M" type="Node3D" unique_id=334125125]
+script = ExtResource("1_script")
+
+[node name="LadderMesh" parent="." unique_id=1822303883 instance=ExtResource("2_mesh")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1072462339]
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=693703468]
+shape = SubResource("BoxShape3D_ladder4m")
+
+[node name="LadderTrigger" parent="." unique_id=1067260595 instance=ExtResource("3_trigger")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.55)
+ladder_size = Vector3(0.8, 4, 0.1)

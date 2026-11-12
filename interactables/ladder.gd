@@ -4,7 +4,7 @@ class_name Ladder
 extends Area3D
 
 ## Physical dimensions of the ladder interaction box and visual bounds.
-@export var ladder_size: Vector3 = Vector3(2.2, 5.0, 0.5):
+@export var ladder_size: Vector3 = Vector3(2.2, 5.0, 0.1):
 	set(value):
 		ladder_size = value
 		if is_inside_tree():

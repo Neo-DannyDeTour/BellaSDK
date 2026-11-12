@@ -11,6 +11,33 @@ const MAX_LADDER_SIDE_DIST: float = 0.6
 ## Centering snap speed pulling player back towards ladder midline.
 const LADDER_CENTER_SNAP_SPEED: float = 8.0
 
+## Target local Z offset in front of ladder center to stay inside 0.1m trigger.
+const LADDER_DEPTH_OFFSET: float = 0.1
+
+## Velocity gain aligning player depth toward [member LADDER_DEPTH_OFFSET].
+const LADDER_DEPTH_PULL_SPEED: float = 8.0
+
+## Minimum look-right dot magnitude (~64 deg) before forward/back steers laterally.
+const LATERAL_LOOK_THRESHOLD: float = 0.90
+
+## Downward look Y component (~30 deg down) required to flip forward input into descent.
+const CLIMB_DOWN_LOOK_PITCH: float = -0.50
+
+## Brief cooldown after ground dismount to prevent single-frame re-attachment.
+const GROUND_DISMOUNT_COOLDOWN: float = 0.15
+
+## Cooldown after jumping off a ladder before re-attaching to the same ladder.
+const JUMP_EJECT_COOLDOWN: float = 0.5
+
+## State identifier for grounded locomotion.
+const STATE_GROUND: StringName = &"Ground"
+
+## State identifier for airborne locomotion.
+const STATE_AIR: StringName = &"Air"
+
+## Payload key referencing the active ladder [Node3D].
+const KEY_LADDER_NODE: StringName = &"ladder_node"
+
 ## Active ladder [Node3D] instance currently grabbed by player character.
 var current_ladder: Node3D = null
 
@@ -18,18 +45,18 @@ var current_ladder: Node3D = null
 var _transition_msg: Dictionary = {}
 
 
-## Initializes ladder state and snaps player to ladder surface.
+## Initializes ladder state and resets entry velocity for clean surface grab.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateLadder: enter() called. Initializing ladder state.")
 	var p: Player = _get_player()
 	if not is_instance_valid(p):
 		return
 
-	if msg.has(&"ladder_node"):
-		var ladder_candidate: Variant = msg[&"ladder_node"]
+	p.velocity = Vector3.ZERO
+	if msg.has(KEY_LADDER_NODE):
+		var ladder_candidate: Variant = msg[KEY_LADDER_NODE]
 		if ladder_candidate is Node3D:
 			current_ladder = ladder_candidate
-			_snap_to_ladder(p)
 
 
 ## Cleans up ladder reference upon exiting ladder locomotion state.
@@ -40,7 +67,6 @@ func exit() -> void:
 
 ## Updates ladder climbing, sound effects, jump inputs, and transitions.
 func physics_update(delta: float) -> void:
-	print("StateLadder: physics_update() processing ladder frame.")
 	var p: Player = _get_player()
 	if not is_instance_valid(p):
 		return
@@ -54,7 +80,7 @@ func physics_update(delta: float) -> void:
 	_handle_crouch_state(loco)
 
 	var input_dir: Vector2 = GestureInputManager.get_vector(
-		&"left", &"right", &"forward", &"backward"
+		ACTION_LEFT, ACTION_RIGHT, ACTION_FORWARD, ACTION_BACKWARD
 	)
 
 	_calculate_ladder_velocity(p, loco, cam, input_dir)
@@ -70,47 +96,26 @@ func physics_update(delta: float) -> void:
 			)
 
 	_handle_jump_input(p, cam, env, input_dir)
-	_check_transitions(p)
-
-
-## Smoothly interpolates player position to align with ladder front plane.
-func _snap_to_ladder(p: Player) -> void:
-	print("StateLadder: _snap_to_ladder() aligning player with ladder rungs.")
-	if not is_instance_valid(current_ladder):
-		return
-
-	var push_out_distance: float = 0.6
-	var ladder_forward: Vector3 = current_ladder.global_transform.basis.z.normalized()
-	var target_pos: Vector3 = current_ladder.global_position + (ladder_forward * push_out_distance)
-	target_pos.y = p.global_position.y
-
-	var tween: Tween = create_tween()
-	(
-		tween
-		. tween_property(p, "global_position", target_pos, 0.15)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_OUT)
-	)
+	_check_transitions(p, env)
 
 
 ## Toggles crouch state and emits [signal Events.player_crouch_changed].
 func _handle_crouch_state(loco: PlayerLocomotionComponent) -> void:
-	print("StateLadder: _handle_crouch_state() polling crouch slide inputs.")
 	if not is_instance_valid(loco):
 		return
 
 	var previous_crouch: bool = loco.crouching
-	loco.crouching = GestureInputManager.is_action_pressed(&"crouch")
+	loco.crouching = GestureInputManager.is_action_pressed(ACTION_CROUCH)
 
 	if loco.crouching != previous_crouch:
+		print("StateLadder: Crouch slide toggled: ", loco.crouching)
 		Events.player_crouch_changed.emit(loco.crouching)
 
 
-## Computes climbing, strafing, and surface depth velocities.
+## Computes climbing, strafing, and surface depth velocities without snap oscillation.
 func _calculate_ladder_velocity(
 	p: Player, loco: PlayerLocomotionComponent, cam: CameraController, input_dir: Vector2
 ) -> void:
-	print("StateLadder: _calculate_ladder_velocity() calculating 3D projection.")
 	if not is_instance_valid(current_ladder):
 		return
 
@@ -130,9 +135,16 @@ func _calculate_ladder_velocity(
 	var ladder_right: Vector3 = current_ladder.global_transform.basis.x.normalized()
 	var ladder_forward: Vector3 = current_ladder.global_transform.basis.z.normalized()
 
-	var lateral_weight_ws: float = look_dir.dot(ladder_right)
+	var raw_lateral_ws: float = look_dir.dot(ladder_right)
+	var lateral_weight_ws: float = 0.0
+	if absf(raw_lateral_ws) > LATERAL_LOOK_THRESHOLD:
+		var excess: float = (
+			(absf(raw_lateral_ws) - LATERAL_LOOK_THRESHOLD) / (1.0 - LATERAL_LOOK_THRESHOLD)
+		)
+		lateral_weight_ws = signf(raw_lateral_ws) * clampf(excess, 0.0, 1.0)
+
 	var vertical_weight_ws: float = 1.0 - absf(lateral_weight_ws)
-	if look_dir.y < -0.15:
+	if look_dir.y < CLIMB_DOWN_LOOK_PITCH:
 		vertical_weight_ws *= -1.0
 
 	var forward_input: float = -input_dir.y
@@ -162,23 +174,26 @@ func _calculate_ladder_velocity(
 		elif intended_lateral < 0.0 and offset_from_center <= -MAX_LADDER_SIDE_DIST:
 			lateral_movement = Vector3.ZERO
 		else:
-			lateral_movement = (ladder_right * intended_lateral * LADDER_SPEED)
+			lateral_movement = ladder_right * intended_lateral * LADDER_SPEED
 	else:
 		lateral_movement = -ladder_right * (offset_from_center * LADDER_CENTER_SNAP_SPEED)
 		if lateral_movement.length_squared() > (LADDER_SPEED * LADDER_SPEED):
 			lateral_movement = lateral_movement.normalized() * LADDER_SPEED
 
-	var depth_pull: Vector3 = -ladder_forward * (local_pos.z * 4.0)
-	p.velocity = ((Vector3.UP * up_down_movement * LADDER_SPEED) + lateral_movement + depth_pull)
+	var depth_error: float = local_pos.z - LADDER_DEPTH_OFFSET
+	var depth_pull_speed: float = clampf(
+		depth_error * LADDER_DEPTH_PULL_SPEED, -LADDER_SPEED, LADDER_SPEED
+	)
+	var depth_pull: Vector3 = -ladder_forward * depth_pull_speed
+	p.velocity = (Vector3.UP * up_down_movement * LADDER_SPEED) + lateral_movement + depth_pull
 
 
 ## Processes directional jump inputs to eject or strafe dismount from ladder.
 func _handle_jump_input(
 	p: Player, cam: CameraController, env: PlayerEnvironmentComponent, input_dir: Vector2
 ) -> void:
-	print("StateLadder: _handle_jump_input() polling ladder jump triggers.")
 	if (
-		not GestureInputManager.is_action_just_pressed(&"jump")
+		not GestureInputManager.is_action_just_pressed(ACTION_JUMP)
 		or not is_instance_valid(current_ladder)
 	):
 		return
@@ -208,13 +223,13 @@ func _handle_jump_input(
 
 		if is_instance_valid(env):
 			env.last_ladder = current_ladder
-			env.ladder_cooldown = 0.5
+			env.ladder_cooldown = JUMP_EJECT_COOLDOWN
 
 		p.move_and_slide()
 		_transition_msg.clear()
 		_transition_msg[&"jump"] = true
 		_transition_msg[&"release_dir"] = jump_dir
-		state_machine.transition_to(&"Air", _transition_msg)
+		state_machine.transition_to(STATE_AIR, _transition_msg)
 		return
 
 	if dot_outward > -0.2:
@@ -223,20 +238,23 @@ func _handle_jump_input(
 
 		if is_instance_valid(env):
 			env.last_ladder = current_ladder
-			env.ladder_cooldown = 0.5
+			env.ladder_cooldown = JUMP_EJECT_COOLDOWN
 
 		p.move_and_slide()
 		_transition_msg.clear()
 		_transition_msg[&"jump"] = true
 		_transition_msg[&"release_dir"] = flat_look
-		state_machine.transition_to(&"Air", _transition_msg)
+		state_machine.transition_to(STATE_AIR, _transition_msg)
 		return
 
 	print("StateLadder: Jump blocked. Player is facing the ladder.")
 
 
 ## Checks ground contact conditions to dismount into [StateGround].
-func _check_transitions(p: Player) -> void:
-	print("StateLadder: _check_transitions() testing ground dismount.")
-	if p.is_on_floor() and p.velocity.y < 0.0:
-		state_machine.transition_to(&"Ground")
+func _check_transitions(p: Player, env: PlayerEnvironmentComponent) -> void:
+	if p.is_on_floor() and p.velocity.y <= 0.0:
+		print("StateLadder: Ground contact detected. Dismounting to Ground.")
+		if is_instance_valid(env):
+			env.last_ladder = current_ladder
+			env.ladder_cooldown = GROUND_DISMOUNT_COOLDOWN
+		state_machine.transition_to(STATE_GROUND)

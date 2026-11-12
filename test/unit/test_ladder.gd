@@ -2,6 +2,9 @@
 class_name TestLadder
 extends GutTest
 
+## Preloaded [Ladder4M] scene under test.
+const LADDER_4M_SCENE: PackedScene = preload("res://interactables/ladder_4m.tscn")
+
 ## The ladder instance under test.
 var ladder: Ladder = null
 
@@ -101,3 +104,34 @@ func test_non_climber_body_ignored() -> void:
 	ladder._on_body_entered(inert_body)
 	ladder._on_body_exited(inert_body)
 	pass_test("Non-climber body was safely ignored without exceptions.")
+
+
+## Verifies default ladder trigger thickness is 0.1m.
+func test_default_ladder_depth_is_point_one() -> void:
+	print("TestLadder: test_default_ladder_depth_is_point_one() called.")
+	assert_almost_eq(ladder.ladder_size.z, 0.1, 0.001, "Default ladder Z depth should be 0.1m.")
+
+
+## Verifies Ladder4M scene collision clearance and climbable prop toggle.
+func test_ladder_4m_scene_clearance_and_climbable_toggle() -> void:
+	print("TestLadder: test_ladder_4m_scene_clearance_and_climbable_toggle() called.")
+	var raw_inst: Node = LADDER_4M_SCENE.instantiate()
+	var inst: Node3D = raw_inst as Node3D
+	assert_not_null(inst, "ladder_4m.tscn should instantiate as Node3D.")
+	add_child_autofree(inst)
+
+	var trigger: Ladder = inst.get_node_or_null("LadderTrigger") as Ladder
+	var body: StaticBody3D = inst.get_node_or_null("StaticBody3D") as StaticBody3D
+	assert_not_null(trigger, "Ladder4M should contain LadderTrigger.")
+	assert_not_null(body, "Ladder4M should contain StaticBody3D collision.")
+	assert_almost_eq(trigger.position.z, 0.55, 0.001, "Trigger should sit at +0.55m.")
+	assert_true(trigger.monitoring, "Trigger should monitor by default when climbable is true.")
+
+	inst.set(&"climbable", false)
+	assert_false(trigger.monitoring, "Setting climbable=false should disable trigger monitoring.")
+	assert_false(trigger.monitorable, "Setting climbable=false should disable monitorable.")
+	assert_eq(
+		trigger.process_mode,
+		Node.PROCESS_MODE_DISABLED,
+		"Setting climbable=false should disable trigger processing."
+	)
