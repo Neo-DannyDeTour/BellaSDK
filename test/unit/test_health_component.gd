@@ -2,6 +2,9 @@
 class_name TestHealthComponent
 extends GutTest
 
+## The dummy actor node owning [member health_comp] so pooling does not disable GUT.
+var dummy_actor: Node3D = null
+
 ## The component instance under test.
 var health_comp: HealthComponent = null
 
@@ -9,11 +12,12 @@ var health_comp: HealthComponent = null
 ## Sets up a clean test instance and initializes health pool values.
 func before_each() -> void:
 	print("TestHealthComponent: before_each() setup.")
+	dummy_actor = Node3D.new()
+	add_child_autofree(dummy_actor)
 	health_comp = HealthComponent.new()
-	add_child_autofree(health_comp)
+	dummy_actor.add_child(health_comp)
 	health_comp.max_health = 100
 	health_comp.current_health = 100
-	health_comp._ready()
 
 
 ## Verifies standard damage reduction and health signal emission.

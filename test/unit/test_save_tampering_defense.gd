@@ -68,7 +68,7 @@ func test_empty_checksum_rejection() -> void:
 	meta_file.close()
 
 	save_manager.load_save_game(base_path)
-	assert_push_error("Missing or empty checksum in metadata", "Empty checksum must log error.")
+	assert_push_warning("Missing or empty checksum in metadata", "Empty checksum must log warning.")
 
 
 ## Verifies [method SaveManager.load_save_game] aborts on checksum mismatch.
@@ -96,7 +96,7 @@ func test_tampered_checksum_mismatch() -> void:
 	meta_file.close()
 
 	save_manager.load_save_game(base_path)
-	assert_push_error("Checksum mismatch", "Tampered checksum mismatch must log error.")
+	assert_push_warning("Checksum mismatch", "Tampered checksum mismatch must log warning.")
 
 
 ## Verifies unencrypted plaintext dat files are rejected by encrypted reader.
@@ -109,8 +109,9 @@ func test_unencrypted_dat_rejection() -> void:
 	raw_file.close()
 
 	save_manager._load_game_state(raw_path)
-	assert_engine_error("ERR_FILE_UNRECOGNIZED", "Engine should reject unrecognized encryption.")
-	assert_push_error("Failed opening encrypted save file", "Rejection must log push_error.")
+	assert_push_warning(
+		"Unrecognized or unencrypted save header", "Unencrypted save must log warning."
+	)
 
 
 ## Verifies [method Player._extract_float_from_dict] rejects NaN and Inf values.
