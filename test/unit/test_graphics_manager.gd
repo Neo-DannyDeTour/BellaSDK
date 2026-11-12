@@ -27,14 +27,18 @@ func test_reset_to_defaults_loads_ultra_preset() -> void:
 	var aa_mode: Variant = graphics.call("get_setting", "aa_mode", "")
 	var motion_blur: Variant = graphics.call("get_setting", "motion_blur", -1.0)
 	var dof_enabled: Variant = graphics.call("get_setting", "dof_enabled", true)
+	var lens_dirt_enabled: Variant = graphics.call("get_setting", "lens_dirt_enabled", false)
+	var lens_dirt_intensity: Variant = graphics.call("get_setting", "lens_dirt_intensity", -1.0)
 
 	assert_eq(preset, "Ultra", "Default preset should be Ultra.")
 	assert_eq(sdfgi, "High", "Ultra preset SDFGI should default to High.")
-	assert_eq(ssao, "High", "Ultra preset SSAO should default to High.")
+	assert_eq(ssao, "Ultra", "Ultra preset SSAO should default to Ultra.")
 	assert_eq(clouds, "High", "Ultra preset Clouds should default to High.")
 	assert_eq(aa_mode, "MSAA 4x", "Default AA mode should be MSAA 4x.")
 	assert_eq(motion_blur, 0.0, "Default motion blur should be 0.0.")
 	assert_eq(dof_enabled, false, "Default DoF should be disabled.")
+	assert_eq(lens_dirt_enabled, true, "Default lens dirt should be enabled.")
+	assert_eq(lens_dirt_intensity, 0.01, "Default lens dirt intensity should be 0.01.")
 
 
 ## Verifies that applying a preset updates the active configuration cache and persists it.

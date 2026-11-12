@@ -132,6 +132,9 @@ var advisor_psychic_overlay: ColorRect = get_node_or_null("AdvisorPsychicOverlay
 @onready
 var harsh_contrast_overlay: ColorRect = get_node_or_null("HarshContrastOverlay") as ColorRect
 
+## ColorRect applying monster roar shockwave distortion effect.
+@onready var roar_overlay: ColorRect = get_node_or_null("RoarOverlay") as ColorRect
+
 ## ColorRect applying full-screen fade transitions and color flashes.
 @onready var fade_overlay: ColorRect = $FadeOverlay
 
@@ -392,6 +395,7 @@ func _setup_fullscreen_layout() -> void:
 		condensation_overlay,
 		advisor_psychic_overlay,
 		harsh_contrast_overlay,
+		roar_overlay,
 		fade_overlay
 	]
 
@@ -462,6 +466,9 @@ func _initialize_overlays() -> void:
 
 	if is_instance_valid(harsh_contrast_overlay):
 		harsh_contrast_overlay.hide()
+
+	if is_instance_valid(roar_overlay):
+		roar_overlay.hide()
 
 
 ## Verifies material presence and instantiates fallback transition shader.

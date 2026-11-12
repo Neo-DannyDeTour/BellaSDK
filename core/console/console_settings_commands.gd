@@ -31,6 +31,14 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 		)
 	)
 	registry.register_command(
+		ConsoleCommand.new(
+			"lensdirt",
+			"Toggles or adjusts player camera lens dirt effect.",
+			_cmd_lensdirt,
+			_get_lensdirt_options
+		)
+	)
+	registry.register_command(
 		ConsoleCommand.new("screenshake", "Triggers a screenshake event.", _cmd_screenshake)
 	)
 	registry.register_command(
@@ -557,6 +565,55 @@ func _cmd_visionassist(args: PackedStringArray) -> void:
 			+ "visionassist color <group> <color>"
 		)
 		context.write(hint, "yellow")
+
+
+## Toggles or modifies player lens dirt billboard effect.
+## [param args] Command argument tokens.
+func _cmd_lensdirt(args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_lensdirt called with args: ", args)
+	var cur_enabled: bool = bool(GraphicsManager.get_setting("lens_dirt_enabled", true))
+	var cur_intensity: float = float(GraphicsManager.get_setting("lens_dirt_intensity", 1.0))
+
+	if args.is_empty():
+		var status_str: String = "ON" if cur_enabled else "OFF"
+		context.write(
+			(
+				"Lens dirt: %s (Intensity: %.2f). Usage: lensdirt [on|off|toggle|<0.0-1.0>]"
+				% [status_str, cur_intensity]
+			),
+			"yellow"
+		)
+		return
+
+	var first_arg: String = args[0].to_lower()
+	if first_arg in ["1", "on", "true", "enable", "enabled"]:
+		GraphicsManager.set_setting("lens_dirt_enabled", true)
+		Events.lens_dirt_changed.emit(true, cur_intensity)
+		context.write("Lens dirt enabled.", "green")
+	elif first_arg in ["0", "off", "false", "disable", "disabled"]:
+		GraphicsManager.set_setting("lens_dirt_enabled", false)
+		Events.lens_dirt_changed.emit(false, cur_intensity)
+		context.write("Lens dirt disabled.", "green")
+	elif first_arg == "toggle":
+		var new_state: bool = not cur_enabled
+		GraphicsManager.set_setting("lens_dirt_enabled", new_state)
+		Events.lens_dirt_changed.emit(new_state, cur_intensity)
+		context.write("Lens dirt toggled to: " + ("ON" if new_state else "OFF"), "green")
+	elif first_arg.is_valid_float():
+		var new_intensity: float = clampf(first_arg.to_float(), 0.0, 1.0)
+		GraphicsManager.set_setting("lens_dirt_intensity", new_intensity)
+		if not cur_enabled and new_intensity > 0.0:
+			GraphicsManager.set_setting("lens_dirt_enabled", true)
+			cur_enabled = true
+		Events.lens_dirt_changed.emit(cur_enabled, new_intensity)
+		context.write("Lens dirt intensity set to: %.2f" % new_intensity, "green")
+	else:
+		context.write("Invalid argument. Usage: lensdirt [on|off|toggle|<0.0-1.0>]", "red")
+
+
+## Returns tab auto-completion candidates for the lensdirt command.
+func _get_lensdirt_options() -> Array[String]:
+	return ["on", "off", "toggle", "0.01", "0.05", "0.1", "0.5", "1.0"]
 
 
 ## Handles wolfvision toggling.

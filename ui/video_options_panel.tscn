@@ -520,6 +520,31 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="LensDirtLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1986424155]
+layout_mode = 2
+text = "Lens Dirt"
+
+[node name="ControlLensDirt" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=699393099]
+layout_mode = 2
+
+[node name="LensDirtCheckBox" type="CheckBox" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1229091011]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LensDirtIntensityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1986424156]
+layout_mode = 2
+text = "Lens Dirt Intensity"
+
+[node name="LensDirtLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1613794957]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LensDirtSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=304082646]
+unique_name_in_owner = true
+layout_mode = 2
+
+
 [node name="SSAOLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1814729318]
 layout_mode = 2
 size_flags_horizontal = 3

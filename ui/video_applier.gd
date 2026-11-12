@@ -272,8 +272,14 @@ static func apply_to_camera(cam: Camera3D, config: Dictionary, _is_diorama: bool
 		cam_attr.dof_blur_amount = effective_dof
 
 	var mb_strength: float = _get_float(config, "motion_blur", VideoConfig.DEFAULT_MOTION_BLUR)
+	var ld_enabled: bool = _get_bool(config, "lens_dirt_enabled", VideoConfig.DEFAULT_LENS_DIRT)
+	var ld_intensity: float = _get_float(
+		config, "lens_dirt_intensity", VideoConfig.DEFAULT_LENS_DIRT_INTENSITY
+	)
 	if cam is ExtendedCamera3D:
-		(cam as ExtendedCamera3D).set_motion_blur_strength(mb_strength)
+		var ext_cam: ExtendedCamera3D = cam as ExtendedCamera3D
+		ext_cam.set_motion_blur_strength(mb_strength)
+		ext_cam.set_lens_dirt(ld_enabled, ld_intensity)
 
 
 ## Resolves the [SubViewport] used for the options menu diorama preview.

@@ -86,6 +86,12 @@ const DEFAULT_DOF_AMOUNT: float = 0.0
 ## Default camera motion blur strength ("Ultra" preset default).
 const DEFAULT_MOTION_BLUR: float = 0.0
 
+## Default lens dirt enabled state.
+const DEFAULT_LENS_DIRT: bool = true
+
+## Default lens dirt intensity scalar.
+const DEFAULT_LENS_DIRT_INTENSITY: float = 0.01
+
 ## Default mesh LOD threshold ("Ultra" preset default).
 const DEFAULT_MESH_LOD: float = 1.0
 
@@ -343,6 +349,8 @@ const PRESETS: Dictionary = {
 		"dof_enabled": false,
 		"dof_amount": 0.0,
 		"motion_blur": 0.0,
+		"lens_dirt_enabled": true,
+		"lens_dirt_intensity": 0.01,
 		"ssao": "Off",
 		"ssi": "Off",
 		"ssr": "Off",
@@ -367,6 +375,8 @@ const PRESETS: Dictionary = {
 		"dof_enabled": false,
 		"dof_amount": 0.0,
 		"motion_blur": 0.25,
+		"lens_dirt_enabled": true,
+		"lens_dirt_intensity": 0.01,
 		"ssao": "Low",
 		"ssi": "Off",
 		"ssr": "Off",
@@ -391,6 +401,8 @@ const PRESETS: Dictionary = {
 		"dof_enabled": true,
 		"dof_amount": 0.15,
 		"motion_blur": 0.50,
+		"lens_dirt_enabled": true,
+		"lens_dirt_intensity": 0.01,
 		"ssao": "Medium",
 		"ssi": "Low",
 		"ssr": "Low",
@@ -415,6 +427,8 @@ const PRESETS: Dictionary = {
 		"dof_enabled": false,
 		"dof_amount": 0.0,
 		"motion_blur": 0.0,
+		"lens_dirt_enabled": true,
+		"lens_dirt_intensity": 0.01,
 		"ssao": "Ultra",
 		"ssi": "Ultra",
 		"ssr": "High",
@@ -443,6 +457,8 @@ static func get_default_settings_dict() -> Dictionary:
 		"tonemap_mode": DEFAULT_TONEMAP,
 		"exposure": DEFAULT_EXPOSURE,
 		"debanding": DEFAULT_DEBANDING,
+		"lens_dirt_enabled": DEFAULT_LENS_DIRT,
+		"lens_dirt_intensity": DEFAULT_LENS_DIRT_INTENSITY,
 		"renderer": "forward_plus",
 		"gpu_adapter_index": 0,
 	}

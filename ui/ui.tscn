@@ -41,10 +41,12 @@
 [ext_resource type="Shader" uid="uid://sgrhpkqbyiwb" path="res://vfx/water_sheet_wipe.gdshader" id="35_wwipe"]
 [ext_resource type="Script" uid="uid://gpy2b8yh1evg" path="res://ui/water_wipe_controller.gd" id="36_wwctrl"]
 [ext_resource type="Shader" uid="uid://drg4qmix2luaa" path="res://ui/anime_speed_lines.gdshader" id="37_speed"]
-[ext_resource type="Shader" path="res://vfx/advisor_psychic.gdshader" id="38_advsh"]
-[ext_resource type="Script" path="res://ui/advisor_psychic_effect.gd" id="39_advfx"]
-[ext_resource type="Shader" path="res://vfx/harsh_contrast_transition.gdshader" id="40_hcntsh"]
-[ext_resource type="Script" path="res://ui/harsh_contrast_effect.gd" id="41_hcntfx"]
+[ext_resource type="Shader" uid="uid://c6co6k4xf3g75" path="res://vfx/advisor_psychic.gdshader" id="38_advsh"]
+[ext_resource type="Script" uid="uid://cceyk0ddup0kd" path="res://ui/advisor_psychic_effect.gd" id="39_advfx"]
+[ext_resource type="Shader" uid="uid://co8i6f60umglp" path="res://vfx/harsh_contrast_transition.gdshader" id="40_hcntsh"]
+[ext_resource type="Script" uid="uid://dk0vjeyaoeh50" path="res://ui/harsh_contrast_effect.gd" id="41_hcntfx"]
+[ext_resource type="Shader" uid="uid://50aul67ruh4f" path="res://shaders/roar_distortion.gdshader" id="42_roar_sh"]
+[ext_resource type="Script" uid="uid://q6eupbc0dq3k" path="res://ui/roar_screen_effect.gd" id="43_roar_scr"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -138,6 +140,16 @@ shader_parameter/jitter_strength = 0.005
 shader_parameter/flash_boost = 0.0
 shader_parameter/light_color = Color(1, 1, 1, 1)
 shader_parameter/dark_color = Color(0, 0, 0, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_roar01"]
+shader = ExtResource("42_roar_sh")
+shader_parameter/intensity = 0.0
+shader_parameter/wave_speed = 18.0
+shader_parameter/wave_frequency = 45.0
+shader_parameter/wave_strength = 0.025
+shader_parameter/blur_strength = 0.12
+shader_parameter/chromatic_aberration = 0.015
+shader_parameter/ring_highlight = 0.08
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
@@ -328,6 +340,18 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("41_hcntfx")
+
+[node name="RoarOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1584920400]
+visible = false
+material = SubResource("ShaderMaterial_roar01")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("43_roar_scr")
 
 [node name="FadeOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1066162705]
 visible = false

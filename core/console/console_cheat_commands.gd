@@ -371,6 +371,24 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
+			"roar",
+			"Triggers monster roar screen-space shockwave distortion.",
+			_cmd_roar,
+			func() -> Array[String]: return ["0.3", "0.5", "1.0", "2.0"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"drunk",
+			"Sets screen drunk distortion and sway intensity: drunk <0.0..1.0|off|on> [duration].",
+			_cmd_drunk,
+			func() -> Array[String]: return ["1.0", "0.5", "0.0", "off", "on"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
 			"contrast_vfx",
 			"Sets or clears sustained HL2 harsh black & white contrast intensity.",
 			_cmd_contrast_vfx,
@@ -1373,6 +1391,49 @@ func _cmd_contrast_vfx(args: PackedStringArray) -> void:
 		Events.harsh_contrast_intensity_requested.emit(intensity, threshold, softness)
 	context.write(
 		"Harsh contrast VFX intensity set to: %.2f (threshold: %.2f)" % [intensity, threshold],
+		"green" if intensity > 0.0 else "yellow"
+	)
+
+
+## Triggers a monster roar screen-space shockwave distortion via [Events].
+func _cmd_roar(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_roar called with args: ", args)
+	var duration: float = 0.3
+	if args.size() > 0 and args[0].strip_edges().is_valid_float():
+		duration = clampf(args[0].to_float(), 0.0, 10.0)
+
+	if Events.has_signal(&"monster_roared"):
+		Events.monster_roared.emit(duration)
+	context.write("Monster roar triggered (sustain duration: %.2fs)." % duration, "green")
+
+
+## Sets screen drunk distortion and camera sway intensity or clears it.
+func _cmd_drunk(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_drunk called with args: ", args)
+	var intensity: float = 0.0
+	var duration: float = 0.6
+	if not args.is_empty():
+		var token: String = args[0].strip_edges().to_lower()
+		if token in ["0", "off", "false", "stop", "clear"]:
+			intensity = 0.0
+		elif token in ["1", "on", "true"]:
+			intensity = 1.0
+		elif token.is_valid_float():
+			intensity = clampf(token.to_float(), 0.0, 1.0)
+		else:
+			context.write("Usage: drunk <0.0..1.0 | off | on> [duration]", "yellow")
+			return
+	else:
+		context.write("Usage: drunk <0.0..1.0 | off | on> [duration]", "yellow")
+		return
+
+	if args.size() > 1 and args[1].strip_edges().is_valid_float():
+		duration = maxf(args[1].to_float(), 0.0)
+
+	if Events.has_signal(&"drunk_intensity_changed"):
+		Events.drunk_intensity_changed.emit(intensity, duration)
+	context.write(
+		"Drunk effect intensity set to: %.2f (duration: %.2fs)" % [intensity, duration],
 		"green" if intensity > 0.0 else "yellow"
 	)
 

@@ -45,6 +45,9 @@ func test_dynamic_signals_can_be_emitted() -> void:
 	_events_instance.active_weapon_changed.emit("pistol")
 	assert_signal_emitted_with_parameters(_events_instance, "active_weapon_changed", ["pistol"])
 
+	_events_instance.drunk_intensity_changed.emit(0.75, 1.2)
+	assert_signal_emitted_with_parameters(_events_instance, "drunk_intensity_changed", [0.75, 1.2])
+
 
 ## Verifies fallback font registration within the internal font registry.
 func test_load_registered_fonts() -> void:

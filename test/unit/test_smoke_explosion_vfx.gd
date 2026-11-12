@@ -17,7 +17,7 @@ func test_scene_instantiation() -> void:
 	assert_true(instance.auto_play, "auto_play should default to true.")
 	assert_false(instance.loop, "loop should default to false.")
 	assert_eq(instance.loop_interval, 1.0, "loop_interval should default to 1.0.")
-	assert_false(instance.preview_active, "preview_active should default to false.")
+	assert_false(instance.preview_loop, "preview_loop should default to false.")
 	assert_true(instance.free_on_finish, "free_on_finish should default to true.")
 
 
@@ -31,8 +31,8 @@ func test_preview_and_loop_mutations() -> void:
 	instance.loop = true
 	assert_true(instance.loop, "Loop property should be true.")
 
-	instance.preview_active = true
-	assert_true(instance.preview_active, "preview_active should be set to true.")
+	instance.preview_loop = true
+	assert_true(instance.preview_loop, "preview_loop should be set to true.")
 
-	instance.preview_active = false
-	assert_false(instance.preview_active, "preview_active should turn off cleanly.")
+	instance.preview_loop = false
+	assert_false(instance.preview_loop, "preview_loop should turn off cleanly.")

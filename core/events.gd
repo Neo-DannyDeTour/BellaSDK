@@ -50,6 +50,11 @@ signal enemy_spawned(enemy_node: Node3D)
 @warning_ignore("unused_signal")
 signal enemy_killed(enemy_node: Node3D, killer_node: Node3D)
 
+## Emitted when a monster triggers a screen-space roar shockwave.
+## Payloads: [param duration] sustain time in seconds.
+@warning_ignore("unused_signal")
+signal monster_roared(duration: float)
+
 # --------------------------------------
 # PLAYER STATE & COMMAND SIGNALS
 # --------------------------------------
@@ -111,6 +116,11 @@ signal underwater_vfx_toggled(
 @warning_ignore("unused_signal")
 signal rain_vfx_toggled(intensity: float)
 
+## Emitted when camera lens dirt effect is toggled or adjusted.
+## Passes [param enabled] and [param intensity].
+@warning_ignore("unused_signal")
+signal lens_dirt_changed(enabled: bool, intensity: float)
+
 ## Emitted when waterfall screen wash effect changes with active state and alpha.
 @warning_ignore("unused_signal")
 signal waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_progress: float)
@@ -134,6 +144,11 @@ signal advisor_psychic_intensity_requested(intensity: float)
 ## Emitted when an Advisor psychic distortion pulse animation finishes.
 @warning_ignore("unused_signal")
 signal advisor_psychic_pulse_finished
+
+## Emitted to change screen drunk distortion and camera sway weight.
+## Passes [param intensity] and [param duration].
+@warning_ignore("unused_signal")
+signal drunk_intensity_changed(intensity: float, duration: float)
 
 ## Emitted to trigger an HL2-style harsh black & white contrast transition pulse across the screen.
 @warning_ignore("unused_signal")

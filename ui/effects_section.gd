@@ -54,6 +54,15 @@ var _clouds_btn_map: Dictionary[String, Button] = {}
 ## Camera motion blur strength numerical input [LineEdit].
 @onready var motion_blur_line: LineEdit = %MotionBlurLine
 
+## Lens dirt master toggle [CheckBox].
+@onready var lens_dirt_checkbox: CheckBox = %LensDirtCheckBox
+
+## Lens dirt intensity numerical input [LineEdit].
+@onready var lens_dirt_line: LineEdit = %LensDirtLine
+
+## Lens dirt intensity [HSlider].
+@onready var lens_dirt_slider: HSlider = %LensDirtSlider
+
 ## SSAO "Off" toggle [Button].
 @onready var ssao_off_button: Button = %SSAOOffButton
 
@@ -191,6 +200,17 @@ func load_settings() -> void:
 	motion_blur_slider.set_value_no_signal(mb_val)
 	motion_blur_line.text = "%.2f" % mb_val
 
+	var ld_enabled: bool = GlobalSettings.get_setting_bool(
+		"Settings", "lens_dirt_enabled", VideoConfig.DEFAULT_LENS_DIRT
+	)
+	lens_dirt_checkbox.set_pressed_no_signal(ld_enabled)
+
+	var ld_val: float = GlobalSettings.get_setting_float(
+		"Settings", "lens_dirt_intensity", VideoConfig.DEFAULT_LENS_DIRT_INTENSITY
+	)
+	lens_dirt_slider.set_value_no_signal(ld_val)
+	lens_dirt_line.text = "%.2f" % ld_val
+
 	_sync_button_row(_ssao_btn_map, "ssao", VideoConfig.DEFAULT_SSAO)
 	_sync_button_row(_ssi_btn_map, "ssi", VideoConfig.DEFAULT_SSI)
 	_sync_button_row(_ssr_btn_map, "ssr", VideoConfig.DEFAULT_SSR)
@@ -224,6 +244,17 @@ func apply_preset_dict(data: Dictionary) -> void:
 		var mb_v: float = VideoApplier._get_float(data, "motion_blur", 0.0)
 		motion_blur_slider.set_value_no_signal(mb_v)
 		motion_blur_line.text = "%.2f" % mb_v
+
+	if data.has("lens_dirt_enabled"):
+		lens_dirt_checkbox.set_pressed_no_signal(
+			VideoApplier._get_bool(data, "lens_dirt_enabled", true)
+		)
+	if data.has("lens_dirt_intensity"):
+		var ld_v: float = VideoApplier._get_float(
+			data, "lens_dirt_intensity", VideoConfig.DEFAULT_LENS_DIRT_INTENSITY
+		)
+		lens_dirt_slider.set_value_no_signal(ld_v)
+		lens_dirt_line.text = "%.2f" % ld_v
 
 	if data.has("ssao"):
 		_set_group_button_silent(_ssao_btn_map, str(data["ssao"]))
@@ -334,6 +365,8 @@ func _connect_signals() -> void:
 	_connect_slider(exposure_slider, exposure_line, "exposure", 0.5, 2.0, 0.05)
 	_connect_dof_slider()
 	_connect_slider(motion_blur_slider, motion_blur_line, "motion_blur", 0.0, 1.5, 0.05)
+	lens_dirt_checkbox.toggled.connect(_on_lens_dirt_toggled)
+	_connect_slider(lens_dirt_slider, lens_dirt_line, "lens_dirt_intensity", 0.0, 1.0, 0.01)
 
 	_connect_button_row(_ssao_btn_map, "ssao")
 	_connect_button_row(_ssi_btn_map, "ssi")
@@ -497,6 +530,13 @@ func _on_tonemap_selected(index: int) -> void:
 func _on_debanding_toggled(toggled_on: bool) -> void:
 	print("EffectsSection: Player toggled debanding -> ", toggled_on)
 	GraphicsManager.set_setting("debanding", toggled_on)
+	effects_settings_changed.emit()
+
+
+## Handles lens dirt checkbox toggle.
+func _on_lens_dirt_toggled(toggled_on: bool) -> void:
+	print("EffectsSection: Player toggled lens dirt -> ", toggled_on)
+	GraphicsManager.set_setting("lens_dirt_enabled", toggled_on)
 	effects_settings_changed.emit()
 
 
