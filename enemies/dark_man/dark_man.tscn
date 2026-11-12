@@ -1,0 +1,52 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" uid="uid://c0r0c8e4tyeoi" path="res://enemies/dark_man/dark_man_visuals.gd" id="1_dm_script"]
+[ext_resource type="PackedScene" uid="uid://cjfl117h6ck1f" path="res://assets/models/dark_man/dark_man.glb" id="2_dm_glb"]
+[ext_resource type="Material" path="res://assets/models/dark_man/mat_dark_man.tres" id="3_mat_dm"]
+[ext_resource type="PackedScene" uid="uid://bdyyg5cxq5860" path="res://assets/models/dark_man/fire_axe.glb" id="4_axe_glb"]
+[ext_resource type="Material" path="res://assets/models/dark_man/mat_fire_axe.tres" id="5_mat_axe"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.28
+height = 2.0
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_axe"]
+size = Vector3(0.06, 0.28, 1.2)
+
+[node name="DarkMan" type="CharacterBody3D"]
+collision_layer = 16
+collision_mask = 7
+script = ExtResource("1_dm_script")
+
+[node name="BodyCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="DarkManModel" parent="." instance=ExtResource("2_dm_glb")]
+
+[node name="DarkManBody" parent="DarkManModel/DarkManRig/Skeleton3D" index="0"]
+layers = 4
+material_override = ExtResource("3_mat_dm")
+
+[node name="RightHandSocket" type="BoneAttachment3D" parent="DarkManModel/DarkManRig/Skeleton3D"]
+bone_name = &"RightHand"
+
+[node name="FireAxe" parent="DarkManModel/DarkManRig/Skeleton3D/RightHandSocket" instance=ExtResource("4_axe_glb")]
+transform = Transform3D(0.105051, 0.98533, -0.134499, 0.24325, 0.105679, 0.964189, 0.964258, -0.134006, -0.22858, 0, 0.055, 0)
+
+[node name="FireAxeMesh" parent="DarkManModel/DarkManRig/Skeleton3D/RightHandSocket/FireAxe" index="0"]
+layers = 4
+material_override = ExtResource("5_mat_axe")
+
+[node name="AxeHitbox" type="Area3D" parent="DarkManModel/DarkManRig/Skeleton3D/RightHandSocket/FireAxe"]
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+monitorable = false
+
+[node name="AxeHitboxShape" type="CollisionShape3D" parent="DarkManModel/DarkManRig/Skeleton3D/RightHandSocket/FireAxe/AxeHitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.064, 0.24)
+shape = SubResource("BoxShape3D_axe")
+
+[editable path="DarkManModel"]
+[editable path="DarkManModel/DarkManRig/Skeleton3D/RightHandSocket/FireAxe"]
