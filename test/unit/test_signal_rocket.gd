@@ -50,6 +50,9 @@ func before_each() -> void:
 
 	var rocket_inst: Node = ROCKET_SCRIPT.new()
 	rocket = rocket_inst as SignalRocketWeapon
+	if is_instance_valid(rocket) and "projectile_scene" in rocket:
+		if rocket.get("projectile_scene") == null:
+			rocket.set("projectile_scene", PROJECTILE_SCENE)
 	weapon_holder.add_child(rocket)
 	autofree(rocket)
 
@@ -60,6 +63,17 @@ func after_each() -> void:
 	for child: Node in root.find_children("*", "SignalRocketProjectile", true, false):
 		if is_instance_valid(child) and not child.is_queued_for_deletion():
 			child.queue_free()
+
+
+## Finds the first active [SignalRocketProjectile] anywhere under the scene root.
+func _find_spawned_projectile() -> SignalRocketProjectile:
+	var matches: Array[Node] = get_tree().root.find_children(
+		"*", "SignalRocketProjectile", true, false
+	)
+	for node: Node in matches:
+		if node is SignalRocketProjectile and is_instance_valid(node):
+			return node as SignalRocketProjectile
+	return null
 
 
 ## Verifies equipping signal rocket auto-ignites the fuse and starts burn timer.
@@ -132,13 +146,10 @@ func test_repick_thrown_rocket() -> void:
 	var fired: bool = rocket.shoot(camera)
 	assert_true(fired)
 
-	var proj: SignalRocketProjectile = null
-	for child: Node in get_tree().root.get_children():
-		if child is SignalRocketProjectile:
-			proj = child as SignalRocketProjectile
-			break
-
+	var proj: SignalRocketProjectile = _find_spawned_projectile()
 	assert_not_null(proj, "SignalRocketProjectile must be spawned in scene tree.")
+	if not is_instance_valid(proj):
+		return
 	autofree(proj)
 	assert_true(proj.is_inside_tree())
 
@@ -148,6 +159,8 @@ func test_repick_thrown_rocket() -> void:
 	assert_false(is_instance_valid(proj), "Projectile must be freed after pickup.")
 	var re_equipped: SignalRocketWeapon = inventory.slots[3] as SignalRocketWeapon
 	assert_not_null(re_equipped, "SignalRocketWeapon should be re-equipped in slot 4.")
+	if not is_instance_valid(re_equipped):
+		return
 	assert_true(re_equipped.is_equipped)
 	assert_eq(re_equipped.current_ammo, 1)
 	assert_gt(re_equipped.burn_duration, 0.0)
@@ -163,13 +176,10 @@ func test_projectile_repick_no_duplication() -> void:
 	var fired: bool = rocket.shoot(camera)
 	assert_true(fired)
 
-	var proj: SignalRocketProjectile = null
-	for child: Node in get_tree().root.get_children():
-		if child is SignalRocketProjectile:
-			proj = child as SignalRocketProjectile
-			break
-
+	var proj: SignalRocketProjectile = _find_spawned_projectile()
 	assert_not_null(proj, "SignalRocketProjectile must be spawned.")
+	if not is_instance_valid(proj):
+		return
 	autofree(proj)
 
 	# Simulate what InteractionScanner calls (interact_with on InteractComponent)
@@ -179,13 +189,18 @@ func test_projectile_repick_no_duplication() -> void:
 	assert_false(is_instance_valid(proj), "Projectile must be freed after pickup.")
 
 	var count_projectiles: int = 0
-	for child: Node in get_tree().root.get_children():
+	var remaining: Array[Node] = get_tree().root.find_children(
+		"*", "SignalRocketProjectile", true, false
+	)
+	for child: Node in remaining:
 		if child is SignalRocketProjectile and is_instance_valid(child):
 			count_projectiles += 1
 	assert_eq(count_projectiles, 0, "No duplicate projectiles should exist on floor.")
 
 	var equipped_rocket: SignalRocketWeapon = inventory.slots[slot_index] as SignalRocketWeapon
 	assert_not_null(equipped_rocket, "Exactly one rocket weapon should be equipped in slot 4.")
+	if not is_instance_valid(equipped_rocket):
+		return
 	assert_true(equipped_rocket.is_equipped)
 	assert_eq(equipped_rocket.current_ammo, 1)
 	autofree(equipped_rocket)

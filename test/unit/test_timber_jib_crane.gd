@@ -37,7 +37,7 @@ func test_single_circle_base_wide_boom_and_scoped_highlights() -> void:
 	assert_almost_eq(
 		base_cyl.radius, 3.20, 0.05, "Single-circle base radius should be 3.20m (6.40m diameter)."
 	)
-	assert_le(
+	assert_lte(
 		base_cyl.height,
 		StairController.MAX_STEP_HEIGHT,
 		"Base height (0.20m) must be <= MAX_STEP_HEIGHT (0.55m) for zero-jump walk-up."

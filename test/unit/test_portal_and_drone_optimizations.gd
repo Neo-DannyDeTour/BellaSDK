@@ -11,8 +11,11 @@ func after_each() -> void:
 ## Verifies StateMachineLock respects capture_mouse parameter for vehicles and remote machines.
 func test_state_machine_lock_preserves_captured_mouse_mode() -> void:
 	print("TestPortalAndDrone: Verifying StateMachineLock mouse mode handling.")
+	var sub_vp: SubViewport = SubViewport.new()
+	add_child_autofree(sub_vp)
+
 	var lock_state: StateMachineLock = StateMachineLock.new()
-	add_child_autofree(lock_state)
+	sub_vp.add_child(lock_state)
 
 	lock_state.enter({"capture_mouse": true})
 	assert_true(
@@ -23,14 +26,18 @@ func test_state_machine_lock_preserves_captured_mouse_mode() -> void:
 	var motion_event: InputEventMouseMotion = InputEventMouseMotion.new()
 	lock_state.handle_input(motion_event)
 	assert_false(
-		get_viewport().is_input_handled(),
-		"Mouse motion should NOT be swallowed when capture_mouse=true."
+		sub_vp.is_input_handled(), "Mouse motion should NOT be swallowed when capture_mouse=true."
 	)
 
 	lock_state.enter({"capture_mouse": false})
 	assert_false(
 		lock_state.get("_is_mouse_captured") == true,
 		"_is_mouse_captured should be false when capture_mouse=false."
+	)
+
+	lock_state.handle_input(motion_event)
+	assert_true(
+		sub_vp.is_input_handled(), "Mouse motion MUST be swallowed when capture_mouse=false."
 	)
 
 	lock_state.exit()

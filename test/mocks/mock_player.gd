@@ -84,17 +84,13 @@ class MockSystemMenu:
 		print("MockSystemMenu: _init() called.")
 		process_mode = Node.PROCESS_MODE_ALWAYS
 
+	## Stubs ready hook to prevent instantiating full main menu UI in unit tests.
+	func _ready() -> void:
+		process_mode = Node.PROCESS_MODE_ALWAYS
+
 	## Inert stub simulating system menu pause toggle.
 	func toggle_pause() -> void:
 		print("MockSystemMenu: toggle_pause() called.")
-
-	## Inert stub simulating noclip mode toggle.
-	func toggle_noclip() -> void:
-		print("MockSystemMenu: toggle_noclip() called.")
-
-	## Inert stub simulating noclip movement processing.
-	func process_noclip(_delta: float) -> void:
-		pass
 
 
 ## Mock interaction component satisfying [PlayerInteractionComponent] typing.

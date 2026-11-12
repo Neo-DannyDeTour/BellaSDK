@@ -2,23 +2,29 @@ extends GutTest
 ## Unit tests for [SewerGrate] component integration and [EventSequenceTrigger] execution.
 class_name TestSewerGrate
 
+## Preloaded sewer grate scene.
+const GRATE_SCENE: PackedScene = preload("res://interactables/sewer_grate/sewer_grate.tscn")
+
 ## Instantiated [SewerGrate] test fixture.
 var _grate: SewerGrate = null
 
 
-## Instantiates sewer grate scene before each test run.
+## Ensures active viewport has a valid 3D physics space and instantiates test fixture.
 func before_each() -> void:
 	print("TestSewerGrate: Setting up test fixture.")
-	var sc: PackedScene = load("res://interactables/sewer_grate/sewer_grate.tscn") as PackedScene
-	_grate = sc.instantiate() as SewerGrate
-	add_child(_grate)
+	var vp: Viewport = get_viewport()
+	if is_instance_valid(vp):
+		var w3d: World3D = vp.find_world_3d()
+		if not is_instance_valid(w3d) or not w3d.space.is_valid():
+			vp.world_3d = World3D.new()
+
+	_grate = GRATE_SCENE.instantiate() as SewerGrate
+	add_child_autofree(_grate)
 
 
 ## Frees test fixture after each test run.
 func after_each() -> void:
 	print("TestSewerGrate: Tearing down test fixture.")
-	if is_instance_valid(_grate):
-		_grate.queue_free()
 	_grate = null
 
 

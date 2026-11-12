@@ -5,12 +5,16 @@ extends GutTest
 ## Preloaded WaterBody packed scene.
 const WATER_BODY_SCENE: PackedScene = preload("res://environment/water_body.tscn")
 
+## Maximum unscaled wall-clock milliseconds allowed per level transition.
+const TRANSITION_TIMEOUT_MSEC: int = 1500
+
 ## Instance of WaterBody under test.
 var water: WaterBody = null
 
 
 ## Sets up fresh WaterBody node and isolates test environment before each run.
 func before_each() -> void:
+	Engine.time_scale = 1.0
 	get_tree().paused = false
 	var root: Window = get_tree().root
 	for child: Node in root.find_children("*", "SmokeGrenadeProjectile", true, false):
@@ -35,17 +39,23 @@ func before_each() -> void:
 	water._default_water_size_y = water.water_size.y
 
 
-## Cleans up active references after each test.
+## Cleans up active references and restores engine time scale after each test.
 func after_each() -> void:
+	Engine.time_scale = 1.0
+	get_tree().paused = false
 	if is_instance_valid(water) and not water.is_queued_for_deletion():
 		water.queue_free()
 	water = null
 
 
-## Awaits signal emission with safe timeout ceiling to prevent test execution hangs.
+## Awaits transition completion with an unscaled wall-clock ceiling preventing hangs.
 func _wait_for_transition(target_water: WaterBody) -> void:
-	if not target_water.is_level_transition_complete():
-		await wait_for_signal(target_water.water_level_transition_finished, 2.0)
+	var start_msec: int = Time.get_ticks_msec()
+	while is_instance_valid(target_water) and not target_water.is_level_transition_complete():
+		if Time.get_ticks_msec() - start_msec > TRANSITION_TIMEOUT_MSEC:
+			fail_test("WaterBody transition timed out after %d ms." % TRANSITION_TIMEOUT_MSEC)
+			return
+		await get_tree().process_frame
 
 
 ## Tests baseline recording and floor anchoring when lowering water level.
