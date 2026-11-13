@@ -300,6 +300,7 @@
 [ext_resource type="AudioStream" uid="uid://ct8uhmrgorrec" path="res://assets/audio/spook_girl_you_mine.mp3" id="299_spook"]
 [ext_resource type="PackedScene" uid="uid://bndmct2r04js0" path="res://interactables/ladder_4m.tscn" id="300_1ksst"]
 [ext_resource type="PackedScene" path="res://enemies/dark_man/dark_man.tscn" id="300_ogn5c"]
+[ext_resource type="PackedScene" uid="uid://cwocptqt0bpi7" path="res://assets/models/bella_first_prototype/bella_first_prototype.glb" id="301_ogn5c"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_amd4b"]
 panorama = ExtResource("2_ot62w")
@@ -365,7 +366,7 @@ func hide_prompt() -> void:
 
 [sub_resource type="BoxMesh" id="BoxMesh_qfnet"]
 
-[sub_resource type="Curve3D" id="Curve3D_blafx"]
+[sub_resource type="Curve3D" id="Curve3D_ogn5c"]
 resource_local_to_scene = true
 _data = {
 "points": PackedVector3Array(0, 0, 0, 0, 0, 0, 19.383461, 29.629358, -0.064650536, 0, 0, 0, 0, 0, 0, 0.7377882, 0.15460587, -5.0951614),
@@ -373,7 +374,7 @@ _data = {
 }
 point_count = 2
 
-[sub_resource type="Curve3D" id="Curve3D_vt30e"]
+[sub_resource type="Curve3D" id="Curve3D_blafx"]
 resource_local_to_scene = true
 _data = {
 "points": PackedVector3Array(0, 0, 0, 0, 0, 0, 8.354211, 13.891926, -1.2618246, 0, 0, 0, 0, 0, 0, 49.580563, -26.118504, 10.274729),
@@ -839,7 +840,7 @@ _data = {
 &"turn_off_lights": SubResource("Animation_gp0ty")
 }
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_a4a5i"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_vt30e"]
 resource_local_to_scene = true
 size = Vector3(5, 4.7401123, 1.7758789)
 
@@ -940,7 +941,7 @@ data = PackedVector3Array(0.3936386, 1.5741582, -4.003519, -0.40813935, 0.514861
 [sub_resource type="BoxShape3D" id="BoxShape3D_k87qh"]
 size = Vector3(3.5, 0.1, 6)
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_yaxg6"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_a4a5i"]
 _surfaces = [{
 "aabb": AABB(-6.99386, -0.06666667, -6.9984646, 13.99386, 6.0666666, 13.984652),
 "format": 34359738375,
@@ -1192,7 +1193,7 @@ size = Vector3(4, 0.1, 4)
 [sub_resource type="BoxMesh" id="BoxMesh_v665w"]
 resource_local_to_scene = true
 subdivide_width = 64
-subdivide_depth = 64
+subdivide_depth = 44
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_ga2ah"]
 noise_type = 3
@@ -1847,11 +1848,11 @@ DO NOT GO THERE!"
 
 [node name="Zipline" parent="InteractiveObjects" unique_id=112234981 instance=ExtResource("21_j01ix")]
 transform = Transform3D(1, 0, 0, 0, -0.13613053, -0.9906909, 0, 0.9906909, -0.13613053, 12.472821, 18.358873, -49.09789)
-curve = SubResource("Curve3D_blafx")
+curve = SubResource("Curve3D_ogn5c")
 
 [node name="Zipline2" parent="InteractiveObjects" unique_id=862410081 instance=ExtResource("21_j01ix")]
 transform = Transform3D(1, 0, 0, 0, -0.13613053, -0.9906909, 0, 0.9906909, -0.13613053, 12.472821, 18.358873, -49.09789)
-curve = SubResource("Curve3D_vt30e")
+curve = SubResource("Curve3D_blafx")
 
 [node name="dev_cylinder" parent="InteractiveObjects" unique_id=823712635 instance=ExtResource("22_wje40")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.713886, 1.1143469, -7.285309)
@@ -2443,7 +2444,7 @@ use_collision = true
 size = Vector3(0.8274231, 4.9395447, 4.5473633)
 
 [node name="CSGBox3D124" type="CSGBox3D" parent="Objects/Level" unique_id=380450754]
-transform = Transform3D(9.798968e-14, 3.9052165, 4.371138e-08, 2.2417425e-06, -1.7070246e-07, 0.9999999, 51.28509, 1.2423523e-21, -4.3711385e-08, 14.492943, 35.29621, -57.391144)
+transform = Transform3D(9.798968e-14, 3.9052165, 4.371138e-08, 2.2417425e-06, -1.7070246e-07, 0.9999999, 51.28509, 1.2423523e-21, -4.3711385e-08, 14.440691, 35.306664, -57.394764)
 use_collision = true
 size = Vector3(0.8274231, 9.3954315, 4.5473633)
 
@@ -4044,7 +4045,7 @@ trigger_size = Vector3(5, 4.7401123, 1.7758789)
 trigger_text = "SPOTLIGHT_SEQ"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Triggers/SpotlightSeqTrigger" unique_id=735839557]
-shape = SubResource("BoxShape3D_a4a5i")
+shape = SubResource("BoxShape3D_vt30e")
 
 [node name="LVLInstanceHideBuilding" type="Area3D" parent="Triggers" unique_id=2071439200 node_paths=PackedStringArray("target_building")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13.5034485, -57.869232)
@@ -4526,7 +4527,7 @@ metadata/_custom_type_script = "uid://ftfgvb3emru"
 [node name="ProceduralSpiralStairsCSG" type="CSGMesh3D" parent="." unique_id=1151779695]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.0954933, 37.2084, -47.896732)
 use_collision = true
-mesh = SubResource("ArrayMesh_yaxg6")
+mesh = SubResource("ArrayMesh_a4a5i")
 script = ExtResource("97_476ux")
 outer_radius = 7.0
 inner_radius = 3.5
@@ -5531,13 +5532,16 @@ is_charged = false
 
 [node name="WaterBody" parent="." unique_id=1141292968 instance=ExtResource("205_2vugq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.5, -8.5, -24)
-custom_aabb = AABB(-18.75, -8.7, -11.25, 37.5, 17.4, 22.5)
+custom_aabb = AABB(-18.75, -9.08, -11.25, 37.5, 18.16, 22.5)
 mesh = SubResource("BoxMesh_v665w")
 water_size = Vector3(37, 15, 22)
-vertex_density = 16.0
-wave_length = 6.75
-ripple_mesh_height = 0.25
-beers_law = 6.8
+wave_amplitude = 0.02
+wave_length = 8.55
+wave_speed = 7.5
+wave_steepness = 0.43
+ripple_mesh_height = 0.52
+ripple_size = 3.7
+beers_law = 6.199999999999999
 foam_noise = SubResource("NoiseTexture2D_l2qba")
 foam_color = Color(0.8, 0.9607843, 1, 1)
 target_level_delta = -14.5
@@ -6530,6 +6534,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 203.88068, 50.084007, -286.39
 
 [node name="GasStove" parent="." unique_id=908280833 instance=ExtResource("283_hs5ng")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 205.72693, 50.379005, -286.5129)
+freeze = true
 
 [node name="sofa" parent="." unique_id=242645398 instance=ExtResource("284_hs5ng")]
 transform = Transform3D(-0.99820465, 0, 0.059896033, 0, 1, 0, -0.059896033, 0, -0.99820465, 207.91985, 49.989006, -286.43997)
@@ -6640,4 +6645,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 232.39758, 51.99318, -284.138
 
 [node name="DarkMan" parent="." unique_id=1934608193 instance=ExtResource("300_ogn5c")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 234.94559, 49.989006, -283.43805)
-wear_amount = 1.0
+
+[node name="bella_first_prototype" parent="." unique_id=143952681 instance=ExtResource("301_ogn5c")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 236.72575, 50.73943, -283.39194)

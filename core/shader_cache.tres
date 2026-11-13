@@ -1269,7 +1269,7 @@ shader_parameter/max_intensity = 0.050000002375
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_f1hol"]
-viewport_path = NodePath("SubViewport")
+viewport_path = NodePath("")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jyx7n"]
 resource_local_to_scene = true
@@ -1354,7 +1354,7 @@ shader_parameter/max_intensity = 0.050000002375
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_m77tu"]
-viewport_path = NodePath("SubViewport")
+viewport_path = NodePath("")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g6j5g"]
 resource_local_to_scene = true
@@ -1578,7 +1578,7 @@ render_priority = 0
 shader = ExtResource("167_et1h1")
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_8mm88"]
-viewport_path = NodePath("SubViewport")
+viewport_path = NodePath("")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ngsht"]
 resource_local_to_scene = true
@@ -1714,7 +1714,7 @@ uv1_triplanar = true
 uv1_world_triplanar = true
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_jhx03"]
-viewport_path = NodePath("InteractiveObjects/Mirror/SubViewport")
+viewport_path = NodePath("")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o8fc1"]
 resource_local_to_scene = true
