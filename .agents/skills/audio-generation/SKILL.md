@@ -5,9 +5,13 @@ metadata:
   icon: volume-2
 ---
 
-# Audio Generation Skill (`/audio-generation`)
+# Audio Generation Skill (`/audio-generation`, `/sound`)
 
 Generates game-ready audio effects (weapon blasts, gunshots, impacts, mechanical clicks, debris, ambient soundscapes) directly into the project repository.
+
+## Activation
+- Slash command: `/audio-generation`, `/sound`
+- Mention: `@audio-generation`, `@sound`
 
 ## Supported Backends
 

@@ -1,0 +1,13 @@
+[gd_resource type="ORMMaterial3D" load_steps=4 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/materials/peeling_plaster_wall/textures/peeling_plaster_wall_albedo.png" id="1_albedo"]
+[ext_resource type="Texture2D" path="res://assets/materials/peeling_plaster_wall/textures/peeling_plaster_wall_orm.png" id="2_orm"]
+[ext_resource type="Texture2D" path="res://assets/materials/peeling_plaster_wall/textures/peeling_plaster_wall_normal.png" id="3_normal"]
+
+[resource]
+resource_name = "peeling_plaster_wall"
+albedo_texture = ExtResource("1_albedo")
+orm_texture = ExtResource("2_orm")
+normal_enabled = true
+normal_texture = ExtResource("3_normal")
+uv1_scale = Vector3(1.0, 1.0, 1.0)
