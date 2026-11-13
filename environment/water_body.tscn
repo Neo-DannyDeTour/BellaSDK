@@ -18,27 +18,36 @@ seamless = true
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ugvly"]
 render_priority = 0
 shader = ExtResource("1_70utq")
-shader_parameter/water_time = 2848.585
+shader_parameter/water_time = 0.0
 shader_parameter/water_size = Vector3(1, 1, 1)
 shader_parameter/show_side_walls = false
 shader_parameter/shallow_color = Color(0.22, 0.65, 0.78, 1)
 shader_parameter/deep_color = Color(0.01, 0.05, 0.16, 1)
 shader_parameter/absorption_coefficients = Vector3(1.4, 0.42, 0.08)
+shader_parameter/depth_color_consumption = Vector3(22, 133, 168)
 shader_parameter/depth_distance = 4.5
 shader_parameter/beers_law = 2.2
+shader_parameter/underwater_ceiling_color = Color(0, 0.1, 0.2, 1)
+shader_parameter/underwater_fog_begin = 0.5
+shader_parameter/underwater_fog_end = 28.0
+shader_parameter/crest_color = Color(0, 0.65, 0.85, 1)
+shader_parameter/crest_glow_intensity = 0.8
+shader_parameter/aerated_foam_glow = 0.5
 shader_parameter/wave_amplitude = 0.1
 shader_parameter/wave_length = 4.5
 shader_parameter/wave_speed = 1.4
 shader_parameter/wave_steepness = 0.35
 shader_parameter/ripples = Array[Vector4]([Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0)])
 shader_parameter/ripple_mesh_height = 0.22
+shader_parameter/ripple_size = 1.0
 shader_parameter/uv_scale = Vector2(2, 2)
-shader_parameter/normal_bump_strength = 2.00000009174012
+shader_parameter/normal_bump_strength = 2.0
 shader_parameter/pan_speed_1 = Vector2(0.1, 0.01)
 shader_parameter/pan_speed_2 = Vector2(-0.015, 0.025)
 shader_parameter/enable_ssr = true
 shader_parameter/ssr_max_distance = 4.5
 shader_parameter/refraction_strength = 0.02
+shader_parameter/chromatic_aberration = 0.02
 shader_parameter/sky_reflection_tint = Color(0.65, 0.82, 1, 1)
 shader_parameter/fresnel_base = 0.12
 shader_parameter/fresnel_power = 3.5
@@ -49,7 +58,6 @@ shader_parameter/foam_noise = SubResource("NoiseTexture2D_pjwc4")
 shader_parameter/foam_color = Color(0.92, 0.96, 1, 1)
 shader_parameter/foam_distance = 0.35
 shader_parameter/crest_foam_threshold = 0.65
-shader_parameter/underwater_ceiling_color = Color(0, 0.1, 0.2, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_aaijj"]
 resource_local_to_scene = true
@@ -70,6 +78,8 @@ shader_parameter/albedo = Color(0, 0.04, 0.16, 1)
 shader_parameter/emission = Color(0, 0.04, 0.16, 1)
 shader_parameter/height_falloff = 0.0
 shader_parameter/edge_fade = 0.1
+shader_parameter/near_fog_ratio = 0.45
+shader_parameter/fade_sharpness = 0.35
 shader_parameter/fade_plane = Vector4(0, 1, 0, -999)
 
 [node name="WaterBody" type="MeshInstance3D" unique_id=1898604217]

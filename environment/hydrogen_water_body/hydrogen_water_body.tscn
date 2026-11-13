@@ -1,0 +1,133 @@
+[gd_scene format=4 uid="uid://bhyecjlo5ij06"]
+
+[ext_resource type="Script" uid="uid://bgugl63n4qrou" path="res://environment/hydrogen_water_body/hydrogen_water_body.gd" id="1_water_gd"]
+[ext_resource type="Shader" uid="uid://dx4ohni3hg8ht" path="res://environment/hydrogen_water_body/hydrogen_water_body.gdshader" id="2_water_shader"]
+[ext_resource type="Script" uid="uid://drwseiq8qv8bp" path="res://environment/hydrogen_water_body/hydrogen_fog_volume.gd" id="3_fog_gd"]
+[ext_resource type="Shader" uid="uid://57pd2jtlduk2" path="res://environment/hydrogen_water_body/hydrogen_fog_fade.gdshader" id="4_fog_shader"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_foam"]
+noise_type = 3
+seed = 42
+frequency = 0.045
+fractal_octaves = 4
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_foam"]
+width = 256
+height = 256
+noise = SubResource("FastNoiseLite_foam")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
+render_priority = 0
+shader = ExtResource("2_water_shader")
+shader_parameter/water_size = Vector3(1, 1, 1)
+shader_parameter/show_side_walls = false
+shader_parameter/water_time = 0.0
+shader_parameter/wave_amplitude = 0.1
+shader_parameter/wave_length = 4.5
+shader_parameter/wave_speed = 1.4
+shader_parameter/wave_steepness = 0.35
+shader_parameter/gerstner_horizontal_scale = 0.45
+shader_parameter/ripple_mesh_height = 0.22
+shader_parameter/ripple_size = 1.0
+shader_parameter/ripples = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/shallow_color = Color(0.22, 0.65, 0.78, 1)
+shader_parameter/deep_color = Color(0.01, 0.05, 0.16, 1)
+shader_parameter/underwater_ceiling_color = Color(0, 0.1, 0.2, 1)
+shader_parameter/underwater_fog_begin = 0.5
+shader_parameter/underwater_fog_end = 28.0
+shader_parameter/absorption_coefficients = Vector3(1.4, 0.42, 0.08)
+shader_parameter/depth_color_consumption = Vector3(22, 133, 168)
+shader_parameter/depth_distance = 4.5
+shader_parameter/beers_law = 2.2
+shader_parameter/crest_color = Color(0, 0.65, 0.85, 1)
+shader_parameter/crest_glow_intensity = 0.25
+shader_parameter/aerated_foam_glow = 0.45
+shader_parameter/caustics_intensity = 0.45
+shader_parameter/caustics_scale = 0.65
+shader_parameter/enable_ssr = true
+shader_parameter/ssr_max_distance = 4.5
+shader_parameter/refraction_strength = 0.025
+shader_parameter/chromatic_aberration = 0.015
+shader_parameter/sky_reflection_tint = Color(0.65, 0.82, 1, 1)
+shader_parameter/fresnel_base = 0.02
+shader_parameter/fresnel_power = 4.5
+shader_parameter/roughness = 0.03
+shader_parameter/specular_strength = 0.6
+shader_parameter/metallic = 0.0
+shader_parameter/uv_scale = Vector2(2, 2)
+shader_parameter/normal_bump_strength = 1.6
+shader_parameter/pan_speed_1 = Vector2(0.1, 0.01)
+shader_parameter/pan_speed_2 = Vector2(-0.015, 0.025)
+shader_parameter/foam_noise = SubResource("NoiseTexture2D_foam")
+shader_parameter/foam_color = Color(0.92, 0.96, 1, 1)
+shader_parameter/foam_distance = 0.35
+shader_parameter/crest_foam_threshold = 0.72
+
+[sub_resource type="BoxMesh" id="BoxMesh_water"]
+subdivide_width = 8
+subdivide_depth = 8
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gd0d5"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_cam"]
+radius = 0.05
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fog"]
+shader = ExtResource("4_fog_shader")
+shader_parameter/base_density = 0.12
+shader_parameter/albedo = Color(0.04, 0.14, 0.24, 1)
+shader_parameter/emission = Color(0, 0.03, 0.06, 1)
+shader_parameter/height_falloff = 0.0
+shader_parameter/edge_fade = 0.15
+shader_parameter/use_density_texture = false
+shader_parameter/texture_scale = Vector3(0.2, 0.2, 0.2)
+shader_parameter/camera_pos = Vector3(0, 0, 0)
+shader_parameter/camera_forward = Vector3(0, 0, -1)
+shader_parameter/fade_plane_dist = 5.0
+shader_parameter/near_fog_ratio = 0.45
+shader_parameter/fade_sharpness = 0.35
+
+[node name="HydrogenWaterBody" type="MeshInstance3D" unique_id=137972450]
+process_priority = 999
+layers = 4
+material_override = SubResource("ShaderMaterial_water")
+custom_aabb = AABB(-0.5315, -1.64, -0.5315, 1.063, 3.28, 1.063)
+gi_mode = 0
+mesh = SubResource("BoxMesh_water")
+script = ExtResource("1_water_gd")
+foam_noise = SubResource("NoiseTexture2D_foam")
+
+[node name="SwimmableArea3D" type="Area3D" parent="." unique_id=965848385 groups=["water_area"]]
+unique_name_in_owner = true
+collision_layer = 0
+collision_mask = 6
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SwimmableArea3D" unique_id=1576152191]
+unique_name_in_owner = true
+shape = SubResource("BoxShape3D_gd0d5")
+
+[node name="CameraPosShapeCast3D" type="ShapeCast3D" parent="." unique_id=1635406923]
+unique_name_in_owner = true
+shape = SubResource("SphereShape3D_cam")
+target_position = Vector3(0, 0, 0)
+collision_mask = 6
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="FogVolume" type="FogVolume" parent="." unique_id=597511225]
+unique_name_in_owner = true
+layers = 512
+size = Vector3(1, 1, 1)
+material = SubResource("ShaderMaterial_fog")
+script = ExtResource("3_fog_gd")
+base_fade_dist = 5.0
+
+[node name="SurfaceAudio" type="AudioStreamPlayer3D" parent="." unique_id=1566201231]
+unique_name_in_owner = true
+autoplay = true
+max_distance = 10.0
+
+[node name="UnderwaterAudio" type="AudioStreamPlayer3D" parent="." unique_id=1062859346]
+unique_name_in_owner = true
+pitch_scale = 0.5

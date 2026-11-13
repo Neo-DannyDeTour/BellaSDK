@@ -1,5 +1,5 @@
 @tool
-## High-performance 3D water volume handling multi-scale waves, buoyancy, and underwater VFX.
+## High-performance 3D water volume handling multi-scale waves, buoyancy, and HL2 underwater VFX.
 class_name WaterBody
 extends MeshInstance3D
 
@@ -66,14 +66,32 @@ const PARAM_DEEP_COLOR: StringName = &"deep_color"
 ## Shader uniform identifier for underwater ceiling tint color.
 const PARAM_UNDERWATER_CEILING_COLOR: StringName = &"underwater_ceiling_color"
 
+## Shader uniform identifier for HL2 linear underwater fog start distance.
+const PARAM_UNDERWATER_FOG_BEGIN: StringName = &"underwater_fog_begin"
+
+## Shader uniform identifier for HL2 linear underwater fog end distance.
+const PARAM_UNDERWATER_FOG_END: StringName = &"underwater_fog_end"
+
 ## Shader uniform identifier for RGB Beer-Lambert absorption rates.
 const PARAM_ABSORPTION_COEFFS: StringName = &"absorption_coefficients"
+
+## Shader uniform identifier for per-channel RGB depth color consumption distances.
+const PARAM_DEPTH_COLOR_CONSUMPTION: StringName = &"depth_color_consumption"
 
 ## Shader uniform identifier for optical depth normalization distance.
 const PARAM_DEPTH_DISTANCE: StringName = &"depth_distance"
 
 ## Shader uniform identifier for Beer-Lambert exponential multiplier.
 const PARAM_BEERS_LAW: StringName = &"beers_law"
+
+## Shader uniform identifier for subsurface wave crest glow color.
+const PARAM_CREST_COLOR: StringName = &"crest_color"
+
+## Shader uniform identifier for subsurface wave crest glow intensity.
+const PARAM_CREST_GLOW_INTENSITY: StringName = &"crest_glow_intensity"
+
+## Shader uniform identifier for aerated foam subsurface glow multiplier.
+const PARAM_AERATED_FOAM_GLOW: StringName = &"aerated_foam_glow"
 
 ## Shader uniform identifier for primary wave amplitude.
 const PARAM_WAVE_AMPLITUDE: StringName = &"wave_amplitude"
@@ -92,6 +110,12 @@ const PARAM_RIPPLES: StringName = &"ripples"
 
 ## Shader uniform identifier for interactive ripple displacement height.
 const PARAM_RIPPLE_MESH_HEIGHT: StringName = &"ripple_mesh_height"
+
+## Shader uniform identifier for interactive ripple spatial scale multiplier.
+const PARAM_RIPPLE_SIZE: StringName = &"ripple_size"
+
+## Shader uniform identifier for dual-scrolling normal flow texture.
+const PARAM_NORMAL_FLOW_MAP: StringName = &"normal_flow_map"
 
 ## Shader uniform identifier for normal map UV tiling scale.
 const PARAM_UV_SCALE: StringName = &"uv_scale"
@@ -113,6 +137,9 @@ const PARAM_SSR_MAX_DISTANCE: StringName = &"ssr_max_distance"
 
 ## Shader uniform identifier for screen-space refraction distortion strength.
 const PARAM_REFRACTION_STRENGTH: StringName = &"refraction_strength"
+
+## Shader uniform identifier for HL2 chromatic aberration dispersion offset.
+const PARAM_CHROMATIC_ABERRATION: StringName = &"chromatic_aberration"
 
 ## Shader uniform identifier for fallback sky reflection tint.
 const PARAM_SKY_REFLECTION_TINT: StringName = &"sky_reflection_tint"
@@ -247,7 +274,14 @@ const SWIM_COLLISION_MASK: int = 6
 			_set_shader_param(PARAM_RIPPLE_MESH_HEIGHT, ripple_mesh_height)
 			_update_culling_bounds()
 
-@export_category("Optics & Absorption")
+## Spatial radius, expansion speed, and ring thickness multiplier for interactive ripples.
+@export_range(0.1, 10.0, 0.05) var ripple_size: float = 1.0:
+	set(value):
+		ripple_size = clampf(value, 0.1, 10.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_RIPPLE_SIZE, ripple_size)
+
+@export_category("Optics, Absorption & HL2 Fog")
 ## Scatter tint of shallow water regions.
 @export var shallow_color: Color = Color(0.22, 0.65, 0.78, 1.0):
 	set(value):
@@ -269,12 +303,40 @@ const SWIM_COLLISION_MASK: int = 6
 		if is_inside_tree():
 			_set_shader_param(PARAM_UNDERWATER_CEILING_COLOR, underwater_ceiling_color)
 
+## Enforces HL2-style non-volumetric depth fog upon submersion even when Volumetric Fog is on.
+@export var force_non_volumetric_fog: bool = true
+
+## Start distance in meters for HL2 linear underwater depth fog.
+@export_range(0.0, 50.0, 0.1) var underwater_fog_begin: float = 0.5:
+	set(value):
+		underwater_fog_begin = maxf(value, 0.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_UNDERWATER_FOG_BEGIN, underwater_fog_begin)
+			if _fallback_fog_active and is_instance_valid(_cached_env):
+				_cached_env.fog_depth_begin = underwater_fog_begin
+
+## End distance in meters where HL2 linear underwater depth fog reaches full opacity.
+@export_range(1.0, 200.0, 0.5) var underwater_fog_end: float = 28.0:
+	set(value):
+		underwater_fog_end = maxf(value, underwater_fog_begin + 0.1)
+		if is_inside_tree():
+			_set_shader_param(PARAM_UNDERWATER_FOG_END, underwater_fog_end)
+			if _fallback_fog_active and is_instance_valid(_cached_env):
+				_cached_env.fog_depth_end = underwater_fog_end
+
 ## Per-channel RGB Beer-Lambert light absorption coefficients.
 @export var absorption_coefficients: Vector3 = Vector3(1.4, 0.42, 0.08):
 	set(value):
 		absorption_coefficients = value
 		if is_inside_tree():
 			_set_shader_param(PARAM_ABSORPTION_COEFFS, absorption_coefficients)
+
+## Per-channel RGB depth distances in meters before color wavelengths are consumed.
+@export var depth_color_consumption: Vector3 = Vector3(22.0, 133.0, 168.0):
+	set(value):
+		depth_color_consumption = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_DEPTH_COLOR_CONSUMPTION, depth_color_consumption)
 
 ## Optical depth normalization distance in meters.
 @export_range(0.1, 100.0, 0.1) var depth_distance: float = 4.5:
@@ -290,8 +352,26 @@ const SWIM_COLLISION_MASK: int = 6
 		if is_inside_tree():
 			_set_shader_param(PARAM_BEERS_LAW, beers_law)
 
-## Non-volumetric underwater depth fog density used when Volumetric Fog is disabled.
-@export_range(0.01, 0.5, 0.005) var fallback_fog_density: float = 0.11
+## Subsurface scattering glow tint transmitted through wave crests.
+@export var crest_color: Color = Color(0.0, 0.65, 0.85, 1.0):
+	set(value):
+		crest_color = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_CREST_COLOR, crest_color)
+
+## Intensity multiplier for subsurface wave crest glow.
+@export_range(0.0, 2.0, 0.05) var crest_glow_intensity: float = 0.8:
+	set(value):
+		crest_glow_intensity = clampf(value, 0.0, 2.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_CREST_GLOW_INTENSITY, crest_glow_intensity)
+
+## Subsurface glow multiplier for aerated shoreline and wake foam.
+@export_range(0.0, 2.0, 0.05) var aerated_foam_glow: float = 0.5:
+	set(value):
+		aerated_foam_glow = clampf(value, 0.0, 2.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_AERATED_FOAM_GLOW, aerated_foam_glow)
 
 @export_category("Reflections & Surface Detail")
 ## Enables raymarched screen-space reflections on the water surface.
@@ -314,6 +394,13 @@ const SWIM_COLLISION_MASK: int = 6
 		refraction_strength = clampf(value, 0.0, 0.2)
 		if is_inside_tree():
 			_set_shader_param(PARAM_REFRACTION_STRENGTH, refraction_strength)
+
+## RGB channel dispersion offset applied to refracted underwater screen samples.
+@export_range(0.0, 0.1, 0.001) var chromatic_aberration: float = 0.02:
+	set(value):
+		chromatic_aberration = clampf(value, 0.0, 0.1)
+		if is_inside_tree():
+			_set_shader_param(PARAM_CHROMATIC_ABERRATION, chromatic_aberration)
 
 ## Sky reflection tint blended via Fresnel reflectivity.
 @export var sky_reflection_tint: Color = Color(0.65, 0.82, 1.0, 1.0):
@@ -356,6 +443,13 @@ const SWIM_COLLISION_MASK: int = 6
 		metallic = clampf(value, 0.0, 1.0)
 		if is_inside_tree():
 			_set_shader_param(PARAM_METALLIC, metallic)
+
+## Optional dual-scrolling normal map blended with procedural capillary waves.
+@export var normal_flow_map: Texture2D = null:
+	set(value):
+		normal_flow_map = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_NORMAL_FLOW_MAP, normal_flow_map)
 
 ## World-space UV tiling scale for micro-normal perturbation.
 @export var uv_scale: Vector2 = Vector2(2.0, 2.0):
@@ -509,20 +603,38 @@ var _has_last_camera_y: bool = false
 ## Cached reference to active viewport [Camera3D].
 var _cached_camera: Camera3D = null
 
-## Tracks whether fallback non-volumetric environment depth fog is currently active.
+## Tracks whether HL2 non-volumetric environment depth fog is currently active.
 var _fallback_fog_active: bool = false
 
-## Cached [Environment] resource modified during fallback underwater fog.
+## True when a temporary [Environment] was injected onto [Camera3D] due to missing scene env.
+var _injected_cam_env: bool = false
+
+## Reference to [Camera3D] receiving temporary fallback [Environment].
+var _injected_camera: Camera3D = null
+
+## Cached [Environment] resource modified during underwater depth fog.
 var _cached_env: Environment = null
 
 ## Saved [member Environment.fog_enabled] state prior to camera submersion.
 var _orig_fog_enabled: bool = false
+
+## Saved [member Environment.fog_mode] state prior to camera submersion.
+var _orig_fog_mode: Environment.FogMode = Environment.FOG_MODE_EXPONENTIAL
 
 ## Saved [member Environment.fog_light_color] prior to camera submersion.
 var _orig_fog_color: Color = Color.BLACK
 
 ## Saved [member Environment.fog_density] prior to camera submersion.
 var _orig_fog_density: float = 0.01
+
+## Saved [member Environment.fog_depth_begin] prior to camera submersion.
+var _orig_fog_depth_begin: float = 10.0
+
+## Saved [member Environment.fog_depth_end] prior to camera submersion.
+var _orig_fog_depth_end: float = 100.0
+
+## Saved [member Environment.fog_depth_curve] prior to camera submersion.
+var _orig_fog_depth_curve: float = 1.0
 
 ## Saved [member Environment.fog_sky_affect] prior to camera submersion.
 var _orig_fog_sky_affect: float = 1.0
@@ -576,6 +688,7 @@ func _ready() -> void:
 	assert(is_instance_valid(_fog_volume), "WaterBody: Missing %FogVolume child node.")
 	assert(is_instance_valid(_surface_audio), "WaterBody: Missing %SurfaceAudio child node.")
 	assert(is_instance_valid(_underwater_audio), "WaterBody: Missing %UnderwaterAudio child node.")
+	assert(ripple_size >= 0.1, "WaterBody: ripple_size must be >= 0.1.")
 
 	if is_instance_valid(_swimmable_area):
 		if not _swimmable_area.is_in_group(GROUP_WATER_AREA):
@@ -754,7 +867,7 @@ func power_on() -> void:
 	change_water_level(true)
 
 
-## De-energizes water volume via [OutputTransmitter3D], restoring baseline level if in toggle mode.
+## De-energizes water volume via [OutputTransmitter3D], restoring baseline level in toggle mode.
 func power_off() -> void:
 	if water_level_mode == WaterLevelMode.ONE_SHOT:
 		return
@@ -866,6 +979,7 @@ func _evaluate_surface_displacement(world_xz: Vector2, t: float) -> Vector3:
 		slope_z += w0.z + w1.z + w2.z
 
 	if _has_active_ripples and ripple_mesh_height > 0.0001:
+		var safe_size: float = maxf(ripple_size, 0.1)
 		var count: int = _ripples.size()
 		for i: int in range(count):
 			var r: Vector4 = _ripples[i]
@@ -881,9 +995,9 @@ func _evaluate_surface_displacement(world_xz: Vector2, t: float) -> Vector3:
 			var dx: float = world_xz.x - r.x
 			var dz: float = world_xz.y - r.y
 			var dist: float = sqrt(dx * dx + dz * dz)
-			var exp_speed: float = 1.15 + scale_f * 0.65
+			var exp_speed: float = (1.15 + scale_f * 0.65) * safe_size
 			var radius: float = age * exp_speed
-			var sigma: float = 0.14 + scale_f * 0.28
+			var sigma: float = (0.14 + scale_f * 0.28) * safe_size
 			var delta_r: float = dist - radius
 
 			if absf(delta_r) > sigma * 3.5:
@@ -893,7 +1007,7 @@ func _evaluate_surface_displacement(world_xz: Vector2, t: float) -> Vector3:
 			var env: float = exp(-(delta_r * delta_r) * inv_two_sigma_sq)
 			var life_ratio: float = 1.0 - (age / max_age)
 			var decay: float = exp(-age * (1.8 / (0.6 + scale_f * 0.4))) * life_ratio
-			var k_r: float = 22.0 / (0.35 + scale_f * 0.65)
+			var k_r: float = (22.0 / (0.35 + scale_f * 0.65)) / safe_size
 			var phase: float = delta_r * k_r - age * 4.0
 
 			var eff_amp: float = minf(amp, 2.0) * ripple_mesh_height * env * decay
@@ -966,15 +1080,22 @@ func _sync_all_shader_parameters() -> void:
 	_set_shader_param(PARAM_SHALLOW_COLOR, shallow_color)
 	_set_shader_param(PARAM_DEEP_COLOR, deep_color)
 	_set_shader_param(PARAM_UNDERWATER_CEILING_COLOR, underwater_ceiling_color)
+	_set_shader_param(PARAM_UNDERWATER_FOG_BEGIN, underwater_fog_begin)
+	_set_shader_param(PARAM_UNDERWATER_FOG_END, underwater_fog_end)
 	_set_shader_param(PARAM_ABSORPTION_COEFFS, absorption_coefficients)
+	_set_shader_param(PARAM_DEPTH_COLOR_CONSUMPTION, depth_color_consumption)
 	_set_shader_param(PARAM_DEPTH_DISTANCE, depth_distance)
 	_set_shader_param(PARAM_BEERS_LAW, beers_law)
+	_set_shader_param(PARAM_CREST_COLOR, crest_color)
+	_set_shader_param(PARAM_CREST_GLOW_INTENSITY, crest_glow_intensity)
+	_set_shader_param(PARAM_AERATED_FOAM_GLOW, aerated_foam_glow)
 	_set_shader_param(PARAM_WAVE_AMPLITUDE, wave_amplitude)
 	_set_shader_param(PARAM_WAVE_LENGTH, wave_length)
 	_set_shader_param(PARAM_WAVE_SPEED, wave_speed)
 	_set_shader_param(PARAM_WAVE_STEEPNESS, wave_steepness)
 	_set_shader_param(PARAM_RIPPLES, _ripples)
 	_set_shader_param(PARAM_RIPPLE_MESH_HEIGHT, ripple_mesh_height)
+	_set_shader_param(PARAM_RIPPLE_SIZE, ripple_size)
 	_set_shader_param(PARAM_UV_SCALE, uv_scale)
 	_set_shader_param(PARAM_NORMAL_BUMP_STRENGTH, normal_bump_strength)
 	_set_shader_param(PARAM_PAN_SPEED_1, pan_speed_1)
@@ -982,6 +1103,7 @@ func _sync_all_shader_parameters() -> void:
 	_set_shader_param(PARAM_ENABLE_SSR, enable_ssr)
 	_set_shader_param(PARAM_SSR_MAX_DISTANCE, ssr_max_distance)
 	_set_shader_param(PARAM_REFRACTION_STRENGTH, refraction_strength)
+	_set_shader_param(PARAM_CHROMATIC_ABERRATION, chromatic_aberration)
 	_set_shader_param(PARAM_SKY_REFLECTION_TINT, sky_reflection_tint)
 	_set_shader_param(PARAM_FRESNEL_BASE, fresnel_base)
 	_set_shader_param(PARAM_FRESNEL_POWER, fresnel_power)
@@ -991,6 +1113,8 @@ func _sync_all_shader_parameters() -> void:
 	_set_shader_param(PARAM_FOAM_COLOR, foam_color)
 	_set_shader_param(PARAM_FOAM_DISTANCE, foam_distance)
 	_set_shader_param(PARAM_CREST_FOAM_THRESHOLD, crest_foam_threshold)
+	if is_instance_valid(normal_flow_map):
+		_set_shader_param(PARAM_NORMAL_FLOW_MAP, normal_flow_map)
 	if is_instance_valid(foam_noise):
 		_set_shader_param(PARAM_FOAM_NOISE, foam_noise)
 
@@ -1282,7 +1406,7 @@ func _evaluate_camera_submersion(cam: Camera3D, delta: float) -> void:
 		_handle_camera_surfaced(cam.global_position, cam_vert_speed)
 
 
-## Orchestrates audio, fog volume, fallback depth fog, and screen VFX on camera submersion.
+## Orchestrates audio, fog volume, HL2 depth fog, and screen VFX on camera submersion.
 func _handle_camera_submerged() -> void:
 	print("WaterBody: Camera submerged below surface.")
 	if is_instance_valid(Events):
@@ -1322,9 +1446,12 @@ func _handle_camera_surfaced(cam_pos: Vector3, vertical_speed: float) -> void:
 		Events.water_sheet_wipe_requested.emit(1.2)
 
 
-## Updates `%FogVolume` density and edge fade on camera submersion state changes.
+## Updates `%FogVolume` edge fade on camera submersion state changes.
 func _update_fog_volume_submersion(is_submerged: bool) -> void:
 	if not is_instance_valid(_fog_volume):
+		return
+	if _fog_volume.has_method(&"set_submerged"):
+		_fog_volume.call(&"set_submerged", is_submerged)
 		return
 	if _fog_volume.material is ShaderMaterial:
 		var fog_mat: ShaderMaterial = _fog_volume.material as ShaderMaterial
@@ -1334,40 +1461,72 @@ func _update_fog_volume_submersion(is_submerged: bool) -> void:
 		fmat.edge_fade = 0.05 if is_submerged else 0.2
 
 
-## Enables murky non-volumetric depth fog on the active [Environment] when volumetric fog is off.
+## Applies HL2-style non-volumetric linear depth fog and creates fallback env if scene lacks one.
 func _apply_fallback_environment_fog() -> void:
+	if _fallback_fog_active:
+		return
+
+	var cam: Camera3D = _get_active_camera()
 	var vp: Viewport = get_viewport()
-	if not is_instance_valid(vp) or not is_instance_valid(vp.world_3d):
+	var target_env: Environment = null
+
+	if is_instance_valid(cam) and is_instance_valid(cam.environment):
+		target_env = cam.environment
+	elif is_instance_valid(vp) and is_instance_valid(vp.world_3d):
+		target_env = vp.world_3d.environment
+
+	if not is_instance_valid(target_env):
+		if not is_instance_valid(cam):
+			return
+		target_env = Environment.new()
+		cam.environment = target_env
+		_injected_cam_env = true
+		_injected_camera = cam
+
+	if not force_non_volumetric_fog and target_env.volumetric_fog_enabled:
 		return
-	var env: Environment = vp.world_3d.environment
-	if not is_instance_valid(env):
-		return
 
-	if not env.volumetric_fog_enabled and not _fallback_fog_active:
-		_cached_env = env
-		_orig_fog_enabled = env.fog_enabled
-		_orig_fog_color = env.fog_light_color
-		_orig_fog_density = env.fog_density
-		_orig_fog_sky_affect = env.fog_sky_affect
+	_cached_env = target_env
+	_orig_fog_enabled = target_env.fog_enabled
+	_orig_fog_mode = target_env.fog_mode
+	_orig_fog_color = target_env.fog_light_color
+	_orig_fog_density = target_env.fog_density
+	_orig_fog_depth_begin = target_env.fog_depth_begin
+	_orig_fog_depth_end = target_env.fog_depth_end
+	_orig_fog_depth_curve = target_env.fog_depth_curve
+	_orig_fog_sky_affect = target_env.fog_sky_affect
 
-		var murk_col: Color = deep_color.lerp(shallow_color, 0.22)
-		env.fog_enabled = true
-		env.fog_light_color = Color(murk_col.r, murk_col.g, murk_col.b, 1.0)
-		env.fog_density = fallback_fog_density
-		env.fog_sky_affect = 1.0
-		_fallback_fog_active = true
+	var murk_col: Color = deep_color.lerp(underwater_ceiling_color, 0.5)
+	target_env.fog_enabled = true
+	target_env.fog_mode = Environment.FOG_MODE_DEPTH
+	target_env.fog_light_color = Color(murk_col.r, murk_col.g, murk_col.b, 1.0)
+	target_env.fog_density = 1.0
+	target_env.fog_depth_begin = underwater_fog_begin
+	target_env.fog_depth_end = underwater_fog_end
+	target_env.fog_depth_curve = 1.0
+	target_env.fog_sky_affect = 1.0
+	_fallback_fog_active = true
 
 
-## Restores original [Environment] depth fog properties when surfacing or exiting tree.
+## Restores original [Environment] depth fog properties and cleans up injected camera environment.
 func _restore_fallback_environment_fog() -> void:
 	if not _fallback_fog_active:
 		return
-	if is_instance_valid(_cached_env):
+	if _injected_cam_env:
+		if is_instance_valid(_injected_camera) and _injected_camera.environment == _cached_env:
+			_injected_camera.environment = null
+	elif is_instance_valid(_cached_env):
 		_cached_env.fog_enabled = _orig_fog_enabled
+		_cached_env.fog_mode = _orig_fog_mode
 		_cached_env.fog_light_color = _orig_fog_color
 		_cached_env.fog_density = _orig_fog_density
+		_cached_env.fog_depth_begin = _orig_fog_depth_begin
+		_cached_env.fog_depth_end = _orig_fog_depth_end
+		_cached_env.fog_depth_curve = _orig_fog_depth_curve
 		_cached_env.fog_sky_affect = _orig_fog_sky_affect
 	_cached_env = null
+	_injected_camera = null
+	_injected_cam_env = false
 	_fallback_fog_active = false
 
 
