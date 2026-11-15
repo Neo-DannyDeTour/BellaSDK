@@ -79,14 +79,13 @@ func _compute_coord() -> Vector2i:
 	return Vector2i(roundi(position.x / CHUNK_SIZE), roundi(position.z / CHUNK_SIZE))
 
 
-## Stamps direct children in [constant GROUP_ROAMING] with origin coord and original ID.
-func _stamp_roaming_metadata() -> void:
-	# shortcut: scans direct children of chunk root only, upgrade to recursive if nested.
-	var children: Array[Node] = get_children()
+## Recursively stamps descendants in [constant GROUP_ROAMING] with origin coord and ID.
+func _stamp_roaming_metadata(parent: Node = self) -> void:
+	var children: Array[Node] = parent.get_children()
 	for child: Node in children:
-		if not child.is_in_group(GROUP_ROAMING):
-			continue
-		if not child.has_meta(META_ORIGIN_CHUNK):
-			child.set_meta(META_ORIGIN_CHUNK, chunk_coord)
-		if not child.has_meta(META_ENTITY_ID):
-			child.set_meta(META_ENTITY_ID, child.name)
+		if child.is_in_group(GROUP_ROAMING):
+			if not child.has_meta(META_ORIGIN_CHUNK):
+				child.set_meta(META_ORIGIN_CHUNK, chunk_coord)
+			if not child.has_meta(META_ENTITY_ID):
+				child.set_meta(META_ENTITY_ID, child.name)
+		_stamp_roaming_metadata(child)

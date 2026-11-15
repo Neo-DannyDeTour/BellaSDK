@@ -70,6 +70,21 @@ func load_from_disk() -> void:
 		else:
 			active_config[key] = str(saved_val)
 
+	var screen_idx: int = VideoApplier._get_int(active_config, "screen_index", 0)
+	var display_user_set: bool = GlobalSettings.get_setting_bool(
+		"Settings", "display_mode_user_set", false
+	)
+	if not display_user_set:
+		active_config["display_mode"] = VideoConfig.DEFAULT_DISPLAY
+
+	var resolution_user_set: bool = GlobalSettings.get_setting_bool(
+		"Settings", "resolution_user_set", false
+	)
+	if not resolution_user_set:
+		var native_res: Vector2i = VideoConfig.get_native_resolution(screen_idx)
+		active_config["resolution_x"] = native_res.x
+		active_config["resolution_y"] = native_res.y
+
 
 ## Returns a value from the cached active configuration or [param default_val].
 func get_setting(key: String, default_val: Variant = null) -> Variant:
@@ -144,6 +159,8 @@ func reset_to_defaults() -> void:
 	print("GraphicsManager: Resetting all video settings to 'Ultra' defaults.")
 	var defaults: Dictionary = VideoConfig.get_default_settings_dict()
 	active_config = defaults.duplicate(true)
+	GlobalSettings.save_setting("Settings", "display_mode_user_set", false, false)
+	GlobalSettings.save_setting("Settings", "resolution_user_set", false, false)
 	GlobalSettings.save_settings_bulk("Settings", active_config, true)
 
 	apply_display_settings()
@@ -184,8 +201,11 @@ func apply_display_settings() -> void:
 	var ui_scale: float = VideoApplier._get_float(
 		active_config, "ui_scale", VideoConfig.DEFAULT_UI_SCALE
 	)
-	if not is_equal_approx(win.content_scale_factor, ui_scale):
-		win.content_scale_factor = ui_scale
+	var effective_scale: float = VideoConfig.compute_effective_ui_scale(
+		ui_scale, Vector2i(res_x, res_y)
+	)
+	if not is_equal_approx(win.content_scale_factor, effective_scale):
+		win.content_scale_factor = effective_scale
 
 
 ## Updates the isolated diorama environment synchronously for real-time menu preview.

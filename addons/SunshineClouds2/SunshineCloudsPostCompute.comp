@@ -48,6 +48,36 @@ float sampleEffectorAdditive(vec3 worldPosition) {
 	return effectorAdditive;
 }
 
+float sampleSmokeExtinction(vec3 rayOrigin, vec3 rayDir, float maxDist) {
+	float extinction = 0.0;
+	for (int i = 0; i < int(genericData.data.pointEffectorCount); i++) {
+		if (pointEffectors[i].power > 0.0) {
+			continue;
+		}
+		vec3 center = pointEffectors[i].position;
+		float radius = pointEffectors[i].radius;
+		vec3 oc = rayOrigin - center;
+		float b = dot(oc, rayDir);
+		float c = dot(oc, oc) - radius * radius;
+		float disc = b * b - c;
+		if (disc > 0.0) {
+			float sdisc = sqrt(disc);
+			float t0 = -b - sdisc;
+			float t1 = -b + sdisc;
+			if (t1 > 0.0 && t0 < maxDist) {
+				float enterT = max(t0, 0.0);
+				float exitT = min(t1, maxDist);
+				if (exitT > enterT) {
+					float chord = exitT - enterT;
+					float dens = abs(pointEffectors[i].power) * 1.5;
+					extinction += dens * (chord / max(radius * 0.5, 0.1));
+				}
+			}
+		}
+	}
+	return clamp(extinction, 0.0, 16.0);
+}
+
 float sampleSceneCoarse(
 	vec3 largeNoisePos,
 	vec3 worldPosition,
@@ -401,6 +431,7 @@ void main() {
 			color.rgb *= shadowAttenuation;
 		}
 
+		vec4 base_input_color = texelFetchMSAA(input_screen_image, uv, sampleIdx);
 		vec3 physicalFogColor = color.rgb;
 		float fogweight = 0.0;
 
@@ -422,6 +453,14 @@ void main() {
 		color.rgb = mix(physicalFogColor, mix(color.rgb, ambientfogdistancecolor, clamp(fogweight, 0.0, 1.0)), genericData.data.atmosphere_simple_blend);
 
 		color.rgb = mix(color.rgb, currentAccumilation.rgb, density);
+
+		if (genericData.data.pointEffectorCount > 0.0) {
+			float smokeExtinction = sampleSmokeExtinction(rayOrigin, raydirection, linear_depth);
+			if (smokeExtinction > 0.001) {
+				float smokeTransmittance = exp(-smokeExtinction);
+				color.rgb = mix(base_input_color.rgb, color.rgb, smokeTransmittance);
+			}
+		}
 
 		if (debugCollisions){
 			color.rgb = vec3(lerp);

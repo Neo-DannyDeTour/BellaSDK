@@ -129,6 +129,11 @@ signal waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_progr
 @warning_ignore("unused_signal")
 signal water_sheet_wipe_requested(duration: float)
 
+## Emitted when a security camera detects the player and captures an in-RAM [param mugshot].
+## Payloads: [param mugshot] low-res [Texture2D], [param camera_pos] world [Vector3].
+@warning_ignore("unused_signal")
+signal player_spotted_by_camera(mugshot: Texture2D, camera_pos: Vector3)
+
 ## Emitted to trigger an Advisor psychic distortion wave pulse across the screen.
 @warning_ignore("unused_signal")
 signal advisor_psychic_pulse_requested(duration: float, peak: float, center_uv: Vector2)

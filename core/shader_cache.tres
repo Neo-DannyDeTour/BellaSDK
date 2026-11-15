@@ -1268,13 +1268,9 @@ shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
 shader_parameter/alpha_scissor_threshold = 0.5
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_f1hol"]
-viewport_path = NodePath("")
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jyx7n"]
 resource_local_to_scene = true
 shading_mode = 0
-albedo_texture = SubResource("ViewportTexture_f1hol")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mx6xk"]
 albedo_texture = ExtResource("180_i7bvm")
@@ -1353,14 +1349,10 @@ shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
 shader_parameter/alpha_scissor_threshold = 0.5
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_m77tu"]
-viewport_path = NodePath("")
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g6j5g"]
 resource_local_to_scene = true
 render_priority = 0
 shader = ExtResource("164_s145x")
-shader_parameter/viewport_texture = SubResource("ViewportTexture_m77tu")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_m7kiq"]
 render_priority = 0
@@ -1577,14 +1569,10 @@ resource_local_to_scene = true
 render_priority = 0
 shader = ExtResource("167_et1h1")
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_8mm88"]
-viewport_path = NodePath("")
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ngsht"]
 resource_local_to_scene = true
 render_priority = 0
 shader = ExtResource("167_et1h1")
-shader_parameter/reflection_texture = SubResource("ViewportTexture_8mm88")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_50wyh"]
 albedo_color = Color(0.30943933, 1, 0.52912915, 1)
@@ -1713,12 +1701,8 @@ uv1_scale = Vector3(0.04, 0.04, 0.04)
 uv1_triplanar = true
 uv1_world_triplanar = true
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_jhx03"]
-viewport_path = NodePath("")
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o8fc1"]
 resource_local_to_scene = true
-albedo_texture = SubResource("ViewportTexture_jhx03")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_62djl"]
 uv1_triplanar = true

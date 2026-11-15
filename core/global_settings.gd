@@ -82,7 +82,13 @@ const SCREEN_FILTER_REGISTRY: Array[Dictionary] = [
 const DEFAULT_DEBUG_CHORDS: Dictionary[String, Array] = {
 	"debug_toggle_metrics": [KEY_QUOTELEFT, KEY_1],
 	"debug_toggle_ui": [KEY_QUOTELEFT, KEY_2],
-	"debug_toggle_diagnostics": [KEY_QUOTELEFT, KEY_3]
+	"debug_toggle_diagnostics": [KEY_QUOTELEFT, KEY_3],
+	"debug_toggle_4": [KEY_QUOTELEFT, KEY_4],
+	"debug_toggle_5": [KEY_QUOTELEFT, KEY_5],
+	"debug_toggle_6": [KEY_QUOTELEFT, KEY_6],
+	"debug_toggle_7": [KEY_QUOTELEFT, KEY_7],
+	"debug_toggle_8": [KEY_QUOTELEFT, KEY_8],
+	"debug_toggle_9": [KEY_QUOTELEFT, KEY_9]
 }
 
 ## The configuration object used to read, cache, and write save file data.
@@ -308,21 +314,37 @@ func _load_all_settings() -> void:
 func _apply_boot_settings() -> void:
 	print("System: Applying boot settings (Window, VSync, UI scale, fonts).")
 	var win: Window = get_window()
-	var mode_val: int = get_setting("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY)
+	var screen_idx: int = get_setting_int("Settings", "screen_index", 0)
+	var display_user_set: bool = get_setting_bool("Settings", "display_mode_user_set", false)
+	var mode_val: int = (
+		get_setting_int("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY)
+		if display_user_set
+		else VideoConfig.DEFAULT_DISPLAY
+	)
 	var mode: DisplayServer.WindowMode = mode_val as DisplayServer.WindowMode
-	var screen_idx: int = get_setting("Settings", "screen_index", 0)
-	var res_x: int = get_setting("Settings", "resolution_x", 1920)
-	var res_y: int = get_setting("Settings", "resolution_y", 1080)
+	var native_res: Vector2i = VideoConfig.get_native_resolution(screen_idx)
+	var resolution_user_set: bool = get_setting_bool("Settings", "resolution_user_set", false)
+	var res_x: int = (
+		get_setting_int("Settings", "resolution_x", native_res.x)
+		if resolution_user_set
+		else native_res.x
+	)
+	var res_y: int = (
+		get_setting_int("Settings", "resolution_y", native_res.y)
+		if resolution_user_set
+		else native_res.y
+	)
 	var res: Vector2i = Vector2i(res_x, res_y)
 	VideoApplier.apply_window_settings(win, mode, screen_idx, res)
 
-	var vsync_val: int = get_setting("Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC)
+	var vsync_val: int = get_setting_int("Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC)
 	var vsync: DisplayServer.VSyncMode = vsync_val as DisplayServer.VSyncMode
-	var fps_cap: int = get_setting("Settings", "fps_limit", VideoConfig.DEFAULT_FPS)
+	var fps_cap: int = get_setting_int("Settings", "fps_limit", VideoConfig.DEFAULT_FPS)
 	VideoApplier.apply_engine_limits(vsync, fps_cap)
 
-	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0)
-	win.content_scale_factor = ui_scale
+	var ui_scale: float = get_setting_float("Settings", "ui_scale", VideoConfig.DEFAULT_UI_SCALE)
+	var effective_scale: float = VideoConfig.compute_effective_ui_scale(ui_scale, res)
+	win.content_scale_factor = effective_scale
 
 	var events: Node = get_node_or_null("/root/Events")
 	if is_instance_valid(events):
@@ -419,7 +441,7 @@ func _ensure_default_weapon_actions() -> void:
 			InputMap.action_add_event(action, key_ev)
 
 
-## Ensures default Tilde + 1..3 ordered chord actions exist in [InputMap].
+## Ensures default Tilde + 1..9 ordered chord actions exist in [InputMap].
 func _ensure_default_debug_chord_actions() -> void:
 	print("System: Registering default debug chord actions.")
 	for action: String in DEFAULT_DEBUG_CHORDS.keys():

@@ -128,6 +128,7 @@ func _input(event: InputEvent) -> void:
 			return
 
 	var input_id: int = _get_unique_event_id(event)
+	var event_ids: Array[int] = _get_event_ids(event)
 	var is_pressed: bool = event.is_pressed()
 
 	var matching_bindings: Array[Dictionary] = _get_actions_for_event(event)
@@ -146,7 +147,7 @@ func _input(event: InputEvent) -> void:
 			if gesture_type == "ordered_chord" and not chord_keys.is_empty():
 				var trigger_var: Variant = chord_keys[chord_keys.size() - 1]
 				var trigger_key: int = trigger_var if trigger_var is int else -1
-				if input_id == trigger_key and _are_modifier_keys_held(chord_keys):
+				if event_ids.has(trigger_key) and _are_modifier_keys_held(chord_keys):
 					print("System: Ordered chord validated: ", action)
 					_dispatch_action(action, "ordered_chord")
 					consumed_by_chord = true
@@ -157,7 +158,8 @@ func _input(event: InputEvent) -> void:
 					_dispatch_action(action, "chord")
 					consumed_by_chord = true
 
-		_held_keys[input_id] = true
+		for eid: int in event_ids:
+			_held_keys[eid] = true
 
 		if consumed_by_chord:
 			return
@@ -202,7 +204,8 @@ func _input(event: InputEvent) -> void:
 						_dispatch_action(action, "mash")
 						data["tap_count"] = 0
 	else:
-		_held_keys.erase(input_id)
+		for eid: int in event_ids:
+			_held_keys.erase(eid)
 
 		for binding_info: Dictionary in matching_bindings:
 			var action: String = str(binding_info.get("action", ""))
@@ -391,7 +394,7 @@ func _are_chord_keys_pressed(chord_keys: Array) -> bool:
 ## Returns an [Array] of [Dictionary] objects containing matched actions and gesture metadata.
 func _get_actions_for_event(event: InputEvent) -> Array[Dictionary]:
 	var matches: Array[Dictionary] = []
-	var event_id: int = _get_unique_event_id(event)
+	var event_ids: Array[int] = _get_event_ids(event)
 
 	for action: String in InputMap.get_actions():
 		if action.begins_with("ui_"):
@@ -411,14 +414,33 @@ func _get_actions_for_event(event: InputEvent) -> Array[Dictionary]:
 
 			var is_match: bool = false
 			if gesture in ["chord", "ordered_chord"] and not chord_keys.is_empty():
-				if chord_keys.has(event_id):
-					is_match = true
+				for eid: int in event_ids:
+					if chord_keys.has(eid):
+						is_match = true
+						break
 			else:
 				is_match = _is_matching_event(event, bound_event)
 
 			if is_match:
 				matches.append({"action": action, "gesture": gesture, "chord_keys": chord_keys})
 	return matches
+
+
+## Collects all unique integer key/button identifiers for an [InputEvent].
+## [param event] The [InputEvent] to inspect.
+## Returns an [Array] of integer IDs including both physical and logical keycodes.
+func _get_event_ids(event: InputEvent) -> Array[int]:
+	var ids: Array[int] = []
+	if event is InputEventKey:
+		var k: InputEventKey = event
+		if k.physical_keycode != KEY_NONE:
+			ids.append(k.physical_keycode)
+		if k.keycode != KEY_NONE and not ids.has(k.keycode):
+			ids.append(k.keycode)
+	elif event is InputEventMouseButton:
+		var m: InputEventMouseButton = event
+		ids.append(100000 + m.button_index)
+	return ids
 
 
 ## Generates a unique integer identifier for hardware inputs.

@@ -21,7 +21,7 @@ config/icon="uid://cijw0jse7sfs8"
 
 [audio]
 
-buses/default_bus_layout="uid://d3qajd8tvw6tr"
+buses/default_bus_layout="res://core/audio/default_bus_layout.tres"
 
 [autoload]
 
@@ -50,6 +50,7 @@ SceneTransition="*res://core/scene_transition.gd"
 SmokeManager="*uid://cux76orvhr6t8"
 BloodManager="*uid://bbth1832rodw7"
 ImpactManager="*res://vfx/impact_manager.gd"
+SpikeForensics="*res://core/spike_forensics.gd"
 
 [debug]
 
@@ -65,7 +66,7 @@ gdscript/warnings/unsafe_call_argument=1
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/size/mode="fullscreen"
+window/size/mode=3
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 display_server/driver.linuxbsd="wayland"
