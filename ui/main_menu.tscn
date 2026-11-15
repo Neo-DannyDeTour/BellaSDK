@@ -67,65 +67,53 @@ theme_override_styles/panel = SubResource("StyleBoxTexture_6bivr")
 
 [node name="GameNameLabel" type="Label" parent="." unique_id=1725804782]
 unique_name_in_owner = true
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -491.0
-offset_top = -310.0
-offset_right = 491.0
-offset_bottom = -234.0
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.04
+anchor_right = 0.95
+anchor_bottom = 0.22
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 75
-text = "Bella Bittersweet: Tunnel Vision"
+text = "BellaSDK"
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 2
 
 [node name="PlateCenterContainer" type="CenterContainer" parent="." unique_id=940863943]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+unique_name_in_owner = true
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.22
+anchor_right = 0.95
+anchor_bottom = 0.96
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="PlateCenterContainer" unique_id=287636838]
 layout_mode = 2
-theme_override_constants/margin_top = 350
 
-[node name="PlateContainer" type="Control" parent="PlateCenterContainer/MarginContainer" unique_id=2102469252]
-custom_minimum_size = Vector2(800, 800)
+[node name="PlateContainer" type="MarginContainer" parent="PlateCenterContainer/MarginContainer" unique_id=2102469252]
 layout_mode = 2
 
 [node name="MetalPlate" type="TextureRect" parent="PlateCenterContainer/MarginContainer/PlateContainer" unique_id=705311146]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
 texture = ExtResource("3_8jgmr")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="MenuMargin" type="MarginContainer" parent="PlateCenterContainer/MarginContainer/PlateContainer" unique_id=2084975143]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -250.0
-offset_top = -250.0
-offset_right = 250.0
-offset_bottom = 250.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
+theme_override_constants/margin_left = 80
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 80
+theme_override_constants/margin_bottom = 48
 
 [node name="MainButtons" type="VBoxContainer" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin" unique_id=988684812]
 unique_name_in_owner = true
 process_mode = 3
-custom_minimum_size = Vector2(250, 500)
+custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -266,11 +254,11 @@ mouse_filter = 2
 unique_name_in_owner = true
 visible = false
 z_index = 1
-custom_minimum_size = Vector2(800, 400)
+custom_minimum_size = Vector2(400, 300)
 layout_mode = 1
+offset_left = -400.0
 offset_top = 35.0
-offset_right = 1280.0
-offset_bottom = 35.0
+offset_bottom = 335.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_jiymt")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer/SearchDropdownAnchor/SearchResultsPanel" unique_id=290380255]
@@ -355,7 +343,7 @@ size_flags_horizontal = 3
 [node name="ResetDefaultsButton" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar/MarginContainer" unique_id=941489246 instance=ExtResource("3_kaxbk")]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(400, 80)
+custom_minimum_size = Vector2(200, 64)
 layout_mode = 2
 size_flags_horizontal = 0
 custom_text = "Reset to Defaults"
@@ -367,7 +355,7 @@ size_flags_horizontal = 3
 
 [node name="MasterBackButton" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar/MarginContainer2" unique_id=910947946 instance=ExtResource("3_kaxbk")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 80)
+custom_minimum_size = Vector2(200, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 1

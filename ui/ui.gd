@@ -101,9 +101,6 @@ func _connect_signals() -> void:
 ## Intercepts global debug hotkeys and blocked movement inputs.
 ## [param event] The [InputEvent] received from the engine.
 func _input(event: InputEvent) -> void:
-	if not is_debug_allowed:
-		return
-
 	if _handle_console_and_debug_hotkeys(event):
 		return
 
@@ -125,8 +122,45 @@ func _input(event: InputEvent) -> void:
 					notification_hud.show_warning_message("Can't sprint", 2.0)
 
 
-## Dispatches console toggle on unchorded Tilde release so Tilde+1..3 chords can fire.
+## Dispatches console toggle on unchorded Tilde release so Tilde+1..9 chords can fire.
 func _handle_console_and_debug_hotkeys(event: InputEvent) -> bool:
+	var is_tilde_event: bool = false
+	var is_pressed: bool = false
+	if event is InputEventKey:
+		var key_ev: InputEventKey = event as InputEventKey
+		if key_ev.is_echo():
+			return false
+		if (
+			key_ev.physical_keycode in [KEY_QUOTELEFT, KEY_ASCIITILDE]
+			or key_ev.keycode in [KEY_QUOTELEFT, KEY_ASCIITILDE]
+		):
+			is_tilde_event = true
+			is_pressed = key_ev.is_pressed()
+		elif InputMap.has_action(ACTION_CONSOLE) and event.is_action(ACTION_CONSOLE):
+			is_tilde_event = true
+			is_pressed = event.is_pressed()
+
+	if is_tilde_event:
+		# Let press pass through to GestureInputManager so _held_keys tracks Tilde.
+		if is_pressed:
+			_tilde_held = true
+			_tilde_chord_used = false
+			return false
+
+		# On release: open/close console only if no chord was triggered while held.
+		var should_toggle_console: bool = _tilde_held and not _tilde_chord_used
+		_tilde_held = false
+		_tilde_chord_used = false
+		if should_toggle_console and is_debug_allowed:
+			print("UIController: Unchorded console key released. Toggling console.")
+			Events.console_toggle_requested.emit()
+			get_viewport().set_input_as_handled()
+			return true
+		return false
+
+	if not is_debug_allowed:
+		return false
+
 	var is_f3_or_debug_menu: bool = false
 	if InputMap.has_action(ACTION_DEBUG_MENU) and event.is_action_pressed(ACTION_DEBUG_MENU):
 		is_f3_or_debug_menu = true
@@ -141,48 +175,11 @@ func _handle_console_and_debug_hotkeys(event: InputEvent) -> bool:
 		get_viewport().set_input_as_handled()
 		return true
 
-	var is_tilde_event: bool = false
-	var is_pressed: bool = false
-	if event is InputEventKey:
-		var key_ev: InputEventKey = event as InputEventKey
-		if key_ev.is_echo():
-			return false
-		var code: Key = (
-			key_ev.physical_keycode if key_ev.physical_keycode != KEY_NONE else key_ev.keycode
-		)
-		if code in [KEY_QUOTELEFT, KEY_ASCIITILDE]:
-			is_tilde_event = true
-			is_pressed = key_ev.is_pressed()
-		elif InputMap.has_action(ACTION_CONSOLE) and event.is_action(ACTION_CONSOLE):
-			is_tilde_event = true
-			is_pressed = event.is_pressed()
-
-	if not is_tilde_event:
-		return false
-
-	# Let press pass through to GestureInputManager so _held_keys tracks KEY_QUOTELEFT.
-	if is_pressed:
-		_tilde_held = true
-		_tilde_chord_used = false
-		return false
-
-	# On release: open/close console only if no chord was triggered while held.
-	var should_toggle_console: bool = _tilde_held and not _tilde_chord_used
-	_tilde_held = false
-	_tilde_chord_used = false
-	if should_toggle_console:
-		print("UIController: Unchorded console key released. Toggling console.")
-		Events.console_toggle_requested.emit()
-		get_viewport().set_input_as_handled()
-		return true
 	return false
 
 
 ## Routes debug actions and marks chord consumption when triggered via [GestureInputManager].
 func _on_gesture_action_triggered(action: String, gesture: String) -> void:
-	if not is_debug_allowed:
-		return
-
 	if gesture in ["chord", "ordered_chord"] and _tilde_held:
 		_tilde_chord_used = true
 
@@ -199,6 +196,12 @@ func _on_gesture_action_triggered(action: String, gesture: String) -> void:
 			_tilde_chord_used = true
 			print("UIController: Chord triggered -> debug_toggle_diagnostics")
 			Events.render_diagnostics_toggle_requested.emit()
+		"debug_toggle_4", "debug_toggle_5", "debug_toggle_6":
+			_tilde_chord_used = true
+			print("UIController: Chord triggered -> ", action, " (unassigned)")
+		"debug_toggle_7", "debug_toggle_8", "debug_toggle_9":
+			_tilde_chord_used = true
+			print("UIController: Chord triggered -> ", action, " (unassigned)")
 
 
 ## Handles damage signals by triggering the screen pain flash effect.

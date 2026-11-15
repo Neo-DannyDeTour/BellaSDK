@@ -43,7 +43,7 @@
 [ext_resource type="PackedScene" uid="uid://bnlraeb1v7dau" path="res://assets/VisTEST/2. Modular_Models/Props/scaffolding_tube.tscn" id="43_wx75l"]
 [ext_resource type="PackedScene" uid="uid://c1j1p38hn3qg8" path="res://assets/VisTEST/2. Modular_Models/Props/scaffolding_base_platform.tscn" id="44_1pcfk"]
 [ext_resource type="PackedScene" uid="uid://cre2eqhw64w1f" path="res://assets/VisTEST/2. Modular_Models/Props/scaffolding_structure.tscn" id="45_52h53"]
-[ext_resource type="PackedScene" uid="uid://cf8pnlqxpdri3" path="res://interactables/pickable_barrel_red.tscn" id="46_ubk4r"]
+[ext_resource type="PackedScene" path="res://interactables/pickable_oil_drum_red.tscn" id="46_ubk4r"]
 [ext_resource type="Texture2D" uid="uid://dqbpt2iyril23" path="res://assets/VisTEST/2. Modular_Models/Walls/Wall_Fan/Wall_Fan_T_Concrete_BaseColor-T_Concrete_Alpha.png" id="47_6vg87"]
 [ext_resource type="PackedScene" uid="uid://b85u3svdjg12c" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_chair_small.tscn" id="52_8plba"]
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://triggers/env_chapter_trigger.tscn" id="52_wkfn1"]
@@ -52,7 +52,7 @@
 [ext_resource type="Script" uid="uid://6ldpudwj5c25" path="res://environment/graphics_cctv_camera.gd" id="55_334ql"]
 [ext_resource type="PackedScene" uid="uid://bn5ay1rfbr545" path="res://enemies/turret.tscn" id="55_b307c"]
 [ext_resource type="Script" uid="uid://dlrddmx144blj" path="res://player/camera_3d.gd" id="56_b307c"]
-[ext_resource type="PackedScene" uid="uid://ckx2iw4xdsaqd" path="res://interactables/pickable_barrel_green.tscn" id="56_k566i"]
+[ext_resource type="PackedScene" path="res://interactables/pickable_oil_drum_green.tscn" id="56_k566i"]
 [ext_resource type="Shader" uid="uid://cp26motkbojta" path="res://ui/VisionAssist.gdshader" id="57_fbi2v"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6sdu6"]

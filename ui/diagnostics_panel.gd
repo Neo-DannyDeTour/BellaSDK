@@ -27,12 +27,6 @@ const OFFENDER_THRESHOLD_MS: float = 0.5
 ## Maximum number of frame hitch records to retain in the display buffer.
 const MAX_HITCH_RECORDS: int = 5
 
-## Minimum interval in seconds between consecutive CSV disk flushes.
-const CSV_FLUSH_INTERVAL: float = 2.0
-
-## Hitch trigger threshold in milliseconds for drop detection.
-const HITCH_STUTTER_THRESHOLD_MS: float = 33.333
-
 ## Maximum tail byte window read from log file during orphan inspection.
 const LOG_READ_WINDOW_BYTES: int = 16384
 
@@ -44,9 +38,6 @@ const UPDATE_MODE_LABELS: Dictionary[int, String] = {
 	3: "[color=green]PARENT_VISIBLE[/color]",
 	4: "[color=red]ALWAYS[/color]",
 }
-
-## Enables continuous background CSV hitch logging even when panel is hidden.
-@export var enable_background_hitch_logging: bool = false
 
 ## RichTextLabel displaying real-time formatted diagnostics.
 @onready var diagnostics_label: RichTextLabel = %DiagnosticsLabel
@@ -103,29 +94,11 @@ var _current_tab: DiagnosticTab = DiagnosticTab.PERFORMANCE
 ## Frame accumulation timer to throttle GUI updates.
 var _refresh_timer: float = 0.0
 
-## Timestamp of the previous frame in microseconds for hitch detection.
-var _last_tick_usec: int = 0
-
 ## Ring buffer storing recent hitch events exceeding threshold.
 var _recent_hitches: Array[Dictionary] = []
 
-## Pre-allocated CSV file path targeting the user desktop.
-var _csv_path: String = ""
-
-## Persistent FileAccess instance preventing disk open/close stalls.
-var _csv_file: FileAccess
-
 ## Static snapshot text for scene geometry to eliminate tree recursion.
 var _cached_branch_survey: String = "Press [Scan Scene Geometry] to inspect hierarchy.\n"
-
-## In-memory write buffer for hitch lines preventing blocking file I/O.
-var _csv_write_buffer: PackedStringArray = PackedStringArray()
-
-## Accumulated time since the last CSV disk flush.
-var _csv_flush_timer: float = 0.0
-
-## Flag preventing hitch logger re-entry during deliberate scans.
-var _is_performing_manual_scan: bool = false
 
 ## Tracks active isolation pass state for rendering layers.
 var _is_isolating_layers: bool = false
@@ -172,25 +145,24 @@ func _ready() -> void:
 
 	_update_tab_button_visuals()
 
-	if OS.get_cmdline_args().has("--log-hitches"):
-		enable_background_hitch_logging = true
-
-	if OS.has_feature("debug") and enable_background_hitch_logging:
-		_init_csv_logging()
-
-	_last_tick_usec = Time.get_ticks_usec()
+	if (
+		is_instance_valid(SpikeForensics)
+		and not SpikeForensics.spike_detected.is_connected(_on_spike_detected)
+	):
+		SpikeForensics.spike_detected.connect(_on_spike_detected)
 
 	sync_toggle_button_labels()
 	_update_processing_state()
 
 
-## Flushes remaining records and closes file handle on tree exit.
+## Disconnects forensic signals on tree exit.
 func _exit_tree() -> void:
 	print("RenderDiagnosticsPanel: Releasing handles.")
-	_flush_csv_to_disk()
-	if _csv_file:
-		_csv_file.close()
-		_csv_file = null
+	if (
+		is_instance_valid(SpikeForensics)
+		and SpikeForensics.spike_detected.is_connected(_on_spike_detected)
+	):
+		SpikeForensics.spike_detected.disconnect(_on_spike_detected)
 
 
 ## Creates the Triage Glitch button dynamically if missing from the scene.
@@ -203,24 +175,6 @@ func _ensure_triage_button() -> void:
 		triage_glitch_button.name = "TriageGlitchButton"
 		triage_glitch_button.text = "Triage Glitch"
 		diorama_button.get_parent().add_child(triage_glitch_button)
-
-
-## Initializes desktop CSV file handle only in debug builds.
-func _init_csv_logging() -> void:
-	if _csv_file != null:
-		return
-	print("RenderDiagnosticsPanel: Creating debug hitch logger.")
-	var desktop_dir: String = OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP)
-	_csv_path = desktop_dir.path_join("godot_hitches.csv")
-	var file_exists: bool = FileAccess.file_exists(_csv_path)
-	_csv_file = FileAccess.open(
-		_csv_path, FileAccess.READ_WRITE if file_exists else FileAccess.WRITE
-	)
-	if _csv_file:
-		if not file_exists:
-			_csv_file.store_line("Timestamp,FrameTime_ms,Culprit,CulpritTime_ms,DrawCalls")
-		else:
-			_csv_file.seek_end()
 
 
 ## Switches active tab to Viewports & Layers pipeline.
@@ -263,39 +217,16 @@ func _apply_layout_constraints() -> void:
 	custom_minimum_size = Vector2(panel_width, 0.0)
 
 
-## Gates processing active state based on visibility and debug logging.
+## Gates processing active state based on panel visibility.
 func _update_processing_state() -> void:
-	var bg_logging: bool = (
-		enable_background_hitch_logging and _csv_file != null and OS.has_feature("debug")
-	)
-	var needs_process: bool = visible or bg_logging
 	var vp: Viewport = get_viewport()
 	if is_instance_valid(vp):
-		RenderingServer.viewport_set_measure_render_time(vp.get_viewport_rid(), needs_process)
-	if needs_process:
-		_last_tick_usec = Time.get_ticks_usec()
-	set_process(needs_process)
+		RenderingServer.viewport_set_measure_render_time(vp.get_viewport_rid(), visible)
+	set_process(visible)
 
 
-## Accumulates delta time, logs hitches, and flushes CSV buffer.
+## Throttles live diagnostic label updates while visible.
 func _process(delta: float) -> void:
-	var has_logger: bool = (
-		enable_background_hitch_logging and _csv_file != null and OS.has_feature("debug")
-	)
-
-	if has_logger:
-		var now_usec: int = Time.get_ticks_usec()
-		var frame_time_ms: float = (now_usec - _last_tick_usec) * 0.001
-		_last_tick_usec = now_usec
-
-		if not _is_performing_manual_scan and frame_time_ms > HITCH_STUTTER_THRESHOLD_MS:
-			_record_hitch_event(frame_time_ms)
-
-		_csv_flush_timer += delta
-		if _csv_flush_timer >= CSV_FLUSH_INTERVAL and not _csv_write_buffer.is_empty():
-			_csv_flush_timer = 0.0
-			_flush_csv_to_disk()
-
 	if not visible:
 		return
 
@@ -318,48 +249,11 @@ func toggle_window() -> bool:
 	return visible
 
 
-## Records hitch telemetry in memory and queues CSV buffer line.
-func _record_hitch_event(frame_time_ms: float) -> void:
-	var vp_rid: RID = get_viewport().get_viewport_rid()
-	var gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
-	var proc_ms: float = Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
-	var physics_ms: float = Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
-
-	var culprit: String = "GPU"
-	var culprit_ms: float = gpu_ms
-	if proc_ms > culprit_ms:
-		culprit = "CPU Process"
-		culprit_ms = proc_ms
-	if physics_ms > culprit_ms:
-		culprit = "Physics"
-		culprit_ms = physics_ms
-
-	var timestamp: String = Time.get_time_string_from_system()
-	var draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
-
-	var record: Dictionary = {
-		"culprit": culprit,
-		"culprit_ms": culprit_ms,
-		"duration_ms": frame_time_ms,
-		"time": timestamp,
-	}
+## Appends attributed spike telemetry from [SpikeForensics] into recent history.
+func _on_spike_detected(record: Dictionary) -> void:
 	_recent_hitches.push_back(record)
 	if _recent_hitches.size() > MAX_HITCH_RECORDS:
 		_recent_hitches.pop_front()
-
-	_csv_write_buffer.append(
-		"%s,%.2f,%s,%.2f,%d" % [timestamp, frame_time_ms, culprit, culprit_ms, draw_calls]
-	)
-
-
-## Writes buffered hitch records to disk to avoid frame stutter loops.
-func _flush_csv_to_disk() -> void:
-	if not _csv_file or _csv_write_buffer.is_empty():
-		return
-	for line: String in _csv_write_buffer:
-		_csv_file.store_line(line)
-	_csv_write_buffer.clear()
-	_csv_file.flush()
 
 
 ## Refreshes panel display matching currently selected diagnostic tab.
@@ -435,7 +329,8 @@ func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
 ## Traverses window hierarchy and compiles geometry statistics.
 func scan_scene_geometry() -> void:
 	print("RenderDiagnosticsPanel: Initiating full-tree geometry audit.")
-	_is_performing_manual_scan = true
+	if is_instance_valid(SpikeForensics):
+		SpikeForensics.set_suppressed(true)
 
 	var output_lines: PackedStringArray = PackedStringArray()
 	var root_vp: Window = get_tree().root
@@ -459,14 +354,15 @@ func scan_scene_geometry() -> void:
 	_cached_branch_survey = "\n".join(output_lines) + "\n"
 	_apply_survey_to_ui()
 
-	_is_performing_manual_scan = false
-	_last_tick_usec = Time.get_ticks_usec()
+	if is_instance_valid(SpikeForensics):
+		SpikeForensics.set_suppressed(false)
 
 
 ## Dumps orphan nodes via [method Node.print_orphan_nodes] and parses log.
 func scan_orphan_nodes() -> void:
 	print("RenderDiagnosticsPanel: Scanning for orphan nodes.")
-	_is_performing_manual_scan = true
+	if is_instance_valid(SpikeForensics):
+		SpikeForensics.set_suppressed(true)
 
 	var orphan_count: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 	var total_nodes: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
@@ -515,8 +411,8 @@ func scan_orphan_nodes() -> void:
 	_cached_branch_survey = "\n".join(output_lines) + "\n"
 	_apply_survey_to_ui()
 
-	_is_performing_manual_scan = false
-	_last_tick_usec = Time.get_ticks_usec()
+	if is_instance_valid(SpikeForensics):
+		SpikeForensics.set_suppressed(false)
 
 
 ## Extracts the latest orphan node dump block from the engine log file.

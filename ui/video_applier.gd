@@ -35,6 +35,12 @@ static func apply_window_settings(
 		return
 	print("VideoApplier: Applying window settings -> mode: ", mode, " res: ", resolution)
 
+	if window.content_scale_size != resolution:
+		window.content_scale_size = resolution
+
+	if Engine.is_embedded_in_editor() or window.is_embedded():
+		return
+
 	var screen_count: int = DisplayServer.get_screen_count()
 	var valid_screen: int = clampi(screen_idx, 0, maxi(screen_count - 1, 0))
 	if window.current_screen != valid_screen:
@@ -44,10 +50,7 @@ static func apply_window_settings(
 	if window.mode != target_mode:
 		window.mode = target_mode
 
-	if window.content_scale_size != resolution:
-		window.content_scale_size = resolution
-
-	if not window.is_embedded() and window.mode == Window.MODE_WINDOWED:
+	if window.mode == Window.MODE_WINDOWED:
 		window.borderless = false
 		if window.size != resolution:
 			window.size = resolution

@@ -17,15 +17,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 32
-theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 32
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
 [node name="ContentVBox" type="VBoxContainer" parent="MarginContainer" unique_id=1501613889]
-custom_minimum_size = Vector2(640, 0)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 
@@ -143,10 +142,11 @@ value = 1.0
 [node name="HSeparator2" type="HSeparator" parent="MarginContainer/ContentVBox" unique_id=1423602958]
 layout_mode = 2
 
-[node name="BehaviorSection" type="HBoxContainer" parent="MarginContainer/ContentVBox" unique_id=189408522]
+[node name="BehaviorSection" type="GridContainer" parent="MarginContainer/ContentVBox" unique_id=189408522]
 layout_mode = 2
-theme_override_constants/separation = 16
-alignment = 1
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 6
+columns = 2
 
 [node name="CrouchModeLabel" type="Label" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=701025219]
 unique_name_in_owner = true

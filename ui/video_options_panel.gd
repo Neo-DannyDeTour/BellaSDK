@@ -26,6 +26,9 @@ var _is_applying_batch: bool = false
 ## Reference to the application restart confirmation [ConfirmationDialog].
 @onready var restart_dialog: ConfirmationDialog = %RestartDialog
 
+## Reference to the diorama preview socket [Control].
+@onready var diorama_socket: Control = %VideoDioramaSocket
+
 
 ## Connects sub-section events and synchronizes initial state with [GraphicsManager].
 func _ready() -> void:
@@ -35,6 +38,9 @@ func _ready() -> void:
 
 	if is_instance_valid(restart_dialog):
 		restart_dialog.hide()
+
+	resized.connect(_on_panel_resized)
+	_on_panel_resized()
 
 	display_section.display_settings_changed.connect(_on_display_settings_changed)
 	quality_section.preset_changed.connect(_on_preset_changed)
@@ -136,3 +142,12 @@ func _on_restart_dialog_confirmed() -> void:
 	GlobalSettings.flush_to_disk()
 	OS.set_restart_on_exit(true, PackedStringArray(restart_args))
 	get_tree().quit()
+
+
+## Adapts diorama preview socket sizing for compact viewports such as 640x480.
+func _on_panel_resized() -> void:
+	if not is_instance_valid(diorama_socket):
+		return
+	var compact: bool = size.x < 760.0 or size.y < 520.0
+	diorama_socket.visible = not compact
+	diorama_socket.custom_minimum_size = Vector2.ZERO if compact else Vector2(640.0, 480.0)

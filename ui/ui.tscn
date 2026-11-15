@@ -951,12 +951,12 @@ fit_content = true
 
 [node name="DiagnosticsPanel" type="PanelContainer" parent="." unique_id=2090465156]
 unique_name_in_owner = true
-anchors_preset = 5
+anchors_preset = -1
 anchor_left = 0.5
 anchor_right = 0.5
+anchor_bottom = 0.95
 offset_left = -174.5
 offset_right = 174.5
-offset_bottom = 720.0
 grow_horizontal = 2
 script = ExtResource("15_rkf1o")
 

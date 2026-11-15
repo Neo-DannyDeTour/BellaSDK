@@ -48,8 +48,13 @@ func _ready() -> void:
 ## Synchronizes all display UI controls with the active configuration in [GraphicsManager].
 func load_settings() -> void:
 	print("DisplaySection: Synchronizing display UI with active configuration.")
-	var display_mode: int = GlobalSettings.get_setting_int(
-		"Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY
+	var display_user_set: bool = GlobalSettings.get_setting_bool(
+		"Settings", "display_mode_user_set", false
+	)
+	var display_mode: int = (
+		GlobalSettings.get_setting_int("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY)
+		if display_user_set
+		else VideoConfig.DEFAULT_DISPLAY
 	)
 	_update_display_mode_buttons(display_mode)
 
@@ -67,11 +72,20 @@ func load_settings() -> void:
 	if screen_idx >= 0 and screen_idx < monitor_options.get_item_count():
 		monitor_options.select(screen_idx)
 
-	var res_x: int = GlobalSettings.get_setting_int(
-		"Settings", "resolution_x", VideoConfig.DEFAULT_RES_X
+	var native_res: Vector2i = VideoConfig.get_native_resolution(screen_idx)
+	_populate_resolution_dropdown(native_res)
+	var resolution_user_set: bool = GlobalSettings.get_setting_bool(
+		"Settings", "resolution_user_set", false
 	)
-	var res_y: int = GlobalSettings.get_setting_int(
-		"Settings", "resolution_y", VideoConfig.DEFAULT_RES_Y
+	var res_x: int = (
+		GlobalSettings.get_setting_int("Settings", "resolution_x", native_res.x)
+		if resolution_user_set
+		else native_res.x
+	)
+	var res_y: int = (
+		GlobalSettings.get_setting_int("Settings", "resolution_y", native_res.y)
+		if resolution_user_set
+		else native_res.y
 	)
 	_select_dropdown_text(resolution_options, str(res_x) + " x " + str(res_y))
 
@@ -114,9 +128,8 @@ func _configure_toggle_group(buttons: Array[Button]) -> void:
 
 ## Populates resolution, framerate cap, and monitor dropdown selectors.
 func _populate_dropdowns() -> void:
-	resolution_options.clear()
-	for res_label: String in VideoConfig.RESOLUTIONS.keys():
-		resolution_options.add_item(res_label)
+	var screen_idx: int = GlobalSettings.get_setting_int("Settings", "screen_index", 0)
+	_populate_resolution_dropdown(VideoConfig.get_native_resolution(screen_idx))
 
 	fps_options.clear()
 	for fps_label: String in VideoConfig.FPS_LIMITS.keys():
@@ -126,6 +139,19 @@ func _populate_dropdowns() -> void:
 	var screen_count: int = maxi(DisplayServer.get_screen_count(), 1)
 	for idx: int in range(screen_count):
 		monitor_options.add_item("Monitor " + str(idx + 1))
+
+
+## Populates resolution dropdown including [param native_res] if not in [VideoConfig].
+func _populate_resolution_dropdown(native_res: Vector2i) -> void:
+	resolution_options.clear()
+	var native_label: String = str(native_res.x) + " x " + str(native_res.y)
+	var has_native: bool = false
+	for res_label: String in VideoConfig.RESOLUTIONS.keys():
+		if res_label == native_label:
+			has_native = true
+		resolution_options.add_item(res_label)
+	if not has_native and native_res.x > 0 and native_res.y > 0:
+		resolution_options.add_item(native_label)
 
 
 ## Connects UI widget signals using typed Callables.
@@ -201,6 +227,7 @@ func _on_display_mode_selected(mode: int) -> void:
 		"Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC
 	)
 	_update_vsync_buttons(cur_vsync, mode)
+	GlobalSettings.save_setting("Settings", "display_mode_user_set", true, false)
 	GraphicsManager.set_setting("display_mode", mode)
 	display_settings_changed.emit()
 
@@ -219,6 +246,12 @@ func _on_vsync_mode_selected(mode: int) -> void:
 ## Handles target monitor selection and updates [GraphicsManager].
 func _on_monitor_selected(index: int) -> void:
 	print("DisplaySection: Player selected monitor index -> ", index)
+	var native_res: Vector2i = VideoConfig.get_native_resolution(index)
+	_populate_resolution_dropdown(native_res)
+	if not GlobalSettings.get_setting_bool("Settings", "resolution_user_set", false):
+		GraphicsManager.set_setting("resolution_x", native_res.x, false)
+		GraphicsManager.set_setting("resolution_y", native_res.y, false)
+		_select_dropdown_text(resolution_options, str(native_res.x) + " x " + str(native_res.y))
 	GraphicsManager.set_setting("screen_index", index)
 	display_settings_changed.emit()
 
@@ -226,11 +259,27 @@ func _on_monitor_selected(index: int) -> void:
 ## Handles screen resolution selection and updates [GraphicsManager].
 func _on_resolution_selected(index: int) -> void:
 	var label: String = resolution_options.get_item_text(index)
-	var res: Vector2i = VideoConfig.RESOLUTIONS.get(label, Vector2i(1920, 1080))
+	var res: Vector2i = _parse_resolution_label(label)
 	print("DisplaySection: Player selected resolution -> ", res)
+	GlobalSettings.save_setting("Settings", "resolution_user_set", true, false)
 	GraphicsManager.set_setting("resolution_x", res.x, false)
 	GraphicsManager.set_setting("resolution_y", res.y, true)
 	display_settings_changed.emit()
+
+
+## Parses a "W x H" resolution label into a [Vector2i].
+func _parse_resolution_label(label: String) -> Vector2i:
+	if VideoConfig.RESOLUTIONS.has(label):
+		var preset_val: Variant = VideoConfig.RESOLUTIONS[label]
+		if preset_val is Vector2i:
+			return preset_val
+	var parts: PackedStringArray = label.split("x")
+	if parts.size() == 2:
+		var w_str: String = parts[0].strip_edges()
+		var h_str: String = parts[1].strip_edges()
+		if w_str.is_valid_int() and h_str.is_valid_int():
+			return Vector2i(w_str.to_int(), h_str.to_int())
+	return VideoConfig.get_native_resolution(0)
 
 
 ## Handles framerate limit selection and updates [GraphicsManager].

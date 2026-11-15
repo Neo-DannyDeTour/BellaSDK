@@ -23,6 +23,9 @@ const LOADING_SCREEN_SCENE: PackedScene = preload("res://ui/loading_screen_anim.
 ## Primary game title label.
 @onready var game_name_label: Label = %GameNameLabel
 
+## Center container wrapping the metal plate and root navigation buttons.
+@onready var plate_center_container: CenterContainer = %PlateCenterContainer
+
 ## Vertical container grouping root buttons.
 @onready var main_buttons: VBoxContainer = %MainButtons
 
@@ -103,6 +106,8 @@ func _connect_primary_buttons() -> void:
 		restart_button.pressed.connect(_on_start_game_pressed)
 	if is_instance_valid(options_button):
 		options_button.pressed.connect(_on_options_pressed)
+	if is_instance_valid(save_button):
+		save_button.pressed.connect(_on_save_pressed)
 	if is_instance_valid(load_button):
 		load_button.pressed.connect(_on_load_pressed)
 	if is_instance_valid(exit_button):
@@ -113,6 +118,13 @@ func _connect_primary_buttons() -> void:
 func _connect_subcomponents() -> void:
 	if is_instance_valid(options_router):
 		options_router.back_requested.connect(_return_to_main_buttons)
+
+	if is_instance_valid(save_load_panel):
+		var close_save_btn: Button = (
+			save_load_panel.find_child("CloseSaveMenuButton", true, false) as Button
+		)
+		if is_instance_valid(close_save_btn):
+			close_save_btn.pressed.connect(_return_to_main_buttons)
 
 	if is_instance_valid(settings_search) and is_instance_valid(options_router):
 		settings_search.setting_navigated.connect(_on_setting_navigated)
@@ -188,16 +200,24 @@ func _stop_main_theme() -> void:
 		main_theme_player.stop()
 
 
+## Sets visibility of the root title label, metal plate container, and main buttons.
+## [param is_menu_visible] Whether the root main menu controls should be visible.
+func _set_main_menu_visible(is_menu_visible: bool) -> void:
+	if is_instance_valid(game_name_label):
+		game_name_label.visible = is_menu_visible
+	if is_instance_valid(plate_center_container):
+		plate_center_container.visible = is_menu_visible
+	if is_instance_valid(main_buttons):
+		main_buttons.visible = is_menu_visible
+
+
 ## Restores the primary navigation view and closes overlays.
 func _return_to_main_buttons() -> void:
 	print("UI: Restoring root menu view.")
 	GraphicsManager.set_diorama_mode(false)
 	if is_instance_valid(highlighter):
 		highlighter.clear_highlight()
-	if is_instance_valid(game_name_label):
-		game_name_label.visible = true
-	if is_instance_valid(main_buttons):
-		main_buttons.visible = true
+	_set_main_menu_visible(true)
 	if is_instance_valid(options_menu_container):
 		options_menu_container.visible = false
 	if is_instance_valid(save_load_panel):
@@ -229,14 +249,18 @@ func _on_new_game_pressed() -> void:
 	if not has_calibrated:
 		_apply_bucket_calibration()
 
-	if is_instance_valid(game_name_label):
-		game_name_label.hide()
-	if is_instance_valid(main_buttons):
-		main_buttons.hide()
+	_set_main_menu_visible(false)
 
 	var chapter_window: Node = CHAPTER_SCREEN.instantiate()
 	if is_instance_valid(chapter_window):
+		chapter_window.tree_exited.connect(_on_chapter_screen_closed)
 		add_child(chapter_window)
+
+
+## Restores main menu visibility when the chapter selection screen closes.
+func _on_chapter_screen_closed() -> void:
+	if is_inside_tree() and not is_queued_for_deletion():
+		_return_to_main_buttons()
 
 
 ## Prepares the scene tree and GPU state before switching to a level or resuming.
@@ -286,10 +310,7 @@ func _on_start_game_pressed() -> void:
 ## Opens the options menu overlay and awakens diorama rendering.
 func _on_options_pressed() -> void:
 	print("UI: Player clicked Options.")
-	if is_instance_valid(game_name_label):
-		game_name_label.visible = false
-	if is_instance_valid(main_buttons):
-		main_buttons.visible = false
+	_set_main_menu_visible(false)
 	if is_instance_valid(save_load_panel):
 		save_load_panel.visible = false
 	if is_instance_valid(options_menu_container):
@@ -301,13 +322,16 @@ func _on_options_pressed() -> void:
 	GraphicsManager.set_diorama_mode(true)
 
 
+## Opens the save/load menu overlay for saving.
+func _on_save_pressed() -> void:
+	print("UI: Player clicked Save Game.")
+	_on_load_pressed()
+
+
 ## Opens the save/load menu overlay.
 func _on_load_pressed() -> void:
 	print("UI: Player clicked Load Game.")
-	if is_instance_valid(game_name_label):
-		game_name_label.visible = false
-	if is_instance_valid(main_buttons):
-		main_buttons.visible = false
+	_set_main_menu_visible(false)
 	if is_instance_valid(options_menu_container):
 		options_menu_container.visible = false
 	if is_instance_valid(save_load_panel):

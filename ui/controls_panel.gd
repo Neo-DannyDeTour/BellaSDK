@@ -32,7 +32,13 @@ const ACTION_CATEGORIES: Dictionary = {
 		"debug_menu",
 		"debug_toggle_metrics",
 		"debug_toggle_ui",
-		"debug_toggle_diagnostics"
+		"debug_toggle_diagnostics",
+		"debug_toggle_4",
+		"debug_toggle_5",
+		"debug_toggle_6",
+		"debug_toggle_7",
+		"debug_toggle_8",
+		"debug_toggle_9"
 	]
 }
 

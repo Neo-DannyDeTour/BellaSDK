@@ -443,11 +443,12 @@ const PRESETS: Dictionary = {
 
 ## Returns a complete default settings dictionary built from the "Ultra" preset.
 static func get_default_settings_dict() -> Dictionary:
+	var native_res: Vector2i = get_native_resolution(0)
 	var base: Dictionary = {
 		"display_mode": DEFAULT_DISPLAY,
 		"screen_index": 0,
-		"resolution_x": DEFAULT_RES_X,
-		"resolution_y": DEFAULT_RES_Y,
+		"resolution_x": native_res.x,
+		"resolution_y": native_res.y,
 		"vsync_mode": DEFAULT_VSYNC,
 		"fps_limit": DEFAULT_FPS,
 		"ui_scale": DEFAULT_UI_SCALE,
@@ -466,3 +467,27 @@ static func get_default_settings_dict() -> Dictionary:
 	for key: Variant in ultra_preset.keys():
 		base[key] = ultra_preset[key]
 	return base
+
+
+## Returns the native screen resolution for [param screen_idx], falling back to 1920x1080.
+static func get_native_resolution(screen_idx: int = 0) -> Vector2i:
+	var screen_count: int = DisplayServer.get_screen_count()
+	if screen_count <= 0:
+		return Vector2i(DEFAULT_RES_X, DEFAULT_RES_Y)
+	var valid_screen: int = clampi(screen_idx, 0, screen_count - 1)
+	var native_size: Vector2i = DisplayServer.screen_get_size(valid_screen)
+	if native_size.x <= 0 or native_size.y <= 0:
+		return Vector2i(DEFAULT_RES_X, DEFAULT_RES_Y)
+	return native_size
+
+
+## Clamps UI scale proportionally for viewports smaller than the 1280x720 reference size.
+static func compute_effective_ui_scale(requested_scale: float, resolution: Vector2i) -> float:
+	if resolution.x <= 0 or resolution.y <= 0:
+		return requested_scale
+	var scale_x: float = float(resolution.x) / 1280.0
+	var scale_y: float = float(resolution.y) / 720.0
+	var viewport_limit: float = minf(scale_x, scale_y)
+	if viewport_limit < 1.0:
+		return minf(requested_scale, maxf(viewport_limit, 0.35))
+	return requested_scale
