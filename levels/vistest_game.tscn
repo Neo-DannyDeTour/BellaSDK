@@ -43,7 +43,7 @@
 [ext_resource type="PackedScene" uid="uid://bnlraeb1v7dau" path="res://assets/VisTEST/2. Modular_Models/Props/scaffolding_tube.tscn" id="40_ucm1e"]
 [ext_resource type="PackedScene" uid="uid://c1j1p38hn3qg8" path="res://assets/VisTEST/2. Modular_Models/Props/scaffolding_base_platform.tscn" id="41_en8gr"]
 [ext_resource type="PackedScene" uid="uid://cre2eqhw64w1f" path="res://assets/VisTEST/2. Modular_Models/Props/scaffolding_structure.tscn" id="42_7f0vx"]
-[ext_resource type="PackedScene" uid="uid://cf8pnlqxpdri3" path="res://interactables/pickable_barrel_red.tscn" id="43_31m50"]
+[ext_resource type="PackedScene" path="res://interactables/pickable_oil_drum_red.tscn" id="43_31m50"]
 [ext_resource type="Texture2D" uid="uid://dqbpt2iyril23" path="res://assets/VisTEST/2. Modular_Models/Walls/Wall_Fan/Wall_Fan_T_Concrete_BaseColor-T_Concrete_Alpha.png" id="44_vhr73"]
 [ext_resource type="PackedScene" uid="uid://b85u3svdjg12c" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_chair_small.tscn" id="45_xlvoj"]
 [ext_resource type="PackedScene" uid="uid://bpn41lsyperm8" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_computer_old.tscn" id="46_ujj0l"]
@@ -54,7 +54,7 @@
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://triggers/env_chapter_trigger.tscn" id="51_52lpc"]
 [ext_resource type="PackedScene" uid="uid://4m1edbr3oqv5" path="res://triggers/trigger_hint.tscn" id="53_ol82b"]
 [ext_resource type="PackedScene" uid="uid://36tm5fsdgnad" path="res://environment/accessible_label_body.tscn" id="54_w467f"]
-[ext_resource type="PackedScene" uid="uid://ckx2iw4xdsaqd" path="res://interactables/pickable_barrel_green.tscn" id="55_0j0ri"]
+[ext_resource type="PackedScene" path="res://interactables/pickable_oil_drum_green.tscn" id="55_0j0ri"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
 panorama = ExtResource("1_t0tlv")

@@ -54,6 +54,9 @@ func test_attractor_preset_switching() -> void:
 func test_attractor_sequence_flow() -> void:
 	var ragdoll: MannequinRagdoll = MANNEQUIN_SCENE.instantiate() as MannequinRagdoll
 	add_child_autofree(ragdoll)
+	if ragdoll.get_skeleton() == null:
+		pending("LFS mannequin_ragdoll.glb unavailable in CI stub mode.")
+		return
 
 	var destination: TargetArrivalBox3D = ARRIVAL_SCENE.instantiate() as TargetArrivalBox3D
 	add_child_autofree(destination)

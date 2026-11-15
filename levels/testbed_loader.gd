@@ -9,7 +9,7 @@ const DEFAULT_LOADING_SCREEN_PATH: String = "res://ui/loading_screen.tscn"
 @export var loading_screen_scene: PackedScene
 
 ## Scene file path of the testbed level to load.
-@export_file("*.tscn", "*.scn") var testbed_path: String = "res://levels/testbed2.tscn"
+@export_file("*.tscn", "*.scn") var testbed_path: String = "res://levels/testbed_chunk.tscn"
 
 ## If true, automatically loads the testbed when running in debug mode.
 @export var auto_launch_in_debug: bool = true

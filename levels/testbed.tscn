@@ -35,7 +35,7 @@
 [ext_resource type="PackedScene" uid="uid://bwx87famw5p7u" path="res://interactables/pickable_box.tscn" id="31_i7ciw"]
 [ext_resource type="PackedScene" uid="uid://d2dtso8yjpyem" path="res://interactables/ground_button.tscn" id="32_hoynx"]
 [ext_resource type="PackedScene" uid="uid://bj5u88pj4vw4j" path="res://interactables/heavy_pickable_box.tscn" id="33_shtew"]
-[ext_resource type="PackedScene" uid="uid://ckx2iw4xdsaqd" path="res://interactables/pickable_barrel_green.tscn" id="34_c4f5s"]
+[ext_resource type="PackedScene" path="res://interactables/pickable_oil_drum_green.tscn" id="34_c4f5s"]
 [ext_resource type="PackedScene" uid="uid://b2ugsvj62h314" path="res://interactables/push_wheel.tscn" id="35_wy5ya"]
 [ext_resource type="PackedScene" uid="uid://dcxsg7atiheuy" path="res://enemies/rook_trap.tscn" id="36_5b0dn"]
 [ext_resource type="PackedScene" uid="uid://dwusg7ievwjmh" path="res://player/breakable_rope.tscn" id="37_bcpoc"]
@@ -99,7 +99,7 @@
 [ext_resource type="Script" uid="uid://cerve38bbxgo8" path="res://player/procedural_spiral_stairs_csg.gd" id="97_476ux"]
 [ext_resource type="PackedScene" uid="uid://ce2qkw8w155wt" path="res://player/fast_rope.tscn" id="98_7m14b"]
 [ext_resource type="Script" uid="uid://bpqd8h1qdh25a" path="res://interactables/procedural_ladder.gd" id="99_3hxda"]
-[ext_resource type="PackedScene" uid="uid://cf8pnlqxpdri3" path="res://interactables/pickable_barrel_red.tscn" id="100_bgt7m"]
+[ext_resource type="PackedScene" path="res://interactables/pickable_oil_drum_red.tscn" id="100_bgt7m"]
 [ext_resource type="PackedScene" uid="uid://dkmm4qelgt7gp" path="res://vfx/vfx_smoke_flipbook.tscn" id="101_gh8vw"]
 [ext_resource type="PackedScene" uid="uid://o1p7fu5ntsjr" path="res://vfx/vfx_blood_burst.tscn" id="102_rjx1h"]
 [ext_resource type="PackedScene" uid="uid://wmyjhovjnea4" path="res://interactables/ladder.tscn" id="103_afiqk"]
@@ -315,6 +315,7 @@ sky_rotation = Vector3(0, 1.1519173, 0)
 sdfgi_min_cell_size = 1.0
 volumetric_fog_enabled = true
 volumetric_fog_density = 0.0
+volumetric_fog_sky_affect = 1.0
 volumetric_fog_gi_inject = 0.25
 volumetric_fog_length = 256.0
 volumetric_fog_ambient_inject = 1.0

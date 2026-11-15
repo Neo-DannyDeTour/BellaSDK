@@ -3,6 +3,7 @@ class_name TestHealthDispenser
 extends GutTest
 
 const HEALTH_DISPENSER_SCRIPT: GDScript = preload("res://interactables/health_dispenser.gd")
+const HEALTH_DISPENSER_SCENE: PackedScene = preload("res://interactables/health_dispenser.tscn")
 const HEALTH_COMPONENT_SCRIPT: GDScript = preload("res://core/components/health_component.gd")
 
 ## Primary HealthDispenser node instance under test.
@@ -88,4 +89,37 @@ func test_update_screen() -> void:
 	_dispenser.call("_update_screen")
 	assert_eq(
 		_dispenser.screen_sprite.texture, tex_high, "Full health ratio should set tex_ready_health."
+	)
+
+
+## Verifies depleted state hides reservoir/screen/conduit and shows medieval text.
+func test_depleted_state_closes_and_hides_parts() -> void:
+	print("TestHealthDispenser: test_depleted_state_closes_and_hides_parts() executing.")
+	var inst: HealthDispenser = HEALTH_DISPENSER_SCENE.instantiate() as HealthDispenser
+	add_child_autofree(inst)
+
+	var player: CharacterBody3D = CharacterBody3D.new()
+	add_child_autofree(player)
+	var comps: Node = Node.new()
+	comps.name = "Components"
+	player.add_child(comps)
+	var health_comp: Node = HEALTH_COMPONENT_SCRIPT.new()
+	health_comp.name = "HealthComponent"
+	comps.add_child(health_comp)
+	health_comp.set("max_health", 500)
+	health_comp.set("current_health", 100)
+
+	inst.set("_player_health_component", health_comp)
+	inst.set("_current_dispenser_health", 25)
+	inst.set("_last_heal_time", 0)
+
+	inst.interact_held(player)
+
+	assert_eq(inst.get("_current_dispenser_health"), 0, "Dispenser should reach 0 HP.")
+	assert_true(inst.get("_is_depleted"), "Dispenser should mark _is_depleted true.")
+	assert_false(inst.health_cylinder.visible, "Health bar cylinder should hide on depletion.")
+	assert_false(inst.screen_sprite.visible, "Screen sprite should hide on depletion.")
+	assert_true(inst.depleted_label.visible, "Depleted label should become visible.")
+	assert_eq(
+		inst.depleted_label.text, "Out of Lifeblood!", "Depleted label should show medieval text."
 	)

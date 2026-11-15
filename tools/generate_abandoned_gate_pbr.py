@@ -1,19 +1,18 @@
-"""Generates authentic, mathematically seamless 2048x2048 PBR texture maps
-
-for abandoned, moldy, chipped industrial sectional garage gates.
-Outputs:
-  - props/garage_gate/textures/gate_albedo.png
-  - props/garage_gate/textures/gate_orm.png (R: AO, G: Roughness, B: Metallic)
-  - props/garage_gate/textures/gate_normal.png (OpenGL +Y tangent space)
+"""Generates non-repetitive, mathematically seamless PBR texture maps for:
+1. Abandoned, moldy, ribbed industrial garage gate panels (2048x2048):
+   - props/garage_gate/textures/gate_albedo.png
+   - props/garage_gate/textures/gate_orm.png
+   - props/garage_gate/textures/gate_normal.png
+2. Weathered galvanized & rusted steel frame tracks/hardware (1024x1024):
+   - props/garage_gate/textures/frame_albedo.png
+   - props/garage_gate/textures/frame_orm.png
+   - props/garage_gate/textures/frame_normal.png
 """
 
-import math
 import os
 import numpy as np
 from PIL import Image
-from scipy.ndimage import gaussian_filter, sobel
 
-RES = 2048
 OUT_DIR = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "..",
@@ -32,200 +31,161 @@ def periodic_spectral_noise(
   ky = np.fft.fftfreq(size)
   kx_grid, ky_grid = np.meshgrid(kx, ky)
   k_sq = kx_grid**2 + ky_grid**2
-  k_sq[0, 0] = 1.0  # Avoid zero division at DC component
+  k_sq[0, 0] = 1.0
 
   amplitude = 1.0 / (k_sq ** (power * 0.5))
   amplitude[0, 0] = 0.0
 
   phase = rng.uniform(0.0, 2.0 * np.pi, (size, size))
   f_complex = amplitude * (np.cos(phase) + 1j * np.sin(phase))
-
-  # Symmetrize for real output
   f_complex[0, 0] = 0.0
+
   spatial = np.fft.ifft2(f_complex).real
   spatial = (spatial - spatial.min()) / (spatial.max() - spatial.min() + 1e-8)
   return spatial.astype(np.float32)
 
 
-def generate_gate_pbr() -> None:
-  os.makedirs(OUT_DIR, exist_ok=True)
-  print(f"Generating 2048x2048 PBR maps into {OUT_DIR}...")
-
-  # 1. Multi-scale periodic noise synthesis
-  macro_noise = periodic_spectral_noise(RES, power=1.6, seed=101)
-  mid_noise = periodic_spectral_noise(RES, power=1.9, seed=202)
-  fine_noise = periodic_spectral_noise(RES, power=2.4, seed=303)
-  micro_grain = periodic_spectral_noise(RES, power=3.2, seed=404)
-  scratch_noise = periodic_spectral_noise(RES, power=2.8, seed=505)
-
-  # Vertical drip distortion (periodic along X and Y)
-  y_coords = np.linspace(0, 2 * np.pi, RES, endpoint=False)
-  drip_modulation = 0.5 + 0.5 * np.sin(
-      y_coords[:, None] * 3.0 + macro_noise * 2.0
-  )
-  drip_streaks = np.clip(
-      (periodic_spectral_noise(RES, power=1.4, seed=707) * 2.5 - 1.2), 0.0, 1.0
-  )
-  drip_mask = np.clip(drip_modulation * drip_streaks * 1.5, 0.0, 1.0)
-
-  # 2. Paint vs Rust Masking (Stepped peeling paint flakes)
-  # Paint covers ~65% of the panel, rust breaches in patches and drip channels
-  paint_field = (
-      macro_noise * 0.55 + mid_noise * 0.35 + fine_noise * 0.10 - drip_mask * 0.20
-  )
-  paint_threshold = 0.42
-  paint_mask_raw = paint_field > paint_threshold
-
-  # Paint flake edge transition: sharp micro-edge with flaking bevel
-  edge_dist = np.clip(
-      (paint_field - paint_threshold) / 0.03, 0.0, 1.0
-  )  # 0 at rust, 1 inside paint
-  paint_mask = edge_dist
-
-  # Exposed steel scratches along edges and high-friction lines
-  scratch_mask = np.clip(
-      (scratch_noise > 0.88).astype(np.float32)
-      * (mid_noise > 0.45).astype(np.float32)
-      * 1.8,
-      0.0,
-      1.0,
-  )
-
-  # 3. Organic Mildew & Mold Spore Colonies
-  # Mold thrives in damp cavities, lower runoff, and edges of peeling paint
-  mold_seed = (
-      periodic_spectral_noise(RES, power=2.1, seed=808) * 0.6
-      + periodic_spectral_noise(RES, power=3.0, seed=909) * 0.4
-  )
-  # Mold concentrates around paint edges and lower moisture zones
-  mold_affinity = (1.0 - np.abs(paint_field - paint_threshold) * 8.0).clip(
-      0.0, 1.0
-  ) * 0.7 + (macro_noise > 0.65).astype(np.float32) * 0.5
-  mold_mask = np.clip((mold_seed * mold_affinity - 0.28) * 3.5, 0.0, 1.0)
-
-  # 4. Color Palette Construction (Linear PBR / Delighted Diffuse)
-  # Palette definitions:
-  # Base paint: Olive drab / sage green enamel (#4d5848 -> #626e5a)
-  col_paint_base = np.array([0.31, 0.36, 0.28], dtype=np.float32)
-  col_paint_worn = np.array([0.38, 0.43, 0.34], dtype=np.float32)
-  col_paint = (
-      col_paint_base * (1.0 - fine_noise[:, :, None] * 0.25)
-      + col_paint_worn * (fine_noise[:, :, None] * 0.25)
-  )
-
-  # Rust colors: Dark burnt pits (#381c10) to warm iron oxide (#6a331c)
-  col_rust_dark = np.array([0.22, 0.11, 0.06], dtype=np.float32)
-  col_rust_mid = np.array([0.42, 0.20, 0.11], dtype=np.float32)
-  rust_tone = mid_noise[:, :, None]
-  col_rust = col_rust_dark * (1.0 - rust_tone) + col_rust_mid * rust_tone
-
-  # Bare steel scratches (#65686b)
-  col_bare_steel = np.array([0.42, 0.43, 0.45], dtype=np.float32)
-
-  # Mold / Mildew colors: Dark olive-black spores (#161c14) with damp greenish-yellow fringe (#2d3a24)
-  col_mold_dark = np.array([0.09, 0.11, 0.08], dtype=np.float32)
-  col_mold_fringe = np.array([0.18, 0.23, 0.14], dtype=np.float32)
-  col_mold = (
-      col_mold_dark * (1.0 - micro_grain[:, :, None])
-      + col_mold_fringe * micro_grain[:, :, None]
-  )
-
-  # Composite Albedo:
-  # Start with Rust
-  albedo = col_rust.copy()
-  # Blend Bare Steel scratches
-  albedo = albedo * (1.0 - scratch_mask[:, :, None]) + col_bare_steel * (
-      scratch_mask[:, :, None]
-  )
-  # Blend Peeling Enamel Paint
-  albedo = albedo * (1.0 - paint_mask[:, :, None]) + col_paint * (
-      paint_mask[:, :, None]
-  )
-  # Blend Mold Spore Colonies
-  albedo = albedo * (1.0 - mold_mask[:, :, None]) + col_mold * (
-      mold_mask[:, :, None]
-  )
-
-  # Apply subtle micro-surface grime modulation
-  albedo *= 0.92 + 0.16 * micro_grain[:, :, None]
-  albedo = np.clip(albedo, 0.0, 1.0)
-
-  # 5. Physical Height Map Synthesis
-  # Structural depths: Rust pit (0.25) < Bare steel (0.42) < Paint slab (0.62) < Raised mold (0.72)
-  height = np.full((RES, RES), 0.35, dtype=np.float32)  # Base substrate
-  height -= (1.0 - paint_mask) * (0.15 + mid_noise * 0.12)  # Rust pits
-  height += paint_mask * 0.22  # Stepped paint thickness
-  height += scratch_mask * 0.05  # Scratch ridges
-  height += mold_mask * 0.12  # Organic raised crust
-  height += micro_grain * 0.02  # Micro-bump
-  height = np.clip(height, 0.0, 1.0)
-
-  # 6. OpenGL Normal Map (+Y Up, Tangent Space)
-  # Toroid-wrapped Sobel gradients for 100% boundary continuity
-  def wrapped_derivative_x(arr: np.ndarray) -> np.ndarray:
+def compute_normal_and_ao(
+    height: np.ndarray, strength: float
+) -> tuple[np.ndarray, np.ndarray]:
+  """Computes toroid-wrapped OpenGL +Y tangent normal map and cavity AO."""
+  def d_dx(arr: np.ndarray) -> np.ndarray:
     return (np.roll(arr, -1, axis=1) - np.roll(arr, 1, axis=1)) * 0.5
 
-  def wrapped_derivative_y(arr: np.ndarray) -> np.ndarray:
+  def d_dy(arr: np.ndarray) -> np.ndarray:
     return (np.roll(arr, -1, axis=0) - np.roll(arr, 1, axis=0)) * 0.5
 
-  normal_strength = 6.5
-  dh_dx = wrapped_derivative_x(height) * normal_strength
-  dh_dy = (
-      wrapped_derivative_y(height) * normal_strength
-  )  # +Y is up in OpenGL/Godot
+  dh_dx = d_dx(height) * strength
+  dh_dy = d_dy(height) * strength
 
-  # Normal components: Nx = -dh/dx, Ny = -dh/dy (or +dh/dy depending on convention), Nz = 1.0
-  norm_x = -dh_dx
-  norm_y = (
-      dh_dy  # Standard Godot OpenGL: screen-up vector points towards positive Y
-  )
-  norm_z = np.ones_like(norm_x)
+  nx = -dh_dx
+  ny = dh_dy
+  nz = np.ones_like(nx)
+  mag = np.sqrt(nx**2 + ny**2 + nz**2)
+  nx /= mag
+  ny /= mag
+  nz /= mag
 
-  magnitude = np.sqrt(norm_x**2 + norm_y**2 + norm_z**2)
-  norm_x /= magnitude
-  norm_y /= magnitude
-  norm_z /= magnitude
-
-  # Pack to [0, 255] RGB
   normal_rgb = np.stack(
       [
-          ((norm_x * 0.5 + 0.5) * 255.0).astype(np.uint8),
-          ((norm_y * 0.5 + 0.5) * 255.0).astype(np.uint8),
-          ((norm_z * 0.5 + 0.5) * 255.0).astype(np.uint8),
+          ((nx * 0.5 + 0.5) * 255.0).astype(np.uint8),
+          ((ny * 0.5 + 0.5) * 255.0).astype(np.uint8),
+          ((nz * 0.5 + 0.5) * 255.0).astype(np.uint8),
       ],
       axis=-1,
   )
 
-  # 7. Ambient Occlusion (Cavity Shading)
-  # Darken deep rust pits, paint crevices, and spore crevices
-  ao_curv = np.clip(
-      1.0 - (wrapped_derivative_x(norm_x) + wrapped_derivative_y(norm_y)) * 0.8,
+  curv = np.clip(1.0 - (d_dx(nx) + d_dy(ny)) * 0.75, 0.0, 1.0)
+  ao = np.clip((0.82 + 0.18 * height) * curv, 0.42, 1.0)
+  return normal_rgb, ao
+
+
+def generate_panel_pbr(res: int = 2048) -> None:
+  print(f"Generating {res}x{res} non-repetitive Panel PBR maps...")
+
+  macro_n = periodic_spectral_noise(res, power=1.5, seed=111)
+  mid_n = periodic_spectral_noise(res, power=2.0, seed=222)
+  fine_n = periodic_spectral_noise(res, power=2.6, seed=333)
+  grain_n = periodic_spectral_noise(res, power=3.4, seed=444)
+
+  # Horizontal stamped sheet-metal ribs (4 subtle grooves across panel height)
+  v_coord = np.linspace(0.0, 1.0, res, endpoint=False)[:, None]
+  rib_wave = np.sin(v_coord * 2.0 * np.pi * 4.0)
+  rib_groove = np.clip((rib_wave - 0.75) * 4.0, 0.0, 1.0).astype(np.float32)
+
+  # Vertical rain/moisture drip streaks (high-frequency X variation, elongated Y)
+  u_streak = periodic_spectral_noise(res, power=1.7, seed=555)
+  # Stretch vertically by rolling/averaging along Y
+  streak_v = (
+      u_streak
+      + np.roll(u_streak, 16, axis=0)
+      + np.roll(u_streak, 32, axis=0)
+      + np.roll(u_streak, 48, axis=0)
+  ) * 0.25
+  drip_mask = np.clip((streak_v - 0.58) * 2.8, 0.0, 1.0)
+
+  # Bottom & top seam moisture accumulation (subtle gradient, zero loud blotches)
+  edge_damp = np.clip(
+      np.exp(-v_coord * 6.0) * 0.8 + np.exp(-(1.0 - v_coord) * 8.0) * 0.5,
+      0.0,
+      1.0,
+  ).astype(np.float32)
+
+  # Subtle chipped paint flakes (~15% rust exposure, mostly near grooves, drips, and seams)
+  rust_field = (
+      macro_n * 0.35
+      + mid_n * 0.35
+      + fine_n * 0.30
+      + edge_damp * 0.22
+      + drip_mask * 0.18
+      + rib_groove * 0.12
+  )
+  rust_thresh = 0.76
+  paint_mask = 1.0 - np.clip((rust_field - rust_thresh) / 0.025, 0.0, 1.0)
+
+  # Organic mold & mildew spores concentrated in damp seams, drip paths, and rust borders
+  mold_noise = mid_n * 0.5 + fine_n * 0.3 + grain_n * 0.2
+  mold_affinity = np.clip(edge_damp * 0.85 + drip_mask * 0.55 + (1.0 - paint_mask) * 0.35, 0.0, 1.0)
+  mold_mask = np.clip((mold_noise * mold_affinity - 0.30) * 2.8, 0.0, 1.0)
+
+  # Bare steel micro-scratches
+  scratch_mask = np.clip(
+      ((grain_n > 0.90) & (fine_n > 0.62)).astype(np.float32) * paint_mask,
       0.0,
       1.0,
   )
-  ao_raw = 0.80 + 0.20 * height
-  # Extra occlusion inside tight mold clusters and stepped paint cliff edges
-  ao = np.clip(ao_raw * ao_curv - mold_mask * 0.15, 0.40, 1.0)
 
-  # 8. Roughness Map (G Channel)
-  # Enamel paint: ~0.50
-  # Porous rust: 0.88 - 0.95
-  # Organic mildew: 0.92 - 0.96
-  # Scraped bare steel: 0.30 - 0.35
-  roughness = np.full((RES, RES), 0.90, dtype=np.float32)  # Default rust
-  roughness = roughness * (1.0 - paint_mask) + 0.50 * paint_mask
+  # Delighted Albedo Palette (subtle, natural weathered industrial olive-gray enamel)
+  col_paint_a = np.array([0.33, 0.37, 0.31], dtype=np.float32)
+  col_paint_b = np.array([0.39, 0.43, 0.36], dtype=np.float32)
+  paint_var = (macro_n * 0.6 + fine_n * 0.4)[:, :, None]
+  col_paint = col_paint_a * (1.0 - paint_var) + col_paint_b * paint_var
+
+  # Subtle dirt/soot wash on paint from drips
+  col_paint *= 1.0 - drip_mask[:, :, None] * 0.22 - rib_groove[:, :, None] * 0.10
+
+  # Rust & Oxide (natural warm brown-ochre to dark oxide, not overly saturated red)
+  col_rust_dark = np.array([0.19, 0.12, 0.08], dtype=np.float32)
+  col_rust_ochre = np.array([0.36, 0.20, 0.11], dtype=np.float32)
+  col_rust = col_rust_dark * (1.0 - fine_n[:, :, None]) + col_rust_ochre * fine_n[:, :, None]
+
+  # Mold / Mildew (dark olive-black spores + mossy damp green)
+  col_mold_dark = np.array([0.10, 0.12, 0.09], dtype=np.float32)
+  col_mold_green = np.array([0.18, 0.23, 0.14], dtype=np.float32)
+  col_mold = col_mold_dark * (1.0 - grain_n[:, :, None]) + col_mold_green * grain_n[:, :, None]
+
+  # Bare steel scratches
+  col_steel = np.array([0.46, 0.48, 0.50], dtype=np.float32)
+
+  albedo = col_rust.copy()
+  albedo = albedo * (1.0 - paint_mask[:, :, None]) + col_paint * paint_mask[:, :, None]
+  albedo = albedo * (1.0 - scratch_mask[:, :, None]) + col_steel * scratch_mask[:, :, None]
+  albedo = albedo * (1.0 - mold_mask[:, :, None] * 0.85) + col_mold * (mold_mask[:, :, None] * 0.85)
+  albedo *= 0.94 + 0.12 * grain_n[:, :, None]
+  albedo = np.clip(albedo, 0.0, 1.0)
+
+  # Height Map: Ribbed grooves + stepped paint flakes + recessed rust pits + raised mold
+  height = np.full((res, res), 0.55, dtype=np.float32)
+  height -= rib_groove * 0.14
+  height -= (1.0 - paint_mask) * (0.18 + fine_n * 0.08)
+  height += mold_mask * 0.09
+  height += grain_n * 0.025
+  height = np.clip(height, 0.0, 1.0)
+
+  normal_rgb, ao = compute_normal_and_ao(height, strength=5.0)
+  ao = np.clip(ao - mold_mask * 0.12 - rib_groove * 0.10, 0.40, 1.0)
+
+  # Roughness: Paint ~0.52, Rust ~0.90, Mold ~0.94, Bare steel ~0.32
+  roughness = np.full((res, res), 0.90, dtype=np.float32)
+  roughness = roughness * (1.0 - paint_mask) + 0.52 * paint_mask
   roughness = roughness * (1.0 - scratch_mask) + 0.32 * scratch_mask
-  roughness = roughness * (1.0 - mold_mask) + 0.94 * mold_mask
-  roughness += (micro_grain - 0.5) * 0.06
+  roughness = roughness * (1.0 - mold_mask * 0.9) + 0.94 * (mold_mask * 0.9)
+  roughness += (grain_n - 0.5) * 0.06
   roughness = np.clip(roughness, 0.05, 1.0)
 
-  # 9. Metallic Map (B Channel)
-  # Conductor (0.85 - 1.0) only on bare steel scratches; dielectric (0.0) on paint, rust, mold
-  metallic = scratch_mask * 0.90
-  metallic *= 1.0 - mold_mask  # Mold covers metal
-  metallic = np.clip(metallic, 0.0, 1.0)
+  # Metallic: Only bare steel scratches are conductive
+  metallic = np.clip(scratch_mask * 0.90 * (1.0 - mold_mask), 0.0, 1.0)
 
-  # 10. Assemble ORM Texture (R: AO, G: Roughness, B: Metallic)
   orm_rgb = np.stack(
       [
           (ao * 255.0).astype(np.uint8),
@@ -235,22 +195,66 @@ def generate_gate_pbr() -> None:
       axis=-1,
   )
 
-  # Convert Albedo to 8-bit sRGB
-  albedo_rgb = (albedo * 255.0).astype(np.uint8)
+  Image.fromarray((albedo * 255.0).astype(np.uint8)).save(os.path.join(OUT_DIR, "gate_albedo.png"))
+  Image.fromarray(orm_rgb).save(os.path.join(OUT_DIR, "gate_orm.png"))
+  Image.fromarray(normal_rgb).save(os.path.join(OUT_DIR, "gate_normal.png"))
+  print("[PBR] Saved Panel Albedo, ORM, Normal.")
 
-  # Save images
-  albedo_path = os.path.join(OUT_DIR, "gate_albedo.png")
-  orm_path = os.path.join(OUT_DIR, "gate_orm.png")
-  normal_path = os.path.join(OUT_DIR, "gate_normal.png")
 
-  Image.fromarray(albedo_rgb).save(albedo_path)
-  Image.fromarray(orm_rgb).save(orm_path)
-  Image.fromarray(normal_rgb).save(normal_path)
+def generate_frame_pbr(res: int = 1024) -> None:
+  print(f"Generating {res}x{res} Weathered Galvanized Steel Frame PBR maps...")
 
-  print(f"[PBR Generator] Saved Albedo: {albedo_path}")
-  print(f"[PBR Generator] Saved ORM:    {orm_path}")
-  print(f"[PBR Generator] Saved Normal: {normal_path}")
+  macro_n = periodic_spectral_noise(res, power=1.7, seed=601)
+  mid_n = periodic_spectral_noise(res, power=2.2, seed=602)
+  grain_n = periodic_spectral_noise(res, power=3.2, seed=603)
+
+  # Brushed directional steel grain
+  brush = (
+      grain_n
+      + np.roll(grain_n, 4, axis=1)
+      + np.roll(grain_n, 8, axis=1)
+      + np.roll(grain_n, 12, axis=1)
+  ) * 0.25
+
+  # Rust & grease oxidation patches on steel tracks/shafts
+  rust_mask = np.clip((macro_n * 0.65 + mid_n * 0.35 - 0.62) * 3.5, 0.0, 1.0)
+  grease_mask = np.clip((mid_n * 0.6 + macro_n * 0.4 - 0.68) * 3.0, 0.0, 1.0)
+
+  col_steel = np.array([0.46, 0.48, 0.50], dtype=np.float32) * (0.88 + 0.24 * brush[:, :, None])
+  col_rust = np.array([0.28, 0.16, 0.10], dtype=np.float32) * (0.85 + 0.30 * grain_n[:, :, None])
+  col_grease = np.array([0.14, 0.14, 0.13], dtype=np.float32)
+
+  albedo = col_steel.copy()
+  albedo = albedo * (1.0 - rust_mask[:, :, None]) + col_rust * rust_mask[:, :, None]
+  albedo = albedo * (1.0 - grease_mask[:, :, None] * 0.7) + col_grease * (grease_mask[:, :, None] * 0.7)
+  albedo = np.clip(albedo, 0.0, 1.0)
+
+  height = 0.55 - rust_mask * 0.12 + brush * 0.05
+  normal_rgb, ao = compute_normal_and_ao(height, strength=3.5)
+
+  roughness = np.full((res, res), 0.42, dtype=np.float32) + (brush - 0.5) * 0.12
+  roughness = roughness * (1.0 - rust_mask) + 0.88 * rust_mask
+  roughness = roughness * (1.0 - grease_mask * 0.7) + 0.24 * (grease_mask * 0.7)
+  roughness = np.clip(roughness, 0.08, 1.0)
+
+  metallic = np.clip(0.88 * (1.0 - rust_mask * 0.9) * (1.0 - grease_mask * 0.5), 0.0, 1.0)
+
+  orm_rgb = np.stack(
+      [
+          (ao * 255.0).astype(np.uint8),
+          (roughness * 255.0).astype(np.uint8),
+          (metallic * 255.0).astype(np.uint8),
+      ],
+      axis=-1,
+  )
+
+  Image.fromarray((albedo * 255.0).astype(np.uint8)).save(os.path.join(OUT_DIR, "frame_albedo.png"))
+  Image.fromarray(orm_rgb).save(os.path.join(OUT_DIR, "frame_orm.png"))
+  Image.fromarray(normal_rgb).save(os.path.join(OUT_DIR, "frame_normal.png"))
+  print("[PBR] Saved Frame Albedo, ORM, Normal.")
 
 
 if __name__ == "__main__":
-  generate_gate_pbr()
+  os.makedirs(OUT_DIR, exist_ok=True)
+  generate_panel_pbr(2048)
+  generate_frame_pbr(1024)
