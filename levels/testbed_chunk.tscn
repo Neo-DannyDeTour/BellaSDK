@@ -1,31 +1,67 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://byxg3suk3b808"]
 
-[ext_resource type="Texture2D" path="res://assets/HDR/moon_night_2k.hdr" id="1_3tum8"]
-[ext_resource type="RDShaderFile" path="res://addons/SunshineClouds2/SunshineCloudsCompute.glsl" id="2_87ecb"]
-[ext_resource type="CompressedTexture3D" path="res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga" id="3_ayydl"]
-[ext_resource type="CompressedTexture3D" path="res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png" id="4_npeyi"]
-[ext_resource type="Texture2D" path="res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres" id="5_fab7r"]
-[ext_resource type="Texture2D" path="res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres" id="6_h010c"]
-[ext_resource type="NoiseTexture3D" path="res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres" id="7_4xfih"]
-[ext_resource type="NoiseTexture3D" path="res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres" id="8_n11xv"]
-[ext_resource type="RDShaderFile" path="res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl" id="9_olki2"]
-[ext_resource type="RDShaderFile" path="res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl" id="10_gh747"]
-[ext_resource type="Script" path="res://addons/SunshineClouds2/SunshineClouds.gd" id="11_fw852"]
-[ext_resource type="NoiseTexture3D" path="res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres" id="12_qnte0"]
-[ext_resource type="Script" path="res://vfx/effects/argon_lightning_controller.gd" id="13_73vka"]
-[ext_resource type="Script" path="res://addons/SunshineClouds2/SunshineCloudsDriver.gd" id="14_4jcua"]
-[ext_resource type="Script" path="res://world/chunk_manager.gd" id="15_ljaj2"]
-[ext_resource type="Script" path="res://triggers/spotlight_seq_trigger.gd" id="16_i2to2"]
-[ext_resource type="Script" path="res://ui/lvl_instance_hide_building.gd" id="17_8oddl"]
-[ext_resource type="PackedScene" path="res://ui/hide_building_test.tscn" id="18_ihtxi"]
-[ext_resource type="PackedScene" path="res://ui/CCTV.tscn" id="19_u1rft"]
-[ext_resource type="Script" path="res://ui/CCTV.gd" id="20_vvo2q"]
-[ext_resource type="PackedScene" path="res://player/player.tscn" id="21_hbve3"]
-[ext_resource type="Script" path="res://player/player.gd" id="22_2vljv"]
-[ext_resource type="Script" path="res://world/player_chunk_tracker.gd" id="23_fcdtr"]
+[ext_resource type="Texture2D" uid="uid://bqru753kemdt6" path="res://assets/HDR/moon_night_2k.hdr" id="1_mfruf"]
+[ext_resource type="RDShaderFile" uid="uid://dx1y5cye1m1hu" path="res://addons/SunshineClouds2/SunshineCloudsCompute.glsl" id="2_1pemt"]
+[ext_resource type="CompressedTexture3D" uid="uid://dei12lsgrjpyu" path="res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga" id="3_xuq7g"]
+[ext_resource type="CompressedTexture3D" uid="uid://b3uyfsp4in821" path="res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png" id="4_8w6u8"]
+[ext_resource type="Texture2D" uid="uid://de2nsujnhdlg0" path="res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres" id="5_dsvs2"]
+[ext_resource type="Texture2D" uid="uid://g02m2ewpwusq" path="res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres" id="6_t8p4i"]
+[ext_resource type="NoiseTexture3D" uid="uid://6ed3lvlpbqmg" path="res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres" id="7_d6orj"]
+[ext_resource type="NoiseTexture3D" uid="uid://dxyewgt7o40m0" path="res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres" id="8_8chls"]
+[ext_resource type="RDShaderFile" uid="uid://cqhejbalsrvjp" path="res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl" id="9_p555j"]
+[ext_resource type="RDShaderFile" uid="uid://crfpk8ta4qxsk" path="res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl" id="10_330ss"]
+[ext_resource type="Script" uid="uid://dnblgqynq1t7l" path="res://addons/SunshineClouds2/SunshineClouds.gd" id="11_vjxr7"]
+[ext_resource type="NoiseTexture3D" uid="uid://bnck2kxeg5bkg" path="res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres" id="12_uhqnr"]
+[ext_resource type="Script" uid="uid://djusduuxf0voj" path="res://addons/SunshineClouds2/SunshineCloudsDriver.gd" id="13_lf15v"]
+[ext_resource type="Script" uid="uid://v2sq4p8vxhfl" path="res://vfx/effects/argon_lightning_controller.gd" id="14_ubkfl"]
+[ext_resource type="Script" uid="uid://b5uo4uoevy2ly" path="res://world/chunk_manager.gd" id="15_4ltmt"]
+[ext_resource type="Script" uid="uid://bohybfp2i35ly" path="res://triggers/spotlight_seq_trigger.gd" id="16_n27ty"]
+[ext_resource type="Script" uid="uid://v535r6a86e4x" path="res://ui/lvl_instance_hide_building.gd" id="17_j15lm"]
+[ext_resource type="PackedScene" uid="uid://cvwg0fpx8l1nb" path="res://interactables/checkpoint.tscn" id="18_6a6yn"]
+[ext_resource type="PackedScene" uid="uid://jvgnyc7a68n6" path="res://environment/soundscape_zone.tscn" id="21_w7nb7"]
+[ext_resource type="AudioStream" uid="uid://c1xti7vwdj3tf" path="res://assets/sounds/StormOcean.wav" id="23_l1g42"]
+[ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://environment/soundscape_data.gd" id="24_k0an3"]
+[ext_resource type="PackedScene" uid="uid://b3nwdm8dlk16p" path="res://triggers/trigger_look.tscn" id="25_8x6qq"]
+[ext_resource type="PackedScene" uid="uid://wmyjhovjnea4" path="res://interactables/ladder.tscn" id="27_v166e"]
+[ext_resource type="AudioStream" uid="uid://76hyigva6yr2" path="res://assets/sounds/SoundscapeCave.wav" id="29_acbxt"]
+[ext_resource type="AudioStream" uid="uid://v1nx1mi0054m" path="res://assets/sounds/FootstepStone4.wav" id="30_s1kcg"]
+[ext_resource type="AudioStream" uid="uid://cfc3fe6a652f3" path="res://assets/sounds/3_FootstepStone5.wav" id="31_c248w"]
+[ext_resource type="AudioStream" uid="uid://vlp6ss6t753l" path="res://assets/sounds/3_FootstepStone6.wav" id="32_sh67e"]
+[ext_resource type="AudioStream" uid="uid://bv5p4qug3kjny" path="res://assets/sounds/WaterLeak_3.wav" id="33_7fxjr"]
+[ext_resource type="AudioStream" uid="uid://d1n4mhjoq3o87" path="res://assets/sounds/WaterLeak_2.wav" id="34_6jvgc"]
+[ext_resource type="Resource" uid="uid://clxrpmynwo16" path="res://environment/sounscape_street_day_busy.tres" id="35_pymsq"]
+[ext_resource type="AudioStream" uid="uid://d4ietx45d3i0j" path="res://assets/sounds/SlowWave.wav" id="36_pviv8"]
+[ext_resource type="PackedScene" uid="uid://opttt7tvnuir" path="res://core/components/health_modifier.tscn" id="37_p2dha"]
+[ext_resource type="PackedScene" uid="uid://b6saw37qcvs0i" path="res://vfx/screenshake_effect.tscn" id="39_hd8an"]
+[ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://triggers/env_chapter_trigger.tscn" id="41_wfxh4"]
+[ext_resource type="PackedScene" uid="uid://c2t21qbkevaof" path="res://interactables/dev_comment/DeveloperCommentary.tscn" id="43_o86dm"]
+[ext_resource type="AudioStream" uid="uid://mxalx6u32lel" path="res://assets/sounds/most_fav_comment.mp3" id="45_vkprc"]
+[ext_resource type="PackedScene" uid="uid://f4suk10ex6ha" path="res://interactables/physics_magnet.tscn" id="46_7m0nq"]
+[ext_resource type="PackedScene" uid="uid://cpcqqr5g0oqpp" path="res://vfx/color_grading_volume.tscn" id="48_865j0"]
+[ext_resource type="PackedScene" uid="uid://uj3w4ru83pkl" path="res://interactables/jump_pad.tscn" id="51_otifs"]
+[ext_resource type="PackedScene" uid="uid://viaarbcifqjx" path="res://interactables/portal.tscn" id="53_x22ce"]
+[ext_resource type="PackedScene" uid="uid://4m1edbr3oqv5" path="res://triggers/trigger_hint.tscn" id="55_lbgo4"]
+[ext_resource type="PackedScene" uid="uid://cwopkjkkwl7rx" path="res://triggers/crab_shell_trigger.tscn" id="57_j06md"]
+[ext_resource type="PackedScene" uid="uid://3r7uhvuqww4i" path="res://environment/aurora_ribbon.tscn" id="59_6vnab"]
+[ext_resource type="Shader" uid="uid://khruxw6kqihp" path="res://vfx/aurora_borealis.gdshader" id="60_uvbq8"]
+[ext_resource type="PackedScene" uid="uid://c5cl283k1mkjr" path="res://environment/smoke_hazard.tscn" id="62_wj7g0"]
+[ext_resource type="PackedScene" uid="uid://bt2yp0m8wpona" path="res://triggers/event_sequence_trigger.tscn" id="64_8grvx"]
+[ext_resource type="Script" uid="uid://cqxhxsogcj5qt" path="res://addons/detour_event_sequencer/event_step.gd" id="66_wvqip"]
+[ext_resource type="PackedScene" uid="uid://cdrlxi46q0ym" path="res://triggers/wake_up_trigger.tscn" id="67_1u1d7"]
+[ext_resource type="PackedScene" uid="uid://cih8g2u1k23op" path="res://environment/hiss_resonance_volume.tscn" id="69_jfudp"]
+[ext_resource type="PackedScene" uid="uid://cx8r7j3t4k2l1" path="res://environment/updraft_vent.tscn" id="71_d65c0"]
+[ext_resource type="PackedScene" uid="uid://cm0v3ely026rf" path="res://triggers/music_trigger.tscn" id="73_eb6b1"]
+[ext_resource type="AudioStream" uid="uid://bvcvtu0ysqlk7" path="res://assets/music/The_Weight_Beneath.mp3" id="75_lq712"]
+[ext_resource type="Script" uid="uid://ccs4u6rl0d08x" path="res://addons/detour_event_sequencer/event_condition.gd" id="76_bgyh0"]
+[ext_resource type="PackedScene" uid="uid://d1yclpejwgyx2" path="res://triggers/mannequin_attractor_trigger.tscn" id="77_kl658"]
+[ext_resource type="AudioStream" uid="uid://ct8uhmrgorrec" path="res://assets/audio/spook_girl_you_mine.mp3" id="79_ibwmg"]
+[ext_resource type="PackedScene" uid="uid://cojcb8srg0tkn" path="res://ui/hide_building_test.tscn" id="80_kitry"]
+[ext_resource type="PackedScene" uid="uid://bkxrbjc7txin4" path="res://ui/CCTV.tscn" id="81_ggkmo"]
+[ext_resource type="PackedScene" uid="uid://2db87kewe2f2" path="res://player/player.tscn" id="83_424rw"]
+[ext_resource type="Script" uid="uid://dipbgvqxanjx8" path="res://world/player_chunk_tracker.gd" id="85_sxrju"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_amd4b"]
-panorama = ExtResource("1_3tum8")
+panorama = ExtResource("1_mfruf")
 
 [sub_resource type="Sky" id="Sky_spvsq"]
 sky_material = SubResource("PanoramaSkyMaterial_amd4b")
@@ -44,29 +80,334 @@ volumetric_fog_ambient_inject = 1.0
 [sub_resource type="CompositorEffect" id="CompositorEffect_n48f2"]
 resource_local_to_scene = false
 resource_name = ""
-enabled = false
+enabled = true
 effect_callback_type = 3
 access_resolved_color = true
 access_resolved_depth = true
 needs_motion_vectors = true
 needs_normal_roughness = false
-script = ExtResource("11_fw852")
+script = ExtResource("11_vjxr7")
 clouds_coverage = 0.704
-dither_noise = ExtResource("4_npeyi")
-height_gradient = ExtResource("6_h010c")
-extra_large_noise_patterns = ExtResource("5_fab7r")
-large_scale_noise = ExtResource("7_4xfih")
-medium_scale_noise = ExtResource("8_n11xv")
-small_scale_noise = ExtResource("12_qnte0")
-curl_noise = ExtResource("3_ayydl")
-pre_pass_compute_shader = ExtResource("10_gh747")
-compute_shader = ExtResource("2_87ecb")
-post_pass_compute_shader = ExtResource("9_olki2")
+dither_noise = ExtResource("4_8w6u8")
+height_gradient = ExtResource("6_t8p4i")
+extra_large_noise_patterns = ExtResource("5_dsvs2")
+large_scale_noise = ExtResource("7_d6orj")
+medium_scale_noise = ExtResource("8_8chls")
+small_scale_noise = ExtResource("12_uhqnr")
+curl_noise = ExtResource("3_xuq7g")
+pre_pass_compute_shader = ExtResource("10_330ss")
+compute_shader = ExtResource("2_1pemt")
+post_pass_compute_shader = ExtResource("9_p555j")
 wind_direction = Vector3(1, 0, 1)
 directional_lights_data = Array[Vector4]([Vector4(0.408, 0.816, 0.408, 16), Vector4(1, 1, 1, 1)])
 
 [sub_resource type="Compositor" id="Compositor_mv12o"]
 compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_n48f2")])
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_47jar"]
+resource_local_to_scene = true
+size = Vector3(5, 4.7401123, 1.7758789)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_j34x5"]
+size = Vector3(17.954102, 8.064148, 9.47937)
+
+[sub_resource type="Resource" id="Resource_q8dtw"]
+script = ExtResource("24_k0an3")
+ambient_track = ExtResource("23_l1g42")
+metadata/_custom_type_script = "uid://cl68g6jurgp0h"
+
+[sub_resource type="Resource" id="Resource_ftgh7"]
+resource_local_to_scene = true
+script = ExtResource("24_k0an3")
+ambient_track = ExtResource("29_acbxt")
+random_sounds = Array[AudioStream]([ExtResource("30_s1kcg"), ExtResource("31_c248w"), ExtResource("32_sh67e"), ExtResource("33_7fxjr"), ExtResource("34_6jvgc"), ExtResource("33_7fxjr")])
+random_volume_db = -20.0
+max_interval = 8.0
+metadata/_custom_type_script = "uid://cl68g6jurgp0h"
+
+[sub_resource type="Resource" id="Resource_n24io"]
+script = ExtResource("24_k0an3")
+ambient_track = ExtResource("36_pviv8")
+metadata/_custom_type_script = "uid://cl68g6jurgp0h"
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_872hv"]
+noise_type = 3
+frequency = 0.0115
+fractal_type = 0
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_55drd"]
+noise = SubResource("FastNoiseLite_872hv")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_55drd"]
+render_priority = 0
+shader = ExtResource("60_uvbq8")
+shader_parameter/noise_tex = SubResource("NoiseTexture2D_55drd")
+shader_parameter/noise_tiling = Vector2(7, 0.1)
+shader_parameter/primary_speed = Vector2(0.04, 0.01)
+shader_parameter/secondary_speed = Vector2(0.045, 0.015)
+shader_parameter/secondary_scale_offset = 1.18
+shader_parameter/dissolve_power = 2.0
+shader_parameter/horizontal_fade_power = 1.5
+shader_parameter/vertical_falloff_power = 2.2
+shader_parameter/bottom_sharpness = 0.15
+shader_parameter/wave_amplitude = 8.0
+shader_parameter/wave_frequency = 0.04
+shader_parameter/wave_speed = 0.6
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_534t5"]
+material = SubResource("ShaderMaterial_55drd")
+size = Vector2(200, 40)
+subdivide_width = 64
+subdivide_depth = 1
+orientation = 2
+
+[sub_resource type="Resource" id="Resource_o5ick"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../ElfDrone")
+method_name = &"navigate_to_waypoint"
+parameter = "Waypoint3D"
+
+[sub_resource type="Resource" id="Resource_rk188"]
+script = ExtResource("66_wvqip")
+step_type = 1
+target_path = NodePath("../Waypoint_Tunnel")
+method_name = &"reached"
+metadata/_custom_type_script = "uid://cqxhxsogcj5qt"
+
+[sub_resource type="Resource" id="Resource_qjyp4"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../ElfDrone")
+method_name = &"join_flock"
+metadata/_custom_type_script = "uid://cqxhxsogcj5qt"
+
+[sub_resource type="Resource" id="Resource_58dqr"]
+script = ExtResource("66_wvqip")
+step_type = 1
+target_path = NodePath("../ElfDrone")
+method_name = &"joined_flock"
+metadata/_custom_type_script = "uid://cqxhxsogcj5qt"
+
+[sub_resource type="Resource" id="Resource_6umad"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../DroneSwarm")
+method_name = &"switch_to_cross_formation"
+delay = 2.5
+metadata/_custom_type_script = "uid://cqxhxsogcj5qt"
+
+[sub_resource type="Resource" id="Resource_b6yp8"]
+script = ExtResource("76_bgyh0")
+
+[sub_resource type="Resource" id="Resource_o0dff"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../MannequinAttractorTrigger3D")
+method_name = &"start_sequence"
+delay = 2.0
+
+[sub_resource type="Resource" id="Resource_ot62w"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../LightLogic4")
+method_name = &"set_flicker_preset"
+parameter = "3.0"
+
+[sub_resource type="Resource" id="Resource_esyl3"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../LightLogic4")
+method_name = &"turn_off"
+delay = 3.0
+
+[sub_resource type="Resource" id="Resource_yaxg6"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../Dumpster")
+method_name = &"open"
+
+[sub_resource type="Resource" id="Resource_w2gwf"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../LightLogic3")
+method_name = &"set_flicker_preset"
+parameter = "8"
+
+[sub_resource type="Resource" id="Resource_a4a5i"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../LightLogic3")
+method_name = &"turn_off"
+delay = 3.0
+
+[sub_resource type="Resource" id="Resource_1ksst"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../SewerGrate")
+method_name = &"open"
+
+[sub_resource type="Resource" id="Resource_ogn5c"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../SewerGrate")
+method_name = &"close"
+
+[sub_resource type="Resource" id="Resource_shtew"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../ScissorGate")
+method_name = &"close"
+
+[sub_resource type="Resource" id="Resource_bcpoc"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../../Geometry/GarageGate")
+method_name = &"toggle_gate"
+
+[sub_resource type="Resource" id="Resource_riw2b"]
+script = ExtResource("66_wvqip")
+target_path = NodePath("../ExplosionRoot")
+method_name = &"detonate"
+
+[sub_resource type="Resource" id="Resource_haddo"]
+script = ExtResource("66_wvqip")
+exec_mode = 1
+target_path = NodePath("../SpookPoweredLight")
+method_name = &"set_flicker_preset"
+parameter = "4"
+
+[sub_resource type="Resource" id="Resource_lumu1"]
+script = ExtResource("66_wvqip")
+exec_mode = 1
+target_path = NodePath("../SpookPoweredLight2")
+method_name = &"set_flicker_preset"
+parameter = "7"
+
+[sub_resource type="Resource" id="Resource_spook_03"]
+script = ExtResource("66_wvqip")
+step_type = 2
+exec_mode = 1
+parameter = "true"
+
+[sub_resource type="Resource" id="Resource_spook_04"]
+script = ExtResource("66_wvqip")
+step_type = 8
+exec_mode = 1
+duration = 0.5
+
+[sub_resource type="Resource" id="Resource_spook_05"]
+script = ExtResource("66_wvqip")
+step_type = 11
+exec_mode = 1
+target_path = NodePath("../Spookmesh")
+audio_stream = ExtResource("79_ibwmg")
+
+[sub_resource type="Resource" id="Resource_spook_06"]
+script = ExtResource("66_wvqip")
+step_type = 3
+exec_mode = 1
+target_path = NodePath("../spookyseqLabel3D")
+duration = 0.5
+
+[sub_resource type="Resource" id="Resource_spook_07"]
+script = ExtResource("66_wvqip")
+step_type = 4
+target_path = NodePath("../spookyseqLabel3D")
+duration = 1.4
+distance = 4.0
+
+[sub_resource type="Resource" id="Resource_spook_08"]
+script = ExtResource("66_wvqip")
+step_type = 5
+target_path = NodePath("../Spookmesh")
+duration = 0.6
+offset_vector = Vector3(0, 3, 0)
+
+[sub_resource type="Resource" id="Resource_spook_09"]
+script = ExtResource("66_wvqip")
+step_type = 8
+exec_mode = 1
+duration = 0.15
+effect_intensity = 0.0
+
+[sub_resource type="Resource" id="Resource_spook_10"]
+script = ExtResource("66_wvqip")
+step_type = 9
+exec_mode = 1
+duration = 1.5
+
+[sub_resource type="Resource" id="Resource_spook_11"]
+script = ExtResource("66_wvqip")
+step_type = 6
+exec_mode = 1
+duration = 0.25
+
+[sub_resource type="Resource" id="Resource_spook_12"]
+script = ExtResource("66_wvqip")
+step_type = 7
+exec_mode = 1
+duration = 0.25
+angle_deg = 110.0
+
+[sub_resource type="Resource" id="Resource_spook_13"]
+script = ExtResource("66_wvqip")
+step_type = 4
+target_path = NodePath("../Spookmesh")
+duration = 0.25
+distance = 0.5
+
+[sub_resource type="Resource" id="Resource_spook_14"]
+script = ExtResource("66_wvqip")
+step_type = 7
+exec_mode = 1
+duration = 0.5
+angle_deg = 75.0
+delay = 1.25
+
+[sub_resource type="Resource" id="Resource_spook_15"]
+script = ExtResource("66_wvqip")
+step_type = 6
+exec_mode = 1
+duration = 0.5
+angle_deg = 0.0
+delay = 1.25
+
+[sub_resource type="Resource" id="Resource_spook_16"]
+script = ExtResource("66_wvqip")
+step_type = 4
+target_path = NodePath("../Spookmesh")
+duration = 0.5
+distance = -2.5
+delay = 1.25
+
+[sub_resource type="Resource" id="Resource_spook_17"]
+script = ExtResource("66_wvqip")
+step_type = 10
+duration = 0.6
+fade_hold_duration = 0.6
+delay = 1.25
+
+[sub_resource type="Resource" id="Resource_spook_18"]
+script = ExtResource("66_wvqip")
+step_type = 12
+exec_mode = 1
+
+[sub_resource type="Resource" id="Resource_spook_19"]
+script = ExtResource("66_wvqip")
+step_type = 5
+exec_mode = 1
+target_path = NodePath("../Spookmesh")
+duration = 0.0
+offset_vector = Vector3(0, -3.7, 0)
+
+[sub_resource type="Resource" id="Resource_spook_20"]
+script = ExtResource("66_wvqip")
+exec_mode = 1
+target_path = NodePath("../SpookPoweredLight")
+method_name = &"set_flicker_preset"
+parameter = "0"
+
+[sub_resource type="Resource" id="Resource_spook_21"]
+script = ExtResource("66_wvqip")
+exec_mode = 1
+target_path = NodePath("../SpookPoweredLight2")
+method_name = &"set_flicker_preset"
+parameter = "0"
+
+[sub_resource type="Resource" id="Resource_spook_22"]
+script = ExtResource("66_wvqip")
+step_type = 2
+parameter = "false"
+delay = 0.6
 
 [sub_resource type="Animation" id="Animation_o7her"]
 length = 0.001
@@ -153,16 +494,9 @@ _data = {
 &"turn_off_lights": SubResource("Animation_gp0ty")
 }
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_rvg8j"]
-resource_local_to_scene = true
-size = Vector3(5, 4.7401123, 1.7758789)
+[node name="Testbed" type="Node3D" unique_id=1945171863]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_j34x5"]
-size = Vector3(17.954102, 8.064148, 9.47937)
-
-[node name="Testbed" type="Node3D" unique_id=1282088712]
-
-[node name="Environment" type="Node3D" parent="." unique_id=1688287513]
+[node name="Environment" type="Node3D" parent="." unique_id=1328368318]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="Environment" unique_id=1200994460 groups=["level_environment"]]
 environment = SubResource("Environment_amd4b")
@@ -173,9 +507,16 @@ transform = Transform3D(0.9652586, 0.061969116, -0.25384185, 0.2425067, 0.149273
 shadow_enabled = true
 directional_shadow_mode = 1
 
+[node name="SunshineCloudsDriverGD" type="Node3D" parent="Environment" unique_id=1375835233]
+script = ExtResource("13_lf15v")
+update_continuously = true
+clouds_resource = SubResource("CompositorEffect_n48f2")
+ambience_sample_environment = SubResource("Environment_amd4b")
+metadata/_custom_type_script = "uid://djusduuxf0voj"
+
 [node name="ArgonLightningController" type="Node3D" parent="Environment" unique_id=1728267574]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 258.21362, 48.988388, -210.22011)
-script = ExtResource("13_73vka")
+script = ExtResource("14_ubkfl")
 start_markers = Array[NodePath]([NodePath("Marker3D")])
 end_markers = Array[NodePath]([NodePath("Marker3D2"), NodePath("Marker3D3")])
 min_interval = 0.2
@@ -190,26 +531,440 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2670898, 0, 8.613892)
 [node name="Marker3D3" type="Marker3D" parent="Environment/ArgonLightningController" unique_id=1561576488]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.259628, 0, -1.5204926)
 
-[node name="SunshineCloudsDriverGD" type="Node3D" parent="Environment" unique_id=1375835233]
-script = ExtResource("14_4jcua")
-update_continuously = true
-clouds_resource = SubResource("CompositorEffect_n48f2")
-ambience_sample_environment = SubResource("Environment_amd4b")
-metadata/_custom_type_script = "uid://djusduuxf0voj"
+[node name="Streaming" type="Node3D" parent="." unique_id=1114791747]
 
-[node name="Streaming" type="Node3D" parent="." unique_id=1901123616]
+[node name="DynamicContainer" type="Node3D" parent="Streaming" unique_id=1898687532]
 
-[node name="DynamicContainer" type="Node3D" parent="Streaming" unique_id=1702716042]
-
-[node name="ChunkManager" type="Node3D" parent="Streaming" unique_id=1303502195 node_paths=PackedStringArray("dynamic_container")]
-script = ExtResource("15_ljaj2")
+[node name="ChunkManager" type="Node3D" parent="Streaming" unique_id=256520717 node_paths=PackedStringArray("dynamic_container")]
+script = ExtResource("15_4ltmt")
 chunk_dir = "res://levels/chunks/testbed/"
 dynamic_container = NodePath("../DynamicContainer")
 
-[node name="IOTimer" type="Timer" parent="Streaming/ChunkManager" unique_id=1184141516]
+[node name="IOTimer" type="Timer" parent="Streaming/ChunkManager" unique_id=166068392]
 wait_time = 0.05
 
-[node name="GameplayGlobal" type="Node3D" parent="." unique_id=351834385]
+[node name="GameplayGlobal" type="Node3D" parent="." unique_id=1451628916]
+
+[node name="Triggers" type="Node3D" parent="GameplayGlobal" unique_id=160820276]
+
+[node name="SpotlightSeqTrigger" type="Area3D" parent="GameplayGlobal/Triggers" unique_id=2034622032 node_paths=PackedStringArray("sequence_player")]
+collision_mask = 2
+script = ExtResource("16_n27ty")
+sequence_player = NodePath("../../LightSequence")
+trigger_size = Vector3(5, 4.7401123, 1.7758789)
+trigger_text = "SPOTLIGHT_SEQ"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GameplayGlobal/Triggers/SpotlightSeqTrigger" unique_id=735839557]
+shape = SubResource("BoxShape3D_47jar")
+
+[node name="LVLInstanceHideBuilding" type="Area3D" parent="GameplayGlobal/Triggers" unique_id=2071439200 node_paths=PackedStringArray("target_building")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13.5034485, -57.869232)
+collision_mask = 2
+script = ExtResource("17_j15lm")
+target_building = NodePath("../../HideBuildingsGroup")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GameplayGlobal/Triggers/LVLInstanceHideBuilding" unique_id=1728961884]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.477051, 2.532074, 3.239685)
+shape = SubResource("BoxShape3D_j34x5")
+
+[node name="Checkpoints" type="Node3D" parent="GameplayGlobal/Triggers" unique_id=397650965]
+
+[node name="Checkpoint2" parent="GameplayGlobal/Triggers/Checkpoints" unique_id=393278115 instance=ExtResource("18_6a6yn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.005507, 3.0070364, -7.4562755)
+trigger_size = Vector3(2, 2, 3)
+trigger_offset = Vector3(-0.185, 1, 0.28)
+
+[node name="Checkpoint" parent="GameplayGlobal/Triggers/Checkpoints" unique_id=1363167234 instance=ExtResource("18_6a6yn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.48194, 8.741266, 9.76771)
+trigger_size = Vector3(2.675, 2, 7.175)
+trigger_offset = Vector3(-0.06, 1, -1.12)
+
+[node name="Checkpoint3" parent="GameplayGlobal/Triggers/Checkpoints" unique_id=672838953 instance=ExtResource("18_6a6yn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.27378, -9.655952e-06, 14.75957)
+trigger_size = Vector3(5.5, 4.515, 2.72)
+trigger_offset = Vector3(-2.15, 2.18, 0)
+
+[node name="Checkpoint4" parent="GameplayGlobal/Triggers/Checkpoints" unique_id=1050881134 instance=ExtResource("18_6a6yn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.91617, -9.298325e-06, 18.390789)
+trigger_size = Vector3(6, 2, 2)
+trigger_offset = Vector3(2.175, 1, -0.3)
+
+[node name="Checkpoint5" parent="GameplayGlobal/Triggers/Checkpoints" unique_id=443240868 instance=ExtResource("18_6a6yn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.55965, 0.19381905, -24.744213)
+trigger_size = Vector3(4.9, 4, 20)
+trigger_offset = Vector3(0, 2, 0)
+
+[node name="Checkpoint6" parent="GameplayGlobal/Triggers/Checkpoints" unique_id=1182861450 instance=ExtResource("18_6a6yn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.6369042, 11.569578, -50.285973)
+trigger_size = Vector3(10, 4, 5)
+trigger_offset = Vector3(-4.115, 2, 0)
+
+[node name="Checkpoint7" parent="GameplayGlobal/Triggers/Checkpoints" unique_id=1320243993 instance=ExtResource("18_6a6yn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26.739439, 11.569578, -23.195477)
+trigger_size = Vector3(15.5, 8, 2)
+trigger_offset = Vector3(5.295, 4, 0)
+
+[node name="Checkpoint8" parent="GameplayGlobal/Triggers/Checkpoints" unique_id=1794218671 instance=ExtResource("18_6a6yn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.864826, -9.775162e-06, -1.8088872)
+trigger_size = Vector3(5, 2, 5)
+trigger_offset = Vector3(0, 1, 1.065)
+
+[node name="SoundscapeZone" parent="GameplayGlobal/Triggers/Checkpoints" unique_id=297960288 instance=ExtResource("21_w7nb7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 109.84187, 6.827738, -27.938662)
+zone_size = Vector3(50, 3, 50)
+soundscape = SubResource("Resource_q8dtw")
+
+[node name="TriggerLook" parent="GameplayGlobal/Triggers" unique_id=1996274554 node_paths=PackedStringArray("look_target", "targets") instance=ExtResource("25_8x6qq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.450024, 1.5000004, 16.956966)
+look_target = NodePath("TriggerLookMarker")
+required_look_time = 1.0
+fire_once = true
+targets = [null]
+trigger_size = Vector3(2, 3, 2)
+auto_consume_on_entry = false
+trigger_text = "TRIGGER_LOOK Standard"
+
+[node name="TriggerLookMarker" type="Marker3D" parent="GameplayGlobal/Triggers/TriggerLook" unique_id=273061713]
+transform = Transform3D(1.0000005, 0, 0, 0, 1.0000005, 0, 0, 0, 1.0000005, 2.4485197, 1.1446267, 0.42571807)
+
+[node name="Ladder" parent="GameplayGlobal/Triggers" unique_id=273226209 instance=ExtResource("27_v166e")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -3.5536122, 11.619547, -7.111744)
+ladder_size = Vector3(1.3, 22.5, 1.2)
+
+[node name="Ladder2" parent="GameplayGlobal/Triggers" unique_id=1390771300 instance=ExtResource("27_v166e")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -3.5536122, 4.3555646, -10.218583)
+ladder_size = Vector3(1.3, 8.5, 1.2)
+
+[node name="Ladder3" parent="GameplayGlobal/Triggers" unique_id=141983666 instance=ExtResource("27_v166e")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -3.5536122, 4.3555646, -12.98919)
+ladder_size = Vector3(1.3, 8.5, 1.2)
+
+[node name="SoundscapeZone" parent="GameplayGlobal/Triggers" unique_id=1472081847 instance=ExtResource("21_w7nb7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.908084, 1.8175311, 3.1614704)
+zone_size = Vector3(5.2, 3.2, 25)
+soundscape = SubResource("Resource_ftgh7")
+fade_duration = 2.0
+
+[node name="SoundscapeZoneStreet" parent="GameplayGlobal/Triggers" unique_id=1378264611 instance=ExtResource("21_w7nb7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.077961, 1.5179498, 23.377544)
+visible = false
+zone_size = Vector3(13.565, 3, 12)
+soundscape = ExtResource("35_pymsq")
+fade_duration = 2.0
+
+[node name="SoundscapeZoneWater" parent="GameplayGlobal/Triggers" unique_id=514316543 instance=ExtResource("21_w7nb7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.039965, 9.037047, -20.402287)
+zone_size = Vector3(30, 20, 24.345)
+soundscape = SubResource("Resource_n24io")
+fade_duration = 2.0
+
+[node name="TriggerHurt" parent="GameplayGlobal/Triggers" unique_id=1142556164 instance=ExtResource("37_p2dha")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.590172, 21.911886, -101.180565)
+show_in_game = true
+trigger_text = "Trigger Hurt -25 per second"
+
+[node name="TriggerHurt2" parent="GameplayGlobal/Triggers" unique_id=904997342 instance=ExtResource("37_p2dha")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.926773, 21.70082, -100.46885)
+modify_amount = 25
+show_in_game = true
+trigger_text = "Trigger Heal - +25 per second"
+
+[node name="screenshake_effect" parent="GameplayGlobal/Triggers" unique_id=1581639647 instance=ExtResource("39_hd8an")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31.36161, 22.200798, -131.72794)
+trigger_size = Vector3(6, 3, 2)
+trigger_color = Color(0.7660849, 0.6306243, 0.5120571, 0.8)
+trigger_text = "Trigger Screenshake"
+trigger_once = false
+shake_intensity = 8.0
+
+[node name="ChapterTrigger" parent="GameplayGlobal/Triggers" unique_id=1955767946 instance=ExtResource("41_wfxh4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.599699, 2.0000057, 23.134068)
+chapter_name = "TESTBED Level"
+trigger_text = "CHAPTER TRIGGER"
+
+[node name="DeveloperCommentary" parent="GameplayGlobal/Triggers" unique_id=1230983170 instance=ExtResource("43_o86dm")]
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -14.6, 1.5, 19.591)
+interact_sound = ExtResource("45_vkprc")
+commentary_title = "DannyDeTour Note Test"
+
+[node name="PhysicsMagnet" parent="GameplayGlobal/Triggers" unique_id=414016059 instance=ExtResource("46_7m0nq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31.669727, 2.7916055, -14.724708)
+force_multiplier = 250.0
+magnet_radius = 3.0
+
+[node name="ColorGradingVolume" parent="GameplayGlobal/Triggers" unique_id=726107414 node_paths=PackedStringArray("target_environment") instance=ExtResource("48_865j0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.904812, 1.4999849, 22.946009)
+volume_size = Vector3(5, 3, 4)
+temperature = -1.0
+aberration_amount = 0.01
+grain_amount = 1.0
+target_environment = NodePath("../../../Environment/WorldEnvironment")
+blend_time = 0.3
+preview_in_editor = true
+
+[node name="ColorGradingVolume3" parent="GameplayGlobal/Triggers" unique_id=1296127807 node_paths=PackedStringArray("target_environment") instance=ExtResource("48_865j0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.568287, 0.999985, 25.695862)
+volume_size = Vector3(1, 2, 1)
+show_in_game = true
+target_environment = NodePath("../../../Environment/WorldEnvironment")
+volume_bloom_intensity = 5.0
+blend_time = 0.3
+preview_in_editor = true
+
+[node name="Ladder4" parent="GameplayGlobal/Triggers" unique_id=660528859 instance=ExtResource("27_v166e")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 68.4896, 29.580513, -150.33453)
+ladder_size = Vector3(1, 8, 1)
+
+[node name="jump_pad2" parent="GameplayGlobal/Triggers" unique_id=1239358990 node_paths=PackedStringArray("assigned_target") instance=ExtResource("51_otifs")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 105.91495, 33.358845, -136.15051)
+assigned_target = NodePath("Target2")
+apex_height = 12.0
+
+[node name="Target2" type="Marker3D" parent="GameplayGlobal/Triggers/jump_pad2" unique_id=897388556]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12.658024, -98.91363)
+
+[node name="Target3" type="Marker3D" parent="GameplayGlobal/Triggers/jump_pad2" unique_id=1728579039]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -10)
+
+[node name="Portal" parent="GameplayGlobal/Triggers" unique_id=1893124656 node_paths=PackedStringArray("linked_portal") instance=ExtResource("53_x22ce")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96.96827, 34.909878, -151.64043)
+linked_portal = NodePath("../Portal2")
+
+[node name="Portal2" parent="GameplayGlobal/Triggers" unique_id=333579161 node_paths=PackedStringArray("linked_portal") instance=ExtResource("53_x22ce")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 22.041147, 8.221147, 19.698483)
+linked_portal = NodePath("../Portal")
+
+[node name="TriggerHint" parent="GameplayGlobal/Triggers" unique_id=1784504971 instance=ExtResource("55_lbgo4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.624365, 23.611326, -70.933105)
+hint_type = 0
+custom_message = "The House of Pain"
+trigger_size = Vector3(4.38, 5.66, 2)
+outline_color = Color(0.4, 0.8, 1, 0.9)
+trigger_text = "HINT pain"
+
+[node name="TriggerHint2" parent="GameplayGlobal/Triggers" unique_id=1817497512 instance=ExtResource("55_lbgo4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.06047, 1.4549848, 13.936689)
+hint_type = 5
+trigger_size = Vector3(1.605, 2.91, 4)
+outline_color = Color(0.4, 0.8, 1, 0.9)
+trigger_text = "HINT flashlight"
+
+[node name="ShellTrigger" parent="GameplayGlobal/Triggers" unique_id=2136957574 instance=ExtResource("57_j06md")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.25245, 29.868069, -122.169205)
+show_in_game = true
+trigger_color = Color(0.9, 0.2, 0.2, 0.25)
+outline_color = Color(1, 0.4, 0.3, 0.9)
+show_orientation = false
+trigger_text = "SHELL TRIGGER"
+
+[node name="jump_pad" parent="GameplayGlobal/Triggers" unique_id=1306747576 node_paths=PackedStringArray("assigned_target") instance=ExtResource("51_otifs")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.50993, 20.70082, -122.23077)
+assigned_target = NodePath("Marker3D")
+
+[node name="Marker3D" type="Marker3D" parent="GameplayGlobal/Triggers/jump_pad" unique_id=1644162592]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26.942348, 8.167248, 0)
+
+[node name="Target2" type="Marker3D" parent="GameplayGlobal/Triggers/jump_pad" unique_id=194725613]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -10)
+
+[node name="AuroraBorealis" parent="GameplayGlobal/Triggers/jump_pad" unique_id=487410922 instance=ExtResource("59_6vnab")]
+transform = Transform3D(0.9887838, -0.04027945, -0.1438205, 0.041244585, 0.9991421, 0.0037343472, 0.1435467, -0.00962425, 0.9895967, 266.00415, 102.79399, -161.82959)
+instance_shader_parameters/intensity = 2.0
+instance_shader_parameters/phase_offset = 0.0
+instance_shader_parameters/tint_color = Color(0.1, 0.9, 0.4, 1)
+mesh = SubResource("PlaneMesh_534t5")
+
+[node name="AuroraBorealis2" parent="GameplayGlobal/Triggers/jump_pad" unique_id=423375914 instance=ExtResource("59_6vnab")]
+transform = Transform3D(0.9887838, -0.04027945, -0.1438205, 0.041244585, 0.9991421, 0.0037343472, 0.1435467, -0.00962425, 0.9895967, 266.00415, 112.481, -226.32)
+instance_shader_parameters/intensity = 2.0
+instance_shader_parameters/phase_offset = 0.0
+instance_shader_parameters/tint_color = Color(0.1, 0.9, 0.4, 1)
+mesh = SubResource("PlaneMesh_534t5")
+
+[node name="AuroraBorealis3" parent="GameplayGlobal/Triggers/jump_pad" unique_id=2146068979 instance=ExtResource("59_6vnab")]
+transform = Transform3D(0.9887838, -0.04027945, -0.1438205, 0.041244585, 0.9991421, 0.0037343472, 0.1435467, -0.00962425, 0.9895967, 266.00415, 98.78073, -292.31815)
+instance_shader_parameters/intensity = 2.0
+instance_shader_parameters/phase_offset = 0.0
+instance_shader_parameters/tint_color = Color(0.1, 0.9, 0.4, 1)
+mesh = SubResource("PlaneMesh_534t5")
+
+[node name="ColorGradingVolume2" parent="GameplayGlobal/Triggers" unique_id=267745152 instance=ExtResource("48_865j0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.447652, 2.3442383, 4.1076336)
+volume_size = Vector3(5, 3, 25)
+preset = 1
+contrast = 1.2
+saturation = 0.0
+
+[node name="SmokeHazard" parent="GameplayGlobal/Triggers" unique_id=761632134 instance=ExtResource("62_wj7g0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.0345335, 21.700806, -95.40432)
+tick_rate = 0.25
+show_visualizer_in_game = true
+visualizer_color = Color(0.9, 0.2, 0.1, 0.3)
+
+[node name="HealthModifier" parent="GameplayGlobal/Triggers" unique_id=805012492 instance=ExtResource("37_p2dha")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64.3653, 26.658546, -230.41812)
+
+[node name="EventSequenceTrigger" parent="GameplayGlobal/Triggers" unique_id=1446420347 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 71.00406, 27.373905, -202.79845)
+collision_layer = 0
+collision_mask = 2
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_o5ick"), SubResource("Resource_rk188"), SubResource("Resource_qjyp4"), SubResource("Resource_58dqr"), SubResource("Resource_6umad")])
+trigger_size = Vector3(1, 1, 1)
+auto_consume_on_entry = false
+trigger_text = "EVENT SEQUENCE"
+
+[node name="WakeUpTrigger" parent="GameplayGlobal/Triggers" unique_id=92180357 instance=ExtResource("67_1u1d7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28.243671, 8.120682, -122.03992)
+eye_open_duration = 2.5
+look_up_duration = 2.0
+gaze_hold_duration = 0.8
+intro_text = "Wake up TRIGGER TEST"
+trigger_size = Vector3(1, 1, 1)
+show_in_game = true
+trigger_color = Color(0.2, 0.6, 1, 0.25)
+outline_color = Color(0.4, 0.8, 1, 0.9)
+show_orientation = false
+trigger_text = "WAKE UP TRIGGER"
+
+[node name="ShellTrigger2" parent="GameplayGlobal/Triggers" unique_id=1055132821 instance=ExtResource("57_j06md")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.048645, 21.700806, -118.429535)
+show_in_game = true
+trigger_color = Color(0.9, 0.2, 0.2, 0.25)
+outline_color = Color(1, 0.4, 0.3, 0.9)
+show_orientation = false
+trigger_text = "Ammo Shell TRIGGER"
+
+[node name="HissResonanceVolume" parent="GameplayGlobal/Triggers" unique_id=192868415 instance=ExtResource("69_jfudp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5550394, 30.307852, -137.09473)
+
+[node name="UpdraftVent" parent="GameplayGlobal/Triggers" unique_id=-1445864465 instance=ExtResource("71_d65c0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3559105, 10.65181, -64.583244)
+radius = 3.0
+height = 11.1
+lift_strength = 10.0
+
+[node name="MusicTrigger" parent="GameplayGlobal/Triggers" unique_id=2127577534 instance=ExtResource("73_eb6b1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -31.285717, 31.71167, 21.367403)
+audio_stream = ExtResource("75_lq712")
+switch_mode = 1
+crossfade_duration = 0.0
+custom_start_time = 12.0
+custom_end_time = 24.0
+trigger_size = Vector3(1, 1, 1)
+trigger_once = false
+
+[node name="MusicTrigger2" parent="GameplayGlobal/Triggers" unique_id=1666432554 instance=ExtResource("73_eb6b1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35.668873, 31.71167, 21.367403)
+switch_mode = 1
+crossfade_duration = 0.0
+section_index = 2
+custom_start_time = 24.0
+custom_end_time = 48.0
+trigger_size = Vector3(1, 1, 1)
+trigger_once = false
+
+[node name="EventSequenceTrigger2" parent="GameplayGlobal/Triggers" unique_id=1244280993 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.4062614, 1.0000052, -30.390635)
+collision_layer = 0
+collision_mask = 6
+activator_mask = 6
+conditions = Array[ExtResource("76_bgyh0")]([SubResource("Resource_b6yp8")])
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_o0dff"), SubResource("Resource_ot62w"), SubResource("Resource_esyl3")])
+trigger_size = Vector3(1, 1, 1)
+auto_consume_on_entry = false
+trigger_text = "EVENT SEQUENCE"
+
+[node name="Label3D" type="Label3D" parent="GameplayGlobal/Triggers/EventSequenceTrigger2" unique_id=1830928789]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2037909, 0)
+billboard = 1
+double_sided = false
+text = "To activate mannequin pull animation -
+stand inside the trigger with a box"
+
+[node name="MannequinAttractorTrigger3D" parent="GameplayGlobal/Triggers" unique_id=1298173903 node_paths=PackedStringArray("target_destination") instance=ExtResource("77_kl658")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.714519, 7.1765723, -25.811884)
+target_destination = NodePath("../../ragdoll_destination")
+bone_preset = 3
+target_bones = Array[StringName]([&"Foot.L", &"Foot.R", &"LowerLeg.L", &"LowerLeg.R"])
+max_duration = 5.0
+trigger_size = Vector3(0.1, 0.1, 0.1)
+
+[node name="EventSequenceTrigger6" parent="GameplayGlobal/Triggers" unique_id=330901470 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 199.62488, 50.489006, -284.33176)
+collision_layer = 0
+collision_mask = 2
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_yaxg6")])
+trigger_size = Vector3(1, 1, 1)
+auto_consume_on_entry = false
+trigger_text = "EVENT SEQUENCE"
+
+[node name="EventSequenceTrigger3" parent="GameplayGlobal/Triggers" unique_id=795253132 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.759106, 1, 20.884615)
+collision_layer = 0
+collision_mask = 2
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_w2gwf"), SubResource("Resource_a4a5i")])
+trigger_size = Vector3(1, 1, 1)
+auto_consume_on_entry = false
+trigger_text = "TRIGGER LOOK flicker and turn off"
+
+[node name="EventSequenceTrigger4" parent="GameplayGlobal/Triggers" unique_id=1057195152 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 182.72412, 50.989006, -287.22604)
+collision_layer = 0
+collision_mask = 2
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_1ksst")])
+trigger_size = Vector3(1, 1, 1)
+trigger_once = false
+auto_consume_on_entry = false
+trigger_text = "EVENT SEQUENCE"
+
+[node name="EventSequenceTrigger5" parent="GameplayGlobal/Triggers" unique_id=337831645 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 182.72412, 50.989006, -291.72092)
+collision_layer = 0
+collision_mask = 2
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_ogn5c")])
+trigger_size = Vector3(1, 1, 1)
+trigger_once = false
+auto_consume_on_entry = false
+trigger_text = "EVENT SEQUENCE"
+
+[node name="EventSequenceTrigger7" parent="GameplayGlobal/Triggers" unique_id=1205993833 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 217.84038, 50.989006, -287.82507)
+collision_layer = 0
+collision_mask = 2
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_shtew")])
+trigger_size = Vector3(1, 1, 1)
+trigger_once = false
+auto_consume_on_entry = false
+trigger_text = "EVENT SEQUENCE"
+
+[node name="EventSequenceTrigger8" parent="GameplayGlobal/Triggers" unique_id=25100321 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 227.68532, 50.989006, -281.00864)
+collision_layer = 0
+collision_mask = 2
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_bcpoc")])
+trigger_size = Vector3(1, 1, 1)
+trigger_once = false
+auto_consume_on_entry = false
+trigger_text = "EVENT SEQUENCE"
+
+[node name="EventSequenceTrigger9" parent="GameplayGlobal/Triggers" unique_id=261755811 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 290.57944, 49.86558, -204.11243)
+collision_layer = 0
+collision_mask = 2
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_riw2b")])
+trigger_size = Vector3(1, 1, 1)
+trigger_once = false
+auto_consume_on_entry = false
+trigger_text = "EVENT SEQUENCE"
+
+[node name="SpookTrigger" parent="GameplayGlobal/Triggers" unique_id=534281423 instance=ExtResource("64_8grvx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 160.5, 61.745, -232.644)
+collision_layer = 0
+collision_mask = 2
+steps = Array[ExtResource("66_wvqip")]([SubResource("Resource_haddo"), SubResource("Resource_lumu1"), SubResource("Resource_spook_03"), SubResource("Resource_spook_04"), SubResource("Resource_spook_05"), SubResource("Resource_spook_06"), SubResource("Resource_spook_07"), SubResource("Resource_spook_08"), SubResource("Resource_spook_09"), SubResource("Resource_spook_10"), SubResource("Resource_spook_11"), SubResource("Resource_spook_12"), SubResource("Resource_spook_13"), SubResource("Resource_spook_14"), SubResource("Resource_spook_15"), SubResource("Resource_spook_16"), SubResource("Resource_spook_17"), SubResource("Resource_spook_18"), SubResource("Resource_spook_19"), SubResource("Resource_spook_20"), SubResource("Resource_spook_21"), SubResource("Resource_spook_22")])
+trigger_size = Vector3(0.2, 5, 5)
+auto_consume_on_entry = false
+trigger_text = "EVENT SEQUENCE"
 
 [node name="LightSequence" type="AnimationPlayer" parent="GameplayGlobal" unique_id=1218410881]
 libraries/ = SubResource("AnimationLibrary_gp0ty")
@@ -226,103 +981,81 @@ light_energy = 3.0
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 19.864418, 6.0325055, 14.771739)
 light_energy = 3.0
 
-[node name="Triggers" type="Node3D" parent="GameplayGlobal" unique_id=160820276]
-
-[node name="SpotlightSeqTrigger" type="Area3D" parent="GameplayGlobal/Triggers" unique_id=2034622032 node_paths=PackedStringArray("sequence_player")]
-collision_mask = 2
-script = ExtResource("16_i2to2")
-sequence_player = NodePath("../../LightSequence")
-trigger_size = Vector3(5, 4.7401123, 1.7758789)
-trigger_text = "SPOTLIGHT_SEQ"
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="GameplayGlobal/Triggers/SpotlightSeqTrigger" unique_id=735839557]
-shape = SubResource("BoxShape3D_rvg8j")
-
-[node name="LVLInstanceHideBuilding" type="Area3D" parent="GameplayGlobal/Triggers" unique_id=2071439200 node_paths=PackedStringArray("target_building")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13.5034485, -57.869232)
-collision_mask = 2
-script = ExtResource("17_8oddl")
-target_building = NodePath("../../HideBuildingsGroup")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="GameplayGlobal/Triggers/LVLInstanceHideBuilding" unique_id=1728961884]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.477051, 2.532074, 3.239685)
-shape = SubResource("BoxShape3D_j34x5")
-
 [node name="HideBuildingsGroup" type="Node3D" parent="GameplayGlobal" unique_id=488482967]
 
-[node name="HideBuildingTEST" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=531998332 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST" parent="GameplayGlobal/HideBuildingsGroup" unique_id=531998332 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -52.375614, 29.263504, -73.53469)
 
-[node name="HideBuildingTEST2" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=917202698 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST2" parent="GameplayGlobal/HideBuildingsGroup" unique_id=917202698 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -79.72591, 29.263504, -73.53469)
 
-[node name="HideBuildingTEST3" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=854555223 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST3" parent="GameplayGlobal/HideBuildingsGroup" unique_id=854555223 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -107.05671, 29.263504, -73.53469)
 
-[node name="HideBuildingTEST4" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=384673309 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST4" parent="GameplayGlobal/HideBuildingsGroup" unique_id=384673309 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -136.7579, 29.263504, -73.53469)
 
-[node name="HideBuildingTEST5" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1620786606 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST5" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1620786606 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -167.06618, 29.263504, -73.53469)
 
-[node name="HideBuildingTEST6" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=577677263 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST6" parent="GameplayGlobal/HideBuildingsGroup" unique_id=577677263 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -52.375614, 29.263504, -119.01293)
 
-[node name="HideBuildingTEST7" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=915964552 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST7" parent="GameplayGlobal/HideBuildingsGroup" unique_id=915964552 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -79.72591, 29.263504, -119.01293)
 
-[node name="HideBuildingTEST8" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1994613172 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST8" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1994613172 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -107.05671, 29.263504, -119.01293)
 
-[node name="HideBuildingTEST9" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=247739502 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST9" parent="GameplayGlobal/HideBuildingsGroup" unique_id=247739502 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -136.7579, 29.263504, -119.01293)
 
-[node name="HideBuildingTEST10" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1036026942 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST10" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1036026942 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -167.06618, 29.263504, -119.01293)
 
-[node name="HideBuildingTEST11" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=687544762 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST11" parent="GameplayGlobal/HideBuildingsGroup" unique_id=687544762 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -52.375614, 29.263504, -169.23907)
 
-[node name="HideBuildingTEST12" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=104711940 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST12" parent="GameplayGlobal/HideBuildingsGroup" unique_id=104711940 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -79.72591, 29.263504, -169.23907)
 
-[node name="HideBuildingTEST13" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1373550706 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST13" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1373550706 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -107.05671, 29.263504, -169.23907)
 
-[node name="HideBuildingTEST14" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1384528641 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST14" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1384528641 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -136.7579, 29.263504, -169.23907)
 
-[node name="HideBuildingTEST15" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1480458891 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST15" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1480458891 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -167.06618, 29.263504, -169.23907)
 
-[node name="HideBuildingTEST16" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1912542401 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST16" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1912542401 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -52.375614, 29.263504, -224.96373)
 
-[node name="HideBuildingTEST17" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1475942495 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST17" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1475942495 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -79.72591, 29.263504, -224.96373)
 
-[node name="HideBuildingTEST18" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=2117139047 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST18" parent="GameplayGlobal/HideBuildingsGroup" unique_id=2117139047 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -107.05671, 29.263504, -224.96373)
 
-[node name="HideBuildingTEST19" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1650175203 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST19" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1650175203 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -136.7579, 29.263504, -224.96373)
 
-[node name="HideBuildingTEST20" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=741656420 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST20" parent="GameplayGlobal/HideBuildingsGroup" unique_id=741656420 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -167.06618, 29.263504, -224.96373)
 
-[node name="HideBuildingTEST21" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1451506991 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST21" parent="GameplayGlobal/HideBuildingsGroup" unique_id=1451506991 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -52.375614, 29.263504, -274.2905)
 
-[node name="HideBuildingTEST22" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=291694827 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST22" parent="GameplayGlobal/HideBuildingsGroup" unique_id=291694827 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -79.72591, 29.263504, -274.2905)
 
-[node name="HideBuildingTEST23" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=767589480 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST23" parent="GameplayGlobal/HideBuildingsGroup" unique_id=767589480 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -107.05671, 29.263504, -274.2905)
 
-[node name="HideBuildingTEST24" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=2053920673 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST24" parent="GameplayGlobal/HideBuildingsGroup" unique_id=2053920673 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -136.7579, 29.263504, -274.2905)
 
-[node name="HideBuildingTEST25" type="Node3D" parent="GameplayGlobal/HideBuildingsGroup" unique_id=219812559 instance=ExtResource("18_ihtxi")]
+[node name="HideBuildingTEST25" parent="GameplayGlobal/HideBuildingsGroup" unique_id=219812559 instance=ExtResource("80_kitry")]
 transform = Transform3D(0.25881907, 0, 0.9659258, 0, 1, 0, -0.9659258, 0, 0.25881907, -167.06618, 29.263504, -274.2905)
 
 [node name="CCTVLocation1" type="Marker3D" parent="GameplayGlobal" unique_id=1135352918]
@@ -331,36 +1064,20 @@ transform = Transform3D(-0.31790048, 0.2453926, -0.91581756, 1.1313338e-08, 0.96
 [node name="CCTVLocation2" type="Marker3D" parent="GameplayGlobal" unique_id=2080313229]
 transform = Transform3D(-0.25881904, 0, -0.9659258, 0, 1, 0, 0.9659258, 0, -0.25881904, -74.048096, 77.984856, -39.773098)
 
-[node name="TVScreen" type="StaticBody3D" parent="GameplayGlobal" unique_id=2083472752 node_paths=PackedStringArray("camera_vp", "camera_locations", "world_env") instance=ExtResource("19_u1rft")]
+[node name="TVScreen" parent="GameplayGlobal" unique_id=2083472752 node_paths=PackedStringArray("camera_locations", "world_env") instance=ExtResource("81_ggkmo")]
 transform = Transform3D(0, 0, -1.0000001, 0, 1, 0, 1.0000001, 0, 0, 34.161728, 1.6922185, 13.610088)
-collision_layer = 4
-script = ExtResource("20_vvo2q")
-camera_vp = NodePath("CCTVViewport")
 camera_locations = [NodePath("../CCTVLocation1"), NodePath("../CCTVLocation2")]
 world_env = NodePath("../../Environment/WorldEnvironment")
 
 [node name="ragdoll_destination" type="Marker3D" parent="GameplayGlobal" unique_id=245457777]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.983325, 1.1920929e-07, -19.636383)
 
-[node name="Player" type="CharacterBody3D" parent="." unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu", "ui_controller", "wolf_hands") groups=["player"] instance=ExtResource("21_hbve3")]
-process_mode = 3
+[node name="Player" parent="." unique_id=1502339238 instance=ExtResource("83_424rw")]
 transform = Transform3D(-0.017830655, 0, 0.999841, 0, 1, 0, -0.999841, 0, -0.017830655, 164.5324, 59.745037, -232.80786)
-collision_layer = 2
-collision_mask = 21
-script = ExtResource("22_2vljv")
-locomotion_component = NodePath("Components/LocomotionComponent")
-interaction_component = NodePath("Components/InteractionComponent")
-environment_component = NodePath("Components/EnvironmentComponent")
-stats_component = NodePath("Components/StatsComponent")
-state_machine = NodePath("StateMachine")
-camera_controller = NodePath("Head/CameraController")
-system_menu = NodePath("SystemMenuController")
-ui_controller = NodePath("UI")
-wolf_hands = NodePath("Head/Eyes/Camera3D/WolfHands")
 
-[node name="PlayerChunkTracker" type="Node3D" parent="Player" unique_id=2104048731]
-script = ExtResource("23_fcdtr")
+[node name="PlayerChunkTracker" type="Node3D" parent="Player" unique_id=1909058817]
+script = ExtResource("85_sxrju")
 
-[node name="PollTimer" type="Timer" parent="Player/PlayerChunkTracker" unique_id=1709841210]
+[node name="PollTimer" type="Timer" parent="Player/PlayerChunkTracker" unique_id=1643715385]
 wait_time = 0.2
 autostart = true

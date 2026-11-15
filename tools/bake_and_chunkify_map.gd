@@ -2,7 +2,7 @@
 class_name BakeAndChunkifyMap
 extends EditorScript
 ## Editor and headless utility that bakes and chunkifies a monolithic level
-## scene into 250x250m [ChunkRoot] scenes, binary geo resources, and a shell.
+## scene into 50x50m [ChunkRoot] scenes, binary geo resources, and a shell.
 
 ## Source level scene path to bake and chunkify.
 const SOURCE_SCENE_PATH: String = "res://levels/testbed.tscn"
@@ -26,7 +26,7 @@ const MESH_PATH_FMT: String = "res://levels/chunks/testbed/geo/chunk_%d_%d_mesh.
 const COL_PATH_FMT: String = "res://levels/chunks/testbed/geo/chunk_%d_%d_col.res"
 
 ## World-space width and depth of a single streaming chunk in meters.
-const CHUNK_SIZE: float = 250.0
+const CHUNK_SIZE: float = 50.0
 
 ## Polling interval in seconds for the [ChunkManager] I/O timer.
 const IO_POLL_INTERVAL: float = 0.05
@@ -205,17 +205,57 @@ class MapBaker:
 	) -> void:
 		var children: Array[Node] = src_root.get_children()
 		for child: Node in children:
-			if child.name == &"Player":
-				_move_node(child, shell_root, src_root, shell_root)
-				_ensure_player_tracker(child, shell_root)
-			elif String(child.name) in ENV_NODE_NAMES:
-				_move_node(child, env_dir, src_root, shell_root)
-			elif String(child.name) in GLOBAL_NODE_NAMES or not (child is Node3D):
-				_move_node(child, global_dir, src_root, shell_root)
-			else:
-				_collect_spatial_node(
-					child, Transform3D.IDENTITY, src_root, plain_csgs, special_csgs, chunk_nodes
-				)
+			_route_or_collect_node(
+				child,
+				Transform3D.IDENTITY,
+				src_root,
+				shell_root,
+				env_dir,
+				global_dir,
+				plain_csgs,
+				special_csgs,
+				chunk_nodes
+			)
+
+	## Routes shell-level actors/folders or delegates spatial nodes to chunk collection.
+	func _route_or_collect_node(
+		node: Node,
+		parent_xform: Transform3D,
+		src_root: Node,
+		shell_root: Node3D,
+		env_dir: Node3D,
+		global_dir: Node3D,
+		plain_csgs: Array[Dictionary],
+		special_csgs: Array[Dictionary],
+		chunk_nodes: Dictionary[Vector2i, Array]
+	) -> void:
+		if node.name == &"Player":
+			_move_node(node, shell_root, src_root, shell_root)
+			if node is Node3D:
+				(node as Node3D).transform = parent_xform * (node as Node3D).transform
+			_ensure_player_tracker(node, shell_root)
+			return
+		if String(node.name) in ENV_NODE_NAMES:
+			_move_node(node, env_dir, src_root, shell_root)
+			if node is Node3D:
+				(node as Node3D).transform = parent_xform * (node as Node3D).transform
+			return
+		if String(node.name) in GLOBAL_NODE_NAMES or not (node is Node3D):
+			_move_node(node, global_dir, src_root, shell_root)
+			if node is Node3D:
+				(node as Node3D).transform = parent_xform * (node as Node3D).transform
+			return
+		_collect_spatial_node(
+			node,
+			parent_xform,
+			src_root,
+			shell_root,
+			env_dir,
+			global_dir,
+			plain_csgs,
+			special_csgs,
+			chunk_nodes
+		)
 
 	## Ensures [param player] has a [PlayerChunkTracker] and [Timer] child owned by [param owner_root].
 	func _ensure_player_tracker(player: Node, owner_root: Node) -> void:
@@ -242,6 +282,9 @@ class MapBaker:
 		node: Node,
 		parent_xform: Transform3D,
 		src_root: Node,
+		shell_root: Node3D,
+		env_dir: Node3D,
+		global_dir: Node3D,
 		plain_csgs: Array[Dictionary],
 		special_csgs: Array[Dictionary],
 		chunk_nodes: Dictionary[Vector2i, Array]
@@ -263,8 +306,16 @@ class MapBaker:
 		if _is_plain_folder(node_3d):
 			var folder_children: Array[Node] = node_3d.get_children()
 			for child: Node in folder_children:
-				_collect_spatial_node(
-					child, world_xform, src_root, plain_csgs, special_csgs, chunk_nodes
+				_route_or_collect_node(
+					child,
+					world_xform,
+					src_root,
+					shell_root,
+					env_dir,
+					global_dir,
+					plain_csgs,
+					special_csgs,
+					chunk_nodes
 				)
 			return
 

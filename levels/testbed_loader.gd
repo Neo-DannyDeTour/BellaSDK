@@ -9,10 +9,13 @@ const DEFAULT_LOADING_SCREEN_PATH: String = "res://ui/loading_screen.tscn"
 @export var loading_screen_scene: PackedScene
 
 ## Scene file path of the testbed level to load.
-@export_file("*.tscn", "*.scn") var testbed_path: String = "res://levels/testbed_chunk.tscn"
+@export_file("*.tscn", "*.scn") var testbed_path: String = "res://levels/testbed.tscn"
 
 ## If true, automatically loads the testbed when running in debug mode.
 @export var auto_launch_in_debug: bool = true
+
+## If true, skips [LoadingScreen] and jumps directly into [member testbed_path].
+@export var bypass_loading_screen: bool = true
 
 ## Keyboard shortcut used to trigger the testbed load manually.
 @export var quick_load_key: Key = KEY_F1
@@ -40,8 +43,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			launch_testbed()
 
 
-## Spawns [LoadingScreen] and requests asynchronous level loading.
+## Spawns [LoadingScreen] or loads [member testbed_path] directly when bypassed.
 func launch_testbed() -> void:
+	if testbed_path.is_empty():
+		push_error("DevTestbedLoader: No testbed_path configured!")
+		return
+
+	if bypass_loading_screen:
+		print("DevTestbedLoader: Bypassing LoadingScreen, loading testbed directly.")
+		var err: Error = get_tree().change_scene_to_file(testbed_path)
+		if err != OK:
+			push_error("DevTestbedLoader: Failed to change scene to ", testbed_path)
+		return
+
 	print("DevTestbedLoader: Launching testbed via LoadingScreen.")
 	if LoadingScreen.is_transition_active:
 		push_warning("DevTestbedLoader: Transition already active.")
@@ -54,10 +68,6 @@ func launch_testbed() -> void:
 
 	if not is_instance_valid(target_scene):
 		push_error("DevTestbedLoader: No loading_screen_scene assigned or found at default path!")
-		return
-
-	if testbed_path.is_empty():
-		push_error("DevTestbedLoader: No testbed_path configured!")
 		return
 
 	var raw_instance: Node = target_scene.instantiate()
