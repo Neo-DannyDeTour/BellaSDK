@@ -88,3 +88,4 @@ gut_test_results.xml
 __pycache__/
 *.pyc
 tools/scripts/trellis_asset_gen.py
+.agents/teamwork/

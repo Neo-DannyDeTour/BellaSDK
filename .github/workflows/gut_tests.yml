@@ -1,10 +1,6 @@
 name: "GUT Unit & Integration Tests"
 
 on:
-  push:
-    branches: ["main", "master", "develop"]
-  pull_request:
-    branches: ["main", "master"]
   workflow_dispatch:
 
 env:

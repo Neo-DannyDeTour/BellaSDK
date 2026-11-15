@@ -1,60 +1,112 @@
 ---
 name: 3d
-description: Generates game-ready 3D models and Godot 4 ORM materials from concept plates using Microsoft TRELLIS API and automated BellaSDK asset ingestion.
+description: Generates game-ready 3D models and Godot 4 ORM materials from concept plates using Microsoft TRELLIS API, headless Blender cleanup, and automated BellaSDK asset ingestion.
 metadata:
   icon: box
 ---
 
 # 3D Asset Generator Skill (`/3d`)
 
-Automated 3D model generator implementing Microsoft TRELLIS image-to-3D inference, mesh simplification (quadric decimation), and Godot 4 ORM material packing.
+Generates non-slop 3D assets via structured concept plates, Microsoft TRELLIS (single or multi-view), headless Blender 5.3 UV-safe cleanup, albedo delighting, and Godot 4 `ORMMaterial3D` compilation.
 
 ## Activation
-Trigger this skill when generating 3D models, props, or environment geometry from reference images:
 - Slash command: `/3d`
 - Mention: `@3d`
 - Prompt: `generate 3d model`, `create 3d prop`, `trellis generate`
 
 ---
 
-## 4-Gate Interrogator Pipeline
-
-Before executing generation, enforce the 4-Gate Interrogator Pipeline:
-1. **Gate 1 — Engine Spec & Topology Lock**:
-   - Confirm target layer (`Layer 1 Environment`, `Layer 2 Player`, `Layer 3 Interactive`).
-   - Confirm sub-mesh split (single manifold mesh vs articulated door/pivot).
-   - Confirm tri budget (default: 2,000 for props).
-2. **Gate 2 — Concept Plate Isolation**:
-   - Auto-crop bounding box to isolate object from vignette/spotlights.
-   - Pad onto `#808080` neutral gray canvas for clean silhouette extraction.
-3. **Gate 3 — Mesh Generation & Retopo**:
-   - Invoke TRELLIS `/preprocess_image` and `/generate_and_extract_glb`.
-   - Simplify mesh using `trimesh.simplify_quadric_decimation()` to match tri budget.
-4. **Gate 4 — Delighted PBR & Godot 4 ORM**:
-   - Pack ORM texture (`R = AO`, `G = Roughness`, `B = Metallic`).
-   - Generate Godot 4 `.tres` resource (`ORMMaterial3D`).
-   - Write `asset_manifest.json` metadata.
+## Default Art Direction Lock
+Unless user specifies an override tag (`stylized`, `plush`, `retro`), enforce **Gritty Semi-Realistic / Post-Soviet Industrial Gothic**:
+- Grounded physical proportions, believable industrial/worn CMF, weathered matte-to-scuffed surfaces.
+- Avoid neon emissive clutter, plastic gloss, floating bits, or cartoon proportions.
 
 ---
 
-## Direct CLI Execution
+## Gate 1 — Tight Engine & Topology Lock (1 Round)
+Ask 1 tight round with concrete defaults before generating concept plates:
+1. **Role & Layer**: `Layer 1 Environment` (static), `Layer 2 Player` (hero/rigged), or `Layer 3 Interactive` (rigid/door/pickup).
+2. **Mesh Strategy**: `TRELLIS single-view` (simple organic/clutter props), `TRELLIS multi-view` (3 plates: front/side/back for asymmetric props & A-pose characters), or `Procedural Blender bpy` (`tools/blender/run.py` — preferred for clean modular walls, crates, pipes, architectural kits).
+3. **Sub-Mesh Split**: Single manifold mesh vs `--keep-separate` articulated pivots.
+4. **Scale & Budgets**:
+   - Mandatory `--target-height` in meters (e.g. `1.68` hero, `0.9` barrel, `0.45` crate).
+   - Tri budget: `800–2,000` static props | `1,500–3,500` interactive | `6,000–12,000` hero characters.
+5. **Material Preset**: `stone | plaster | wood | metal | fabric | wet`.
 
-```bash
-./.venv/bin/python tools/scripts/trellis_asset_gen.py \
-  --image "<path_to_reference_image>" \
-  --slug "<prop_slug>" \
-  --layer "Layer 1 Environment" \
-  --tri-budget 2000 \
-  --metallic 0.0 \
-  --roughness 0.7
+Wait for confirmation before Gate 2.
+
+---
+
+## Gate 2 — Concept Plate Prompts (`image-generator`)
+
+### Anti-Slop Plate Rules
+- **NEVER** pass dark spotlight vignettes, floor shadows, perspective wide-angle distortion, or cluttered backgrounds into TRELLIS.
+- **NO thin disconnected geometry**: avoid loose wires, antennae, chains, thin straps, or stray hair strands (marching cubes breaks or blobs them; add cables/chains in Godot/Blender separately).
+
+### Template A: Static / Interactive Prop (3/4 View)
+```text
+Isolated single [OBJECT] asset for 3D modeling, gritty semi-realistic post-Soviet industrial aesthetic, [MATERIALS AND WEAR: e.g., chipped olive-drab enamel paint over dark rusted steel, matte black vulcanized rubber seals, realistic grime in recesses], centered three-quarter orthographic-style view with zero perspective distortion, clean solid manifold silhouette with chunky readable bevels and zero thin floating wires or loose straps, flat even shadowless diffuse studio lighting, uniform solid #808080 neutral gray background, zero floor plane, zero cast shadows, zero vignette, sharp focus edge-to-edge.
 ```
 
-### CLI Arguments
-- `--image`: Path to local reference plate (PNG/JPEG).
-- `--slug`: Name identifier (creates `res://assets/models/<slug>/`).
-- `--layer`: Target collision layer (default: `"Layer 1 Environment"`).
-- `--tri-budget`: Maximum face count (default: `2000`).
-- `--metallic`: Metallic float value between 0.0 and 1.0 (default: `0.0`).
-- `--roughness`: Roughness float value between 0.0 and 1.0 (default: `0.7`).
-- `--output-dir`: Optional custom output directory.
-- `--seed`: Generation seed (default: `42`).
+### Template B: Symmetric / Hard-Surface Front Plate
+```text
+Isolated single [OBJECT] asset, straight-on orthographic front elevation, gritty weathered industrial CMF [MATERIALS AND WEAR], solid manifold geometry with heavy chamfers and no delicate gaps, flat shadowless diffuse studio lighting, uniform solid #808080 neutral gray background, zero floor shadow, zero perspective distortion, edge-to-edge crisp detail.
+```
+
+### Template C: Humanoid Character 3-View Turnaround (For Multi-View + AccuRIG)
+Generate 3 separate square plates (`_front.png`, `_side.png`, `_back.png`) locking identical costume, colors, and proportions:
+```text
+Full-body character concept turnaround, pure orthographic [front / 90-degree left side profile / back] view, symmetrical standing A-pose with arms angled 45 degrees down from torso and fingers slightly separated, feet hip-width apart facing straight forward, [CHARACTER DESCRIPTION & GRITTY OUTFIT CMF], clean sculpted manifold forms with zero stray floating hair strands or thin dangling straps, flat even shadowless studio lighting, uniform solid #808080 neutral gray background, zero floor shadow, zero perspective distortion, full body centered from head to boots with margin.
+```
+
+### Gate 2 Visual Inspection (Mandatory Before Gate 3)
+Inspect generated image(s) via `read_file`. **Reject and regenerate** if:
+- Ground shadow, spotlight cone, or gradient background appears.
+- Parts are cropped at canvas borders.
+- Limbs/fingers are fused or thin floating cables appear.
+
+---
+
+## Gate 3 & 4 — Automated Generation, Blender Cleanup & Godot ORM
+
+Run via `.venv/bin/python` (automatically runs `/snap/bin/blender` `tools/blender/postprocess_trellis.py` for UV-safe decimation, bottom-center `min_y = 0` grounding, normal recalc, texture extraction, albedo delighting, ORM packing, and `ORMMaterial3D` `.tres` assembly):
+
+### Single-View Prop
+```bash
+./.venv/bin/python tools/scripts/trellis_asset_gen.py \
+  --image "<front_plate.png>" \
+  --slug "<prop_slug>" \
+  --layer "Layer 3 Interactive" \
+  --preset metal \
+  --tri-budget 2000 \
+  --target-height 0.85
+```
+
+### Multi-View Hero / Complex Asset
+```bash
+./.venv/bin/python tools/scripts/trellis_asset_gen.py \
+  --image "<front_plate.png>" \
+  --multi-images "<side_plate.png>" "<back_plate.png>" \
+  --multiimage-algo stochastic \
+  --slug "<asset_slug>" \
+  --layer "Layer 2 Player" \
+  --preset fabric \
+  --tri-budget 8000 \
+  --target-height 1.68
+```
+
+### Key Flags
+- `--target-height <m>`: Required for accurate Godot meter scale (baked directly into vertices, `scale = (1,1,1)`).
+- `--preset <stone|plaster|wood|metal|fabric|wet>`: Calibrates derived roughness & normal strength.
+- `--metallic` / `--roughness`: Optional numeric overrides.
+- `--keep-separate`: Preserve multi-part sub-meshes instead of joining.
+- `--skip-delight`: Keep raw extracted albedo if already flat-lit.
+- Token resolution order: `--hf-token` -> `HF_TOKEN` env -> `.env` `HF_TOKEN` -> `~/.cache/huggingface/token`.
+
+---
+
+## Post-Generation QA Gate
+Before handoff, verify `res://assets/models/<slug>/`:
+1. `asset_manifest.json` reports `uv_layers >= 1`, `tri_count <= budget`, non-null `dimensions_m`, and `collision_hint`.
+2. `<slug>.tres` links `<slug>_albedo.png`, `<slug>_orm.png`, and `<slug>_normal.png` (not blank uniform ORM unless source mesh was untextured).
+3. In Godot: assign collision shape from `collision_hint` (`BoxShape3D` / `ConvexPolygonShape3D` for dynamic/interactive; never `ConcavePolygonShape3D` on `RigidBody3D`).

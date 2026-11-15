@@ -1,37 +1,41 @@
 ---
 name: automation
-description: Automated 60 FPS performance, render pipeline, and scene misconfiguration audit runner for BellaSDK.
+description: Automated 60 FPS performance, architecture, gdlint, and Godot headless verification orchestrator for BellaSDK.
 metadata:
   icon: schedule
 ---
 
-# BellaSDK Performance & Architecture Automation Skill
+# BellaSDK Performance & Verification Automation (`/automation`)
 
-Automated task runner for Principal Godot 4 Performance Engineer ("Bolt" ⚡).
+Single entrypoint orchestrating `godot-suite` audit skills (`godot-performance-audit`, `godot-arch-check`, `godot-lint`) plus CLI verification.
 
 ## Activation
-Trigger this skill anytime to execute an end-to-end 60 FPS audit:
-- Prompt: `/automation` or `@automation` or `Run automated performance audit`
+- Prompt: `/automation`, `@automation`, or `Run automated performance audit`
 
-## Automated Execution Procedure
+---
 
-### Phase 1: Diagnostic Scan
-Scans `.gd` and `.tscn` files across the 6 core bottlenecks (excluding `addons/`):
-1. **Global `_process()` & `_physics_process()`**: Uncached tree traversals, continuous polling without signals, per-frame heap allocations (`Array`, `Dictionary`), un-culled distance checks (must use `distance_squared_to()`).
-2. **SubViewport & Render Pipeline**: Verify `disable_3d = true` on 2D viewports, ensure `render_target_update_mode` uses `UPDATE_WHEN_VISIBLE` (2) instead of `UPDATE_ALWAYS` (4), check `SubViewportContainer.stretch` size coupling.
-3. **Draw Calls & Batching**: Identify duplicate `MeshInstance3D` clusters for `MultiMeshInstance3D` batching, runtime `CSGShape3D` overhead, and unshared materials.
-4. **Physics & Colliders**: Flag `0xFFFFFFFF` broad masks, `ConcavePolygonShape3D` on dynamic bodies, and `RigidBody3D.can_sleep == false`.
-5. **Scene & Signal Leaks**: Vanished base scene overrides, redundant `.emit()` calls after UI setter mutations, and unsafe `as Type` casts leaking instantiated nodes.
-6. **Code Rules**: Enforce strict typing, typed Callables, pre-allocated `StringName` constants (`&"name"`), and `gdlint` class ordering.
+## Automated Workflow
 
-### Phase 2: Interrogation & Locked Spec
-- Generate a Ranked Bottleneck Table (`file_path:line`, category, est. CPU ms / draw call impact, proposed fix).
-- Formulate concrete recommendations and stress-test tradeoffs with the user before editing code.
-- Wait for explicit user confirmation of the Locked Spec.
+### Phase 1: Parallel Diagnostic Scan (Using `godot-suite`)
+Run the checklists defined in:
+1. [godot-performance-audit](file:///home/dkd/Documents/BellaSDK/.agents/plugins/godot-suite/skills/godot-performance-audit/SKILL.md) (6 focus areas: `_process` hotspots, `SubViewport`, batching `< 600` draw calls, `CollisionLayers`, leaks, static typing).
+2. [godot-arch-check](file:///home/dkd/Documents/BellaSDK/.agents/plugins/godot-suite/skills/godot-arch-check/SKILL.md) (`NodeQuery`, `AudioPool`, `MaterialCache`, `MathUtils`, `Utilities`, Render/Physics layers).
+3. Static CLI lint scan (excluding `addons/`):
+```bash
+gdlint $(find . -name "*.gd" -not -path "./addons/*" -not -path "./.godot/*")
+```
 
-### Phase 3: Execute & Audit
-- Apply complete, drop-in scripts and `.tscn` modifications.
-- Run `gdlint` verification.
-- Output required 1-2 line reply audit:
-  - `- Skipped: [Omitted or unverified features/callers]`
-  - `- Risk: [Concrete breaking assumptions or scene dependencies]`
+### Phase 2: Ranked Findings & Locked Spec Gate
+- Output a **Ranked Bottleneck Table** (`file_path:line`, category, est. CPU ms / draw call / safety impact, proposed fix).
+- Grill user on architectural tradeoffs using 1 tight round with recommended answers.
+- Wait for explicit `"go"` on the Locked Spec before editing `.gd` or `.tscn` files.
+
+### Phase 3: Execute & Verify
+1. Apply complete drop-in fixes following [godot-lint](file:///home/dkd/Documents/BellaSDK/.agents/plugins/godot-suite/skills/godot-lint/SKILL.md) and `GEMINI.md` rules.
+2. Re-run `gdlint` on all modified `.gd` files and run Godot headless verification:
+```bash
+godot --headless --quit --path .
+```
+3. Conclude with the mandatory 2-line audit:
+   - `Skipped: [Features, scenes, or callers omitted or unverified]`
+   - `Risk: [Concrete breaking assumptions, scene dependencies, or edge cases]`

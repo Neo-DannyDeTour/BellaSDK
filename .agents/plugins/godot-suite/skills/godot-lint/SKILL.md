@@ -27,6 +27,6 @@ gdformat scripts/<target_file>.gd
 ```
 
 ### 3. Strict Rule Invariants
-- Class definitions order must follow: signals, enums, constants, `@export`, public vars, `_private` vars, `@onready`, lifecycle (`_ready`, `_process`), public methods, `_private` methods.
+- Max line length 100 chars, tabs (`1` tab), zero trailing whitespace.
 - Local function variables must NEVER start with a leading underscore `_`.
 - Strict static typing required on all variables, signal signatures, and return types (`-> void`).
