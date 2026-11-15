@@ -73,6 +73,9 @@ extends CSGMesh3D
 		if is_inside_tree():
 			_update_mesh()
 
+## Editor button that bakes this CSG into a StaticBody3D + external .res mesh.
+@export_tool_button("Bake to StaticBody3D (.res)") var bake_action: Callable = _bake_to_static_body
+
 
 ## Called when the node enters the scene tree to initialize the procedural mesh.
 func _ready() -> void:
@@ -172,3 +175,8 @@ func _add_quad(st: SurfaceTool, p1: Vector3, p2: Vector3, p3: Vector3, p4: Vecto
 	st.add_vertex(p1)
 	st.add_vertex(p3)
 	st.add_vertex(p4)
+
+
+## Bakes this procedural CSG spiral staircase into a sibling [StaticBody3D] + .res mesh.
+func _bake_to_static_body() -> void:
+	Utilities.bake_csg_to_static_body(self)

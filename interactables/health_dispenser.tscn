@@ -29,7 +29,7 @@ shader_parameter/alpha_scissor_threshold = 0.5
 [sub_resource type="CylinderMesh" id="CylinderMesh_534t5"]
 top_radius = 0.095
 bottom_radius = 0.095
-height = 0.72
+height = 0.68
 radial_segments = 24
 rings = 8
 
@@ -51,10 +51,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.19707033)
 shape = SubResource("BoxShape3D_mtknx")
 
 [node name="ChassisModel" parent="." unique_id=1148041408 instance=ExtResource("9_chassis")]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0)
 
 [node name="ScreenSprite" type="Sprite3D" parent="." unique_id=1645974949]
-transform = Transform3D(0.088, 0, 0, 0, 0.088, 0, 0, 0, 0.088, 0, 0.08, 0.105)
+transform = Transform3D(0.072, 0, 0, 0, 0.062, 0, 0, 0, 0.072, 0, 0.0, 0.105)
 double_sided = false
 alpha_cut = 1
 texture = ExtResource("5_dwsg7")
@@ -70,7 +69,7 @@ font_size = 42
 outline_size = 10
 
 [node name="TentaclePivot" type="Node3D" parent="." unique_id=324808458]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.5, -0.22, 0.22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, -0.3, 0.22)
 
 [node name="DetectionArea" type="Area3D" parent="." unique_id=930658938]
 collision_layer = 5

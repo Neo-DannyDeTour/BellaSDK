@@ -17,8 +17,11 @@ const LADDER_DEPTH_OFFSET: float = 0.1
 ## Velocity gain aligning player depth toward [member LADDER_DEPTH_OFFSET].
 const LADDER_DEPTH_PULL_SPEED: float = 8.0
 
-## Minimum look-right dot magnitude (~64 deg) before forward/back steers laterally.
-const LATERAL_LOOK_THRESHOLD: float = 0.90
+## Minimum inward yaw dot (~50 deg from ladder normal) required for vertical W/S climb.
+const CLIMB_FACING_DOT_MIN: float = 0.6428
+
+## Minimum inward yaw dot (~105 deg from ladder normal) before W/S enters opposite deadzone.
+const SIDE_LEAN_DOT_MIN: float = -0.2588
 
 ## Downward look Y component (~30 deg down) required to flip forward input into descent.
 const CLIMB_DOWN_LOOK_PITCH: float = -0.50
@@ -112,7 +115,7 @@ func _handle_crouch_state(loco: PlayerLocomotionComponent) -> void:
 		Events.player_crouch_changed.emit(loco.crouching)
 
 
-## Computes climbing, strafing, and surface depth velocities without snap oscillation.
+## Computes climbing, lateral lean, and surface depth velocities by horizontal look zone.
 func _calculate_ladder_velocity(
 	p: Player, loco: PlayerLocomotionComponent, cam: CameraController, input_dir: Vector2
 ) -> void:
@@ -135,37 +138,38 @@ func _calculate_ladder_velocity(
 	var ladder_right: Vector3 = current_ladder.global_transform.basis.x.normalized()
 	var ladder_forward: Vector3 = current_ladder.global_transform.basis.z.normalized()
 
-	var raw_lateral_ws: float = look_dir.dot(ladder_right)
-	var lateral_weight_ws: float = 0.0
-	if absf(raw_lateral_ws) > LATERAL_LOOK_THRESHOLD:
-		var excess: float = (
-			(absf(raw_lateral_ws) - LATERAL_LOOK_THRESHOLD) / (1.0 - LATERAL_LOOK_THRESHOLD)
-		)
-		lateral_weight_ws = signf(raw_lateral_ws) * clampf(excess, 0.0, 1.0)
+	# Project look and inward normal onto horizontal plane to isolate yaw from pitch.
+	var flat_look: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z)
+	if flat_look.length_squared() > 0.0001:
+		flat_look = flat_look.normalized()
+	else:
+		flat_look = -ladder_forward
 
-	var vertical_weight_ws: float = 1.0 - absf(lateral_weight_ws)
-	if look_dir.y < CLIMB_DOWN_LOOK_PITCH:
-		vertical_weight_ws *= -1.0
+	var flat_inward: Vector3 = Vector3(-ladder_forward.x, 0.0, -ladder_forward.z).normalized()
+	var flat_right: Vector3 = Vector3(ladder_right.x, 0.0, ladder_right.z).normalized()
+
+	var inward_dot: float = flat_look.dot(flat_inward)
+	var side_dot: float = flat_look.dot(flat_right)
 
 	var forward_input: float = -input_dir.y
-	var ws_lateral: float = lateral_weight_ws * forward_input
-	var ws_vertical: float = vertical_weight_ws * forward_input
+	var ws_lateral: float = 0.0
+	var ws_vertical: float = 0.0
 
-	var lateral_weight_ad: float = right_dir.dot(ladder_right)
-	var vertical_weight_ad: float = 1.0 - absf(lateral_weight_ad)
-	if right_dir.y < -0.15:
-		vertical_weight_ad *= -1.0
+	if inward_dot >= CLIMB_FACING_DOT_MIN:
+		# Facing ladder: W/S drives vertical climb, inverted when pitched sharply downward.
+		var climb_sign: float = -1.0 if look_dir.y < CLIMB_DOWN_LOOK_PITCH else 1.0
+		ws_vertical = forward_input * climb_sign
+	elif inward_dot >= SIDE_LEAN_DOT_MIN:
+		# Looking to sides: W/S leans laterally toward/away from viewed side with zero climb.
+		var side_sign: float = 1.0 if side_dot >= 0.0 else -1.0
+		ws_lateral = forward_input * side_sign
+	# Opposite direction (inward_dot < SIDE_LEAN_DOT_MIN): W/S produces zero movement.
 
 	var strafe_input: float = input_dir.x
-	var ad_lateral: float = lateral_weight_ad * strafe_input
-	var ad_vertical: float = vertical_weight_ad * strafe_input
+	var ad_lateral: float = right_dir.dot(ladder_right) * strafe_input
 
-	var plane_intent: Vector2 = Vector2(ws_lateral + ad_lateral, ws_vertical + ad_vertical)
-	if plane_intent.length_squared() > 1.0:
-		plane_intent = plane_intent.normalized()
-
-	var intended_lateral: float = plane_intent.x
-	var up_down_movement: float = plane_intent.y
+	var intended_lateral: float = clampf(ws_lateral + ad_lateral, -1.0, 1.0)
+	var up_down_movement: float = clampf(ws_vertical, -1.0, 1.0)
 	var lateral_movement: Vector3 = Vector3.ZERO
 
 	if absf(intended_lateral) > 0.05:

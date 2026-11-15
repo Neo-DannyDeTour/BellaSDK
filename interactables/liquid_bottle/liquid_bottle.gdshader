@@ -77,30 +77,29 @@ void fragment() {
 	float bubbles_total = 0.0;
 
 	if (FRONT_FACING) {
-		// Rising carbonation bubbles along side walls using triplanar projection.
-		vec2 distortion = vec2(wave_noise_1, wave_noise_2) * 0.015;
-		vec2 flow = TIME * vec2(2.0, 0.0);
-		float bub_x = smoothstep(
-			0.88,
-			1.0,
-			texture(bubbles_tex, scale * 3.0 * pos.yx + distortion - flow).r
-		);
-		float bub_y = smoothstep(
-			0.88,
-			1.0,
-			texture(bubbles_tex, scale * 3.0 * pos.yz + distortion - flow).r
-		);
-		vec2 bubbles = vec2(bub_x, bub_y) * weights.zx * vel;
-		bubbles_total = clamp(bubbles.x + bubbles.y, 0.0, 1.0);
+		// Multi-scale rising carbonation bubbles using cellular Worley + noise projection.
+		vec2 distortion = vec2(wave_noise_1, wave_noise_2) * 0.02;
+		vec2 flow_slow = TIME * vec2(0.28, 0.02);
+		vec2 flow_fast = TIME * vec2(0.52, -0.03);
+		float cell_1 = texture(waves_noise, scale * 4.5 * pos.yx + distortion - flow_slow).r;
+		float cell_2 = texture(waves_noise, scale * 8.5 * pos.yz - distortion - flow_fast).g;
+		float mask_noise = texture(bubbles_tex, scale * 2.5 * pos.yx - flow_slow * 0.5).r;
+		float bub_large = smoothstep(0.76, 0.92, 1.0 - cell_1) * smoothstep(0.35, 0.65, mask_noise);
+		float bub_small = smoothstep(0.80, 0.95, 1.0 - cell_2) * 0.75;
+		bubbles_total = clamp((bub_large + bub_small) * clamp(vel, 0.2, 1.5), 0.0, 1.0);
 
-		// Meniscus contact ring & agitation foam.
-		float rim_foam = foam * clamp(vel * 0.85 + 0.25, 0.0, 1.0);
-		vec3 foam_col = mix(base_col, vec3(1.0), rim_foam);
-		surface_col = mix(base_col, foam_col, clamp(vel + foam * 0.35, 0.0, 1.0)) + bubbles_total * 0.35;
+		// Cylindrical Fresnel depth shading + meniscus contact rim & bright bubble highlights.
+		float ndotv = clamp(abs(dot(NORMAL, VIEW)), 0.0, 1.0);
+		float cyl_depth = mix(0.28, 1.15, pow(ndotv, 1.35));
+		float rim_foam = foam * clamp(vel * 0.45 + 0.25, 0.0, 1.0);
+		vec3 deep_col = base_col * cyl_depth;
+		vec3 rim_col = mix(deep_col, base_col * 1.65 + vec3(0.18), rim_foam);
+		vec3 bub_highlight = base_col * 1.85 + vec3(0.45, 0.65, 0.45);
+		surface_col = mix(rim_col, bub_highlight, bubbles_total * 0.85);
 
 		vec3 world_foam_n = normalize(vec3(-coeff.x, 1.0, -coeff.y));
 		vec3 view_foam_n = normalize((VIEW_MATRIX * vec4(world_foam_n, 0.0)).xyz);
-		NORMAL = normalize(mix(NORMAL, view_foam_n, foam * vel * 0.6));
+		NORMAL = normalize(mix(NORMAL, view_foam_n, foam * clamp(vel, 0.0, 1.0) * 0.5));
 	} else {
 		// Top meniscus surface cap (rendered via backfaces below liquid_line).
 		float surface_ripples = (wave_noise_1 - wave_noise_2) * 0.15 * clamp(slosh_energy + 0.1, 0.0, 1.0);
@@ -108,7 +107,7 @@ void fragment() {
 			vec3(-coeff.x + surface_ripples, 1.0, -coeff.y + surface_ripples)
 		);
 		NORMAL = normalize((VIEW_MATRIX * vec4(world_meniscus_n, 0.0)).xyz);
-		surface_col = mix(base_col * 1.12, vec3(1.0), vel * 0.65);
+		surface_col = base_col * 1.15 + vec3(0.06);
 	}
 
 	// Screen-space refraction + Beer-Lambert law absorption when liquid is translucent or held.

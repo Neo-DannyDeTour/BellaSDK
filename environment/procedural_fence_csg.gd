@@ -71,6 +71,9 @@ enum Orientation {
 		diagonal_angle = value
 		_request_rebuild()
 
+## Editor button that bakes this CSG into a StaticBody3D + external .res mesh.
+@export_tool_button("Bake to StaticBody3D (.res)") var bake_action: Callable = _bake_to_static_body
+
 ## Tracks whether a deferred mesh rebuild is currently scheduled.
 var _is_dirty: bool = false
 
@@ -253,3 +256,8 @@ static func _add_csg_box(parent: Node3D, size: Vector3, pos: Vector3) -> void:
 	box.size = size
 	box.position = pos
 	parent.add_child(box)
+
+
+## Bakes this procedural CSG fence into a sibling [StaticBody3D] with external .res mesh.
+func _bake_to_static_body() -> void:
+	Utilities.bake_csg_to_static_body(self)

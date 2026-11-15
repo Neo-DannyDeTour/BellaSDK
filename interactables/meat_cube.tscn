@@ -1,27 +1,51 @@
 [gd_scene format=3 uid="uid://b1mqjhfxiy6bc"]
 
 [ext_resource type="Script" uid="uid://bdq5cyrq7ofas" path="res://interactables/meat_cube.gd" id="1_bxs5d"]
-[ext_resource type="ArrayMesh" uid="uid://bypxmmibnp46f" path="res://assets/dev_meshes/dev_box.tres" id="1_ucve1"]
+[ext_resource type="Shader" path="res://interactables/meat_cube.gdshader" id="2_shdr1"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_ucve1"]
-size = Vector3(1.8, 1.8, 1.8)
+[sub_resource type="BoxShape3D" id="BoxShape3D_rigid"]
+size = Vector3(2.0, 2.0, 2.0)
 
-[node name="MeatCube" type="SoftBody3D" unique_id=283655227 node_paths=PackedStringArray("meat_visual")]
-layers = 5
-mesh = ExtResource("1_ucve1")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_meat"]
+shader = ExtResource("2_shdr1")
+shader_parameter/use_albedo_tex = false
+shader_parameter/base_color = Color(0.58, 0.08, 0.07, 1)
+shader_parameter/fat_color = Color(0.88, 0.72, 0.68, 1)
+shader_parameter/triplanar_scale = 0.8
+shader_parameter/roughness_val = 0.24
+shader_parameter/bump_strength = 0.35
+shader_parameter/jiggle_radius = 1.6
+
+[sub_resource type="BoxMesh" id="BoxMesh_subdiv"]
+material = SubResource("ShaderMaterial_meat")
+size = Vector3(2.0, 2.0, 2.0)
+subdivide_width = 12
+subdivide_height = 12
+subdivide_depth = 12
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_detect"]
+size = Vector3(2.12, 2.12, 2.12)
+
+[node name="MeatCube" type="RigidBody3D" node_paths=PackedStringArray("meat_visual")]
 collision_layer = 5
 collision_mask = 7
-simulation_precision = 10
-total_mass = 15.0
-pressure_coefficient = 3.0
-damping_coefficient = 0.5
+mass = 15.0
+contact_monitor = true
+max_contacts_reported = 4
 script = ExtResource("1_bxs5d")
-meat_visual = NodePath(".")
-meat_cube_scene_path = "uid://b1mqjhfxiy6bc"
+meat_visual = NodePath("MeatMesh")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1967780440]
-collision_layer = 5
-collision_mask = 7
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_rigid")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=875126131]
-shape = SubResource("BoxShape3D_ucve1")
+[node name="MeatMesh" type="MeshInstance3D" parent="."]
+layers = 5
+mesh = SubResource("BoxMesh_subdiv")
+
+[node name="BounceDetector" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BounceDetector"]
+shape = SubResource("BoxShape3D_detect")

@@ -1,118 +1,109 @@
-## Monitors a soft body physics cube and autonomously resets it if structural collapse is detected.
-##
-## Tracks the global axis-aligned bounding box (AABB) of the assigned visual mesh. If the vertical
-## height falls below the defined threshold, the script assumes the cube was crushed and replaces
-## it with a freshly instantiated packed scene.
+## Drives spring-based jiggle deformation and bouncy player impacts on a rigid meat cube.
 class_name MeatCubeInteractor
-extends Node3D
+extends RigidBody3D
 
-## The visual node (like a SoftBody3D or MeshInstance3D) whose geometry we are monitoring.
-@export var meat_visual: VisualInstance3D
+const PARAM_IMPACT_POS: StringName = &"impact_local_pos"
+const PARAM_SQUISH_VEC: StringName = &"squish_vector"
+const SLEEP_THRESHOLD: float = 0.0005
 
-## The string path to the scene. Bypassing a [PackedScene] prevents circular reference errors.
-@export_file("*.tscn") var meat_cube_scene_path: String
+## Visual [MeshInstance3D] receiving [member PARAM_SQUISH_VEC] shader parameters.
+@export var meat_visual: MeshInstance3D
+## Upward launch speed applied to a [CharacterBody3D] landing on the cube.
+@export var player_bounce_speed: float = 11.5
+## Horizontal knockback multiplier when bouncing a [CharacterBody3D] off the sides.
+@export var side_bounce_speed: float = 7.0
+## Harmonic spring stiffness controlling snap-back speed.
+@export var spring_stiffness: float = 180.0
+## Harmonic spring damping controlling jiggle decay.
+@export var spring_damping: float = 8.5
+## Maximum local vertex displacement magnitude.
+@export var max_squish: float = 0.45
 
-## The percentage of the original height the cube must reach to be considered "collapsed".
-@export var collapse_threshold: float = 0.7
+@onready var _bounce_detector: Area3D = $BounceDetector
 
-## Tracks if the cube is currently in a collapsed and resetting state.
-var _is_resetting: bool = false
-## Stores the original global height of the bounding box at spawn.
-var _initial_height: float = 0.0
-## Accumulates delta time to print debug information periodically instead of every frame.
-var _debug_timer: float = 0.0
-## Cached packed scene reference avoiding repeated synchronous disk IO during respawns.
-var _cached_packed_scene: PackedScene = null
+var _squish_pos: Vector3 = Vector3.ZERO
+var _squish_vel: Vector3 = Vector3.ZERO
+var _last_bounce_msec: int = 0
 
 
-## Defers the initialization of the baseline geometry height until physics are settled.
 func _ready() -> void:
-	print("Meat cube interactor initialized. Waiting to record initial geometry...")
-	if not meat_cube_scene_path.is_empty() and ResourceLoader.exists(meat_cube_scene_path):
-		var loaded_res: Resource = ResourceLoader.load(meat_cube_scene_path)
-		if loaded_res is PackedScene:
-			_cached_packed_scene = loaded_res as PackedScene
-	call_deferred("_record_initial_height")
+	assert(is_instance_valid(meat_visual), "MeatCubeInteractor requires meat_visual.")
+	assert(is_instance_valid(_bounce_detector), "MeatCubeInteractor requires BounceDetector.")
+	set_process(false)
+	body_entered.connect(_on_rigid_body_entered)
+	_bounce_detector.body_entered.connect(_on_player_detector_entered)
+	_apply_shader_params(Vector3.UP, Vector3.ZERO)
 
 
-## Calculates the true global height of the [member meat_visual] bounds.
-func _record_initial_height() -> void:
-	print("Attempting to record initial meat cube height...")
+func _process(delta: float) -> void:
+	var step: float = minf(delta, 0.033)
+	var accel: Vector3 = (-spring_stiffness * _squish_pos) - (spring_damping * _squish_vel)
+	_squish_vel += accel * step
+	_squish_pos += _squish_vel * step
+	_squish_pos = _squish_pos.limit_length(max_squish)
+
 	if is_instance_valid(meat_visual):
-		# In Godot 4, multiply global transform by the local AABB to get the global bounds
-		var global_aabb: AABB = meat_visual.global_transform * meat_visual.get_aabb()
-		_initial_height = global_aabb.size.y
-		print("Recorded initial global meat cube height as: ", _initial_height)
+		meat_visual.set_instance_shader_parameter(PARAM_SQUISH_VEC, _squish_pos)
+
+	if (
+		_squish_pos.length_squared() < SLEEP_THRESHOLD
+		and _squish_vel.length_squared() < SLEEP_THRESHOLD
+	):
+		_squish_pos = Vector3.ZERO
+		_squish_vel = Vector3.ZERO
+		if is_instance_valid(meat_visual):
+			meat_visual.set_instance_shader_parameter(PARAM_SQUISH_VEC, Vector3.ZERO)
+		set_process(false)
+
+
+## Applies an external squish impulse at [param world_point] along [param world_impulse].
+func apply_jiggle_impulse(world_point: Vector3, world_impulse: Vector3) -> void:
+	var local_point: Vector3 = to_local(world_point)
+	var local_dir: Vector3 = global_transform.basis.inverse() * world_impulse
+	_squish_vel += local_dir
+	_apply_shader_params(local_point, _squish_pos)
+	set_process(true)
+
+
+func _apply_shader_params(local_pos: Vector3, squish: Vector3) -> void:
+	if is_instance_valid(meat_visual):
+		meat_visual.set_instance_shader_parameter(PARAM_IMPACT_POS, local_pos)
+		meat_visual.set_instance_shader_parameter(PARAM_SQUISH_VEC, squish)
+
+
+func _on_rigid_body_entered(body: Node) -> void:
+	if body == self:
+		return
+	var impact_vel: Vector3 = linear_velocity
+	if body is RigidBody3D:
+		var other_rb: RigidBody3D = body as RigidBody3D
+		impact_vel = other_rb.linear_velocity - linear_velocity
+	var speed: float = impact_vel.length()
+	if speed > 1.0:
+		var hit_point: Vector3 = global_position + Vector3.DOWN
+		apply_jiggle_impulse(hit_point, impact_vel.normalized() * minf(speed * 0.6, 8.0))
+
+
+func _on_player_detector_entered(body: Node3D) -> void:
+	if not (body is CharacterBody3D):
+		return
+	var now_msec: int = Time.get_ticks_msec()
+	if now_msec - _last_bounce_msec < 120:
+		return
+	_last_bounce_msec = now_msec
+
+	var player: CharacterBody3D = body as CharacterBody3D
+	var to_player: Vector3 = player.global_position - global_position
+	var local_offset: Vector3 = global_transform.basis.inverse() * to_player
+
+	# Top landing vs side impact
+	if local_offset.y > 0.55 and absf(local_offset.x) < 1.15 and absf(local_offset.z) < 1.15:
+		var incoming_down: float = maxf(-player.velocity.y, 4.0)
+		player.velocity.y = maxf(player_bounce_speed, incoming_down * 0.9)
+		apply_jiggle_impulse(player.global_position, Vector3.DOWN * minf(incoming_down * 0.85, 9.0))
+		apply_central_impulse(Vector3.DOWN * minf(incoming_down * 3.0, 35.0))
 	else:
-		print("WARNING: No meat_visual assigned! Autonomous collapse detection will not work.")
-
-
-## Calculates the global AABB as the soft body deforms to check for collapse conditions.
-## [param delta]: Frame delta time.
-func _physics_process(delta: float) -> void:
-	if _is_resetting or not is_instance_valid(meat_visual) or _initial_height <= 0.0:
-		return
-
-	# Continuously calculate the global AABB as the soft body deforms
-	var global_aabb: AABB = meat_visual.global_transform * meat_visual.get_aabb()
-	var current_height: float = global_aabb.size.y
-
-	_debug_timer += delta
-	if _debug_timer >= 1.0:
-		# print(
-		# 	"Checking geometry - Current height: ",
-		# 	current_height,
-		# 	" | Target to collapse: ",
-		# 	_initial_height * collapse_threshold
-		# )
-		_debug_timer = 0.0
-
-	if current_height < (_initial_height * collapse_threshold):
-		# print("Autonomous detection: Cube geometry collapsed! Current height: ", current_height)
-		trigger_1_second_reset()
-
-
-## Locks the logic loop and queues a fresh respawn after a short delay.
-func trigger_1_second_reset() -> void:
-	print("Meat cube structural integrity compromised. Initiating 1-second reset timer.")
-	if _is_resetting:
-		return
-
-	_is_resetting = true
-
-	var timer: SceneTreeTimer = get_tree().create_timer(1.0)
-	timer.timeout.connect(_respawn_cube)
-
-
-## Instantiates [member meat_cube_scene_path] and deletes this collapsed instance.
-func _respawn_cube() -> void:
-	print("Respawning a fresh meat cube to restore initial form.")
-
-	if not is_instance_valid(_cached_packed_scene):
-		if meat_cube_scene_path.is_empty():
-			print("Error: meat_cube_scene_path is empty. Assign it in Inspector.")
-			return
-		if ResourceLoader.exists(meat_cube_scene_path):
-			var loaded_res: Resource = ResourceLoader.load(meat_cube_scene_path)
-			if loaded_res is PackedScene:
-				_cached_packed_scene = loaded_res as PackedScene
-
-	if not is_instance_valid(_cached_packed_scene):
-		print("Error: Failed to load PackedScene at: ", meat_cube_scene_path)
-		return
-
-	var raw_instance: Node = _cached_packed_scene.instantiate()
-	if not (raw_instance is Node3D):
-		if is_instance_valid(raw_instance):
-			raw_instance.queue_free()
-		print("Error: Instantiated meat cube root is not a Node3D!")
-		return
-
-	var fresh_cube: Node3D = raw_instance if raw_instance is Node3D else null
-	var parent_node: Node = get_parent()
-	if is_instance_valid(parent_node):
-		parent_node.add_child(fresh_cube)
-		fresh_cube.global_transform = global_transform
-		queue_free()
-	else:
-		fresh_cube.queue_free()
+		var push_dir: Vector3 = Vector3(to_player.x, 0.35, to_player.z).normalized()
+		player.velocity = push_dir * side_bounce_speed
+		apply_jiggle_impulse(player.global_position, -push_dir * 6.5)
+		apply_central_impulse(-push_dir * 20.0)

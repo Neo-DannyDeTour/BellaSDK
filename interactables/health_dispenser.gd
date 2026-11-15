@@ -1,5 +1,5 @@
-## Wall-mounted gothic healing dispenser with 25mm corrugated pipe conduit,
-## octopus-fang nozzle, glowing liquid glass reservoir, VHS TV screen, and iron shutters.
+## Wall-mounted gothic healing dispenser with organic S-curved cephalopod tentacle,
+## suction-cup fang nozzle, multi-layer glass reservoir vessel, VHS screen, and shutters.
 class_name HealthDispenser
 extends StaticBody3D
 
@@ -11,12 +11,12 @@ const GOTHIC_METAL_MAT: Material = preload(
 	"res://assets/materials/gothic_wrought_metal/gothic_wrought_metal.tres"
 )
 
-## Preloaded PBR material for 25mm corrugated pipe conduit.
-const CONDUIT_MAT: Material = preload(
-	"res://assets/materials/conduit_ribbed_metal/conduit_ribbed_metal.tres"
+## Preloaded PBR material for antique tarnished brass edges, gothic arch, and cages.
+const TARNISHED_BRASS_MAT: Material = preload(
+	"res://assets/materials/tarnished_brass/tarnished_brass.tres"
 )
 
-## Preloaded PBR material for slimy biomechanical octopus nozzle skin.
+## Preloaded PBR material for slimy biomechanical octopus tentacle skin.
 const OCTOPUS_MAT: Material = preload("res://assets/materials/octopus_flesh/octopus_flesh.tres")
 
 ## Preloaded Lex Pertizan glass + liquid shader material for the health reservoir.
@@ -74,26 +74,32 @@ const ANIM_BITE: StringName = &"bite"
 ## Depleted medieval status text shown after shutters close.
 const DEPLETED_TEXT: String = "Out of Lifeblood!"
 
-## Number of cross-section rings forming the continuous 25mm corrugated conduit.
+## Number of cross-section rings forming the continuous organic tentacle body.
 const CONDUIT_RINGS: int = 64
 
-## Number of radial sides around the corrugated conduit circumference.
-const CONDUIT_RADIAL_SEGS: int = 12
+## Number of radial sides around the organic tentacle circumference.
+const CONDUIT_RADIAL_SEGS: int = 16
 
-## Inner trough radius in meters of the 25mm corrugated conduit ribs.
-const CONDUIT_INNER_RADIUS: float = 0.022
+## Muscular base radius in meters where tentacle emerges from lower pipe socket.
+const TENTACLE_BASE_RADIUS: float = 0.068
 
-## Outer ridge radius in meters of the 25mm corrugated conduit ribs.
-const CONDUIT_OUTER_RADIUS: float = 0.031
+## Tapered distal radius in meters where tentacle body meets the tip nozzle.
+const TENTACLE_TIP_RADIUS: float = 0.028
 
-## Semi-transparent glowing green liquid color at high reservoir charge.
-const COLOR_LIQUID_HIGH: Color = Color(0.10, 0.98, 0.30, 0.38)
+## Number of paired suction cup rows along the ventral tentacle curve.
+const SUCKER_ROWS: int = 18
 
-## Semi-transparent glowing amber liquid color at medium reservoir charge.
-const COLOR_LIQUID_MID: Color = Color(0.98, 0.72, 0.08, 0.38)
+## Number of radial segments per procedural suction cup ring.
+const SUCKER_RADIAL_SEGS: int = 8
 
-## Semi-transparent glowing red liquid color at low reservoir charge.
-const COLOR_LIQUID_LOW: Color = Color(0.98, 0.14, 0.10, 0.38)
+## Rich emerald-green bioluminescent liquid color at high reservoir charge.
+const COLOR_LIQUID_HIGH: Color = Color(0.02, 0.34, 0.06, 0.42)
+
+## Glowing amber-chartreuse liquid color at medium reservoir charge.
+const COLOR_LIQUID_MID: Color = Color(0.55, 0.38, 0.04, 0.42)
+
+## Glowing crimson liquid color at low reservoir charge.
+const COLOR_LIQUID_LOW: Color = Color(0.58, 0.06, 0.04, 0.42)
 
 @export_category("Health Settings")
 ## Texture displayed on screen when player health is very low (<= 33%).
@@ -121,10 +127,10 @@ const COLOR_LIQUID_LOW: Color = Color(0.98, 0.14, 0.10, 0.38)
 ## Screen [Sprite3D] projecting the dynamic health status texture.
 @export var screen_sprite: Sprite3D
 
-## Spatial pivot node acting as the root anchor for the procedural conduit.
+## Spatial pivot node acting as the root anchor for the procedural tentacle.
 @export var tentacle_pivot: Node3D
 
-## Trigger [Area3D] detecting player proximity to animate the conduit.
+## Trigger [Area3D] detecting player proximity to animate the tentacle.
 @export var detection_area: Area3D
 
 ## Mesh representing the glass liquid reservoir draining as health depletes.
@@ -146,7 +152,7 @@ const COLOR_LIQUID_LOW: Color = Color(0.98, 0.14, 0.10, 0.38)
 ## Legacy radial thickness kept for inspector compatibility.
 @export var thickness: float = 0.034
 
-## Maximum physical reach in meters the conduit can extend toward targets.
+## Maximum physical reach in meters the tentacle can extend toward targets.
 @export var max_reach: float = 2.0
 
 ## Player character currently inside the proximity detection area.
@@ -167,28 +173,49 @@ var _is_depleted: bool = false
 ## Alternates between healing SFX variations on consecutive ticks.
 var _heal_sfx_toggle: bool = false
 
-## Continuous procedural corrugated conduit [MeshInstance3D].
+## Continuous procedural organic tentacle [MeshInstance3D].
 var _conduit_mesh_instance: MeshInstance3D = null
 
-## Dynamic [ArrayMesh] updated when the conduit bends toward targets.
+## Dynamic [ArrayMesh] updated when the tentacle bends toward targets.
 var _conduit_mesh: ArrayMesh = null
 
-## Pre-allocated vertex buffer for zero-allocation conduit curve updates.
+## Pre-allocated vertex buffer for zero-allocation tentacle curve updates.
 var _conduit_verts: PackedVector3Array = PackedVector3Array()
 
-## Pre-allocated normal buffer for zero-allocation conduit curve updates.
+## Pre-allocated normal buffer for zero-allocation tentacle curve updates.
 var _conduit_normals: PackedVector3Array = PackedVector3Array()
 
-## Pre-allocated UV buffer for zero-allocation conduit curve updates.
+## Pre-allocated UV buffer for zero-allocation tentacle curve updates.
 var _conduit_uvs: PackedVector2Array = PackedVector2Array()
 
-## Pre-allocated triangle index buffer for the corrugated conduit mesh.
+## Pre-allocated triangle index buffer for the tentacle skin mesh.
 var _conduit_indices: PackedInt32Array = PackedInt32Array()
 
-## Pre-allocated mesh surface arrays passed to [method ArrayMesh.add_surface_from_arrays].
+## Pre-allocated mesh surface arrays for the tentacle skin surface.
 var _conduit_arrays: Array = []
 
-## Instanced octopus-fang nozzle attached at the conduit tip.
+## Pre-allocated vertex buffer for paired underside suction cups.
+var _sucker_verts: PackedVector3Array = PackedVector3Array()
+
+## Pre-allocated normal buffer for paired underside suction cups.
+var _sucker_normals: PackedVector3Array = PackedVector3Array()
+
+## Pre-allocated UV buffer for paired underside suction cups.
+var _sucker_uvs: PackedVector2Array = PackedVector2Array()
+
+## Pre-allocated triangle index buffer for paired underside suction cups.
+var _sucker_indices: PackedInt32Array = PackedInt32Array()
+
+## Pre-allocated mesh surface arrays for the suction cups surface.
+var _sucker_arrays: Array = []
+
+## Wet fleshy pink material shared by tentacle and nozzle suction cups.
+var _sucker_material: StandardMaterial3D = null
+
+## Refractive Fresnel glass material applied to the outer reservoir vessel shell.
+var _vessel_glass_material: StandardMaterial3D = null
+
+## Instanced octopus-fang nozzle attached at the tentacle tip.
 var _nozzle_instance: Node3D = null
 
 ## Cached [AnimationPlayer] inside the octopus nozzle instance.
@@ -209,18 +236,22 @@ var _displayed_fill: float = 1.0
 ## Currently displayed glowing liquid color.
 var _displayed_color: Color = COLOR_LIQUID_HIGH
 
-## Target world coordinate for the tip of the procedural conduit.
+## Target world coordinate for the tip of the procedural tentacle.
 var _current_target_pos: Vector3 = Vector3.ZERO
 
-## Tension scalar between 0.0 (limp resting) and 1.0 (reaching toward target).
+## Tension scalar between 0.0 (S-curve rest) and 1.0 (reaching toward target).
 var _active_weight: float = 0.0
 
+## Accumulated phase timer driving subtle organic tentacle breathing motion.
+var _organic_phase: float = 0.0
 
-## Initializes chassis PBR overrides, VHS TV screen, liquid reservoir, and conduit.
+
+## Initializes chassis PBR overrides, VHS TV screen, liquid vessel, and tentacle.
 func _ready() -> void:
-	print("HealthDispenser: _ready() - Initializing gothic dispenser and conduit.")
+	print("HealthDispenser: _ready() - Initializing gothic dispenser and organic tentacle.")
 
 	_current_dispenser_health = max_dispenser_health
+	_create_custom_materials()
 	_setup_chassis()
 	_setup_screen_shader()
 	_setup_health_cylinder()
@@ -231,7 +262,7 @@ func _ready() -> void:
 		depleted_label.visible = false
 
 	if is_instance_valid(tentacle_pivot):
-		_current_target_pos = tentacle_pivot.global_position + (Vector3.DOWN * 1.1)
+		_current_target_pos = _get_rest_tip_world_pos()
 		_update_tentacle_visuals()
 
 	set_physics_process(false)
@@ -241,29 +272,35 @@ func _ready() -> void:
 		Utilities.safe_connect(detection_area.body_exited, _on_body_exited)
 
 
-## Evaluates quadratic bezier interpolation to guide continuous conduit and nozzle.
+## Evaluates cubic bezier S-curve interpolation to guide organic tentacle and tip.
 func _physics_process(delta: float) -> void:
 	if _is_depleted:
 		set_physics_process(false)
 		return
 
 	var is_targeting: bool = is_instance_valid(_nearby_player)
-	var desired_target: Vector3 = Vector3.ZERO
+	var rest_tip: Vector3 = _get_rest_tip_world_pos()
+	var desired_target: Vector3 = rest_tip
 
 	if is_targeting:
-		_active_weight = move_toward(_active_weight, 1.0, delta * 3.0)
-		desired_target = _nearby_player.global_position + Vector3(0.0, 1.0, 0.0)
+		_active_weight = move_toward(_active_weight, 1.0, delta * 2.8)
+		_organic_phase += delta * 2.4
+		desired_target = _nearby_player.global_position + Vector3(0.0, 1.05, 0.0)
 	else:
 		_active_weight = move_toward(_active_weight, 0.0, delta * 2.0)
-		desired_target = tentacle_pivot.global_position + (Vector3.DOWN * 1.1)
+		_organic_phase = move_toward(_organic_phase, 0.0, delta * 2.0)
 
-	_current_target_pos = _current_target_pos.lerp(desired_target, delta * 6.0)
+	_current_target_pos = _current_target_pos.lerp(desired_target, delta * 5.5)
 	_update_tentacle_visuals()
 
 	var is_resting: bool = (
-		_active_weight <= 0.0 and _current_target_pos.is_equal_approx(desired_target)
+		not is_targeting
+		and _active_weight <= 0.001
+		and _current_target_pos.distance_squared_to(rest_tip) <= 0.0001
 	)
 	if is_resting:
+		_current_target_pos = rest_tip
+		_update_tentacle_visuals()
 		set_physics_process(false)
 
 
@@ -302,6 +339,34 @@ func interact_held(_character: CharacterBody3D) -> void:
 			_on_dispenser_depleted()
 
 
+## Creates shared wet suction-cup and outer refractive glass vessel materials.
+func _create_custom_materials() -> void:
+	_sucker_material = StandardMaterial3D.new()
+	_sucker_material.albedo_color = Color(0.58, 0.25, 0.38, 1.0)
+	_sucker_material.roughness = 0.14
+	_sucker_material.metallic_specular = 0.85
+	_sucker_material.rim_enabled = true
+	_sucker_material.rim = 0.45
+	_sucker_material.rim_tint = 0.55
+	_sucker_material.clearcoat_enabled = true
+	_sucker_material.clearcoat = 0.90
+	_sucker_material.clearcoat_roughness = 0.06
+
+	_vessel_glass_material = StandardMaterial3D.new()
+	_vessel_glass_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_vessel_glass_material.cull_mode = BaseMaterial3D.CULL_BACK
+	_vessel_glass_material.albedo_color = Color(0.45, 0.78, 0.54, 0.24)
+	_vessel_glass_material.metallic = 0.08
+	_vessel_glass_material.metallic_specular = 0.96
+	_vessel_glass_material.roughness = 0.05
+	_vessel_glass_material.rim_enabled = true
+	_vessel_glass_material.rim = 0.72
+	_vessel_glass_material.rim_tint = 0.35
+	_vessel_glass_material.clearcoat_enabled = true
+	_vessel_glass_material.clearcoat = 1.0
+	_vessel_glass_material.clearcoat_roughness = 0.03
+
+
 ## Applies PBR material overrides and caches shutter [AnimationPlayer] on chassis.
 func _setup_chassis() -> void:
 	if not is_instance_valid(chassis_model):
@@ -315,13 +380,22 @@ func _setup_chassis() -> void:
 		_chassis_anim.pause()
 
 
-## Recursively assigns rusted iron or gothic wrought metal materials to chassis meshes.
+## Recursively assigns tarnished brass, rusted steel, glass, or wrought iron to chassis.
 func _apply_chassis_materials(node: Node) -> void:
 	if node is MeshInstance3D:
 		var mesh_inst: MeshInstance3D = node as MeshInstance3D
-		if mesh_inst.name.contains("Backplate"):
+		var m_name: String = mesh_inst.name
+		if m_name.contains("Backplate") or m_name.contains("LowerPipeUpMouth"):
 			mesh_inst.material_override = RUSTED_STEEL_MAT
-		elif not (mesh_inst.name.contains("GaugeFace") or mesh_inst.name.contains("ScreenBacking")):
+		elif m_name.contains("Brass"):
+			mesh_inst.material_override = TARNISHED_BRASS_MAT
+		elif m_name.contains("GlassVesselOuter"):
+			mesh_inst.material_override = _vessel_glass_material
+		elif not (
+			m_name.contains("GaugeFace")
+			or m_name.contains("ScreenBacking")
+			or m_name.contains("UpperSocketHole")
+		):
 			mesh_inst.material_override = GOTHIC_METAL_MAT
 
 	for child: Node in node.get_children():
@@ -343,19 +417,22 @@ func _setup_screen_shader() -> void:
 	screen_sprite.material_override = _screen_material
 
 
-## Pre-allocates mesh buffers and [MeshInstance3D] for the continuous 25mm conduit.
+## Pre-allocates mesh buffers for the organic tentacle skin and underside suction cups.
 func _setup_continuous_conduit() -> void:
 	if not is_instance_valid(tentacle_pivot):
 		return
 
 	var ring_stride: int = CONDUIT_RADIAL_SEGS + 1
-	var vert_count: int = (CONDUIT_RINGS + 1) * ring_stride
-	var index_count: int = CONDUIT_RINGS * CONDUIT_RADIAL_SEGS * 6
+	var body_vert_count: int = (CONDUIT_RINGS + 1) * ring_stride + 1
+	var root_center_idx: int = (CONDUIT_RINGS + 1) * ring_stride
+	var body_index_count: int = (
+		(CONDUIT_RINGS * CONDUIT_RADIAL_SEGS * 6) + (CONDUIT_RADIAL_SEGS * 3)
+	)
 
-	_conduit_verts.resize(vert_count)
-	_conduit_normals.resize(vert_count)
-	_conduit_uvs.resize(vert_count)
-	_conduit_indices.resize(index_count)
+	_conduit_verts.resize(body_vert_count)
+	_conduit_normals.resize(body_vert_count)
+	_conduit_uvs.resize(body_vert_count)
+	_conduit_indices.resize(body_index_count)
 
 	var idx: int = 0
 	for r: int in range(CONDUIT_RINGS):
@@ -366,26 +443,69 @@ func _setup_continuous_conduit() -> void:
 			var b: int = row_a + s + 1
 			var c: int = row_b + s
 			var d: int = row_b + s + 1
+			# Clockwise front-face winding for Godot 4 Vulkan renderer (normals point outward)
 			_conduit_indices[idx] = a
-			_conduit_indices[idx + 1] = b
-			_conduit_indices[idx + 2] = d
+			_conduit_indices[idx + 1] = d
+			_conduit_indices[idx + 2] = b
 			_conduit_indices[idx + 3] = a
-			_conduit_indices[idx + 4] = d
-			_conduit_indices[idx + 5] = c
+			_conduit_indices[idx + 4] = c
+			_conduit_indices[idx + 5] = d
 			idx += 6
 
+	# Cap the base of the tentacle inside the pipe mouth so interiors are never visible
+	for s: int in range(CONDUIT_RADIAL_SEGS):
+		_conduit_indices[idx] = root_center_idx
+		_conduit_indices[idx + 1] = s
+		_conduit_indices[idx + 2] = s + 1
+		idx += 3
+
 	_conduit_arrays.resize(Mesh.ARRAY_MAX)
+
+	# Pre-allocate Surface 1: paired rows of 3D cup-shaped suckers along the underside
+	var total_suckers: int = SUCKER_ROWS * 2
+	var verts_per_sucker: int = (SUCKER_RADIAL_SEGS * 2) + 1
+	var indices_per_sucker: int = SUCKER_RADIAL_SEGS * 9
+	_sucker_verts.resize(total_suckers * verts_per_sucker)
+	_sucker_normals.resize(total_suckers * verts_per_sucker)
+	_sucker_uvs.resize(total_suckers * verts_per_sucker)
+	_sucker_indices.resize(total_suckers * indices_per_sucker)
+
+	var s_idx: int = 0
+	for sc: int in range(total_suckers):
+		var v_base: int = sc * verts_per_sucker
+		var rim_base: int = v_base + SUCKER_RADIAL_SEGS
+		var cup_center: int = v_base + (SUCKER_RADIAL_SEGS * 2)
+		for s: int in range(SUCKER_RADIAL_SEGS):
+			var sn: int = (s + 1) % SUCKER_RADIAL_SEGS
+			var b0: int = v_base + s
+			var b1: int = v_base + sn
+			var r0: int = rim_base + s
+			var r1: int = rim_base + sn
+			# Outer stalk wall (CW outward)
+			_sucker_indices[s_idx] = b0
+			_sucker_indices[s_idx + 1] = r1
+			_sucker_indices[s_idx + 2] = b1
+			_sucker_indices[s_idx + 3] = b0
+			_sucker_indices[s_idx + 4] = r0
+			_sucker_indices[s_idx + 5] = r1
+			# Concave inner suction disk (CW outward)
+			_sucker_indices[s_idx + 6] = r0
+			_sucker_indices[s_idx + 7] = cup_center
+			_sucker_indices[s_idx + 8] = r1
+			s_idx += 9
+
+	_sucker_arrays.resize(Mesh.ARRAY_MAX)
+
 	_conduit_mesh = ArrayMesh.new()
 	_conduit_mesh_instance = MeshInstance3D.new()
-	_conduit_mesh_instance.name = "CorrugatedConduit"
+	_conduit_mesh_instance.name = "OrganicTentacle"
 	_conduit_mesh_instance.top_level = true
 	_conduit_mesh_instance.mesh = _conduit_mesh
-	_conduit_mesh_instance.material_override = CONDUIT_MAT
 	_conduit_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	tentacle_pivot.add_child(_conduit_mesh_instance)
 
 
-## Instantiates the rigged octopus-fang nozzle at the tip of the 25mm conduit.
+## Instantiates the rigged tentacle tip nozzle at the distal end of the tentacle.
 func _spawn_octopus_nozzle() -> void:
 	if not is_instance_valid(tentacle_pivot):
 		return
@@ -401,12 +521,14 @@ func _spawn_octopus_nozzle() -> void:
 	_nozzle_anim = _find_animation_player(_nozzle_instance)
 
 
-## Applies slimy cephalopod flesh material to nozzle body while preserving fangs/suckers.
+## Applies slimy cephalopod flesh and sucker materials to nozzle sub-meshes.
 func _apply_nozzle_materials(node: Node) -> void:
 	if node is MeshInstance3D:
 		var mesh_inst: MeshInstance3D = node as MeshInstance3D
 		if mesh_inst.name.contains("NozzleBody"):
 			mesh_inst.material_override = OCTOPUS_MAT
+		elif mesh_inst.name.contains("Suckers"):
+			mesh_inst.material_override = _sucker_material
 	for child: Node in node.get_children():
 		_apply_nozzle_materials(child)
 
@@ -442,95 +564,223 @@ func _play_heal_sfx() -> void:
 	AudioPool.play_sfx_3d(stream, pos)
 
 
-## Rebuilds the continuous corrugated conduit mesh along the quadratic bezier curve.
+## Returns the world-space upper socket position where the S-curved tentacle rests.
+func _get_rest_tip_world_pos() -> Vector3:
+	if not is_instance_valid(tentacle_pivot):
+		return global_position
+	var b: Basis = global_transform.basis
+	return tentacle_pivot.global_position + (b * Vector3(-0.08, 0.64, -0.06))
+
+
+## Rebuilds the tapered organic tentacle and underside suckers along a cubic S-curve.
 func _update_tentacle_visuals() -> void:
 	if not is_instance_valid(tentacle_pivot) or not is_instance_valid(_conduit_mesh):
 		return
 
-	var p0: Vector3 = tentacle_pivot.global_position
-	var p2: Vector3 = _current_target_pos
+	var b: Basis = global_transform.basis
+	var right_dir: Vector3 = b.x.normalized()
+	var up_dir: Vector3 = b.y.normalized()
+	var fwd_dir: Vector3 = b.z.normalized()
 
-	var raw_dist: float = p0.distance_to(p2)
+	var p0: Vector3 = tentacle_pivot.global_position
+	var p3: Vector3 = _current_target_pos
+
+	var raw_dist: float = p0.distance_to(p3)
 	if raw_dist > max_reach:
-		var direction: Vector3 = p0.direction_to(p2)
-		p2 = p0 + (direction * max_reach)
+		var direction: Vector3 = p0.direction_to(p3)
+		p3 = p0 + (direction * max_reach)
 		raw_dist = max_reach
 
-	var p1: Vector3 = p0.lerp(p2, 0.5)
-	p1.y += (raw_dist * 0.6) * _active_weight
+	# Resting S-curve control points matching reference art (sweeps right then left then up)
+	var p1_rest: Vector3 = p0 + (right_dir * 0.24) + (up_dir * 0.22) + (fwd_dir * 0.18)
+	var p2_rest: Vector3 = p0 + (right_dir * -0.28) + (up_dir * 0.52) + (fwd_dir * 0.16)
+
+	# Active reaching control points with subtle organic muscular undulation
+	var sway_a: float = sin(_organic_phase) * 0.04 * _active_weight
+	var sway_b: float = cos(_organic_phase * 0.85) * 0.04 * _active_weight
+	var p1_act: Vector3 = (
+		p0.lerp(p3, 0.33)
+		+ (right_dir * (0.14 + sway_a))
+		+ (up_dir * (0.22 * raw_dist))
+		+ (fwd_dir * 0.15)
+	)
+	var p2_act: Vector3 = (
+		p0.lerp(p3, 0.68)
+		+ (right_dir * (-0.12 + sway_b))
+		+ (up_dir * (0.12 * raw_dist))
+		+ (fwd_dir * 0.08)
+	)
+
+	var p1: Vector3 = p1_rest.lerp(p1_act, _active_weight)
+	var p2: Vector3 = p2_rest.lerp(p2_act, _active_weight)
 
 	var ring_stride: int = CONDUIT_RADIAL_SEGS + 1
-	var prev_tangent: Vector3 = Vector3.DOWN
-	var ref_normal: Vector3 = Vector3.FORWARD
+	var prev_tangent: Vector3 = up_dir
+	var ref_normal: Vector3 = right_dir
+	var binormal: Vector3 = fwd_dir
 
 	for r: int in range(CONDUIT_RINGS + 1):
 		var t: float = float(r) / float(CONDUIT_RINGS)
-		var center: Vector3 = _get_quadratic_bezier(p0, p1, p2, t)
-		var tangent: Vector3 = _get_quadratic_bezier_tangent(p0, p1, p2, t)
+		var center: Vector3 = _get_cubic_bezier(p0, p1, p2, p3, t)
+		var tangent: Vector3 = _get_cubic_bezier_tangent(p0, p1, p2, p3, t)
 		if tangent.length_squared() > 0.000001:
 			tangent = tangent.normalized()
 		else:
 			tangent = prev_tangent
 
 		if r == 0:
-			var up_ref: Vector3 = Vector3.RIGHT if absf(tangent.y) >= 0.98 else Vector3.UP
-			ref_normal = tangent.cross(up_ref).normalized()
+			# Stable initial frame anchored to wall forward axis (never crosses gimbal lock)
+			var wall_ref: Vector3 = up_dir if absf(tangent.dot(fwd_dir)) >= 0.95 else (-fwd_dir)
+			ref_normal = tangent.cross(wall_ref).normalized()
 		else:
 			var rot_quat: Quaternion = Quaternion(prev_tangent, tangent)
 			ref_normal = (rot_quat * ref_normal).normalized()
 
-		var binormal: Vector3 = tangent.cross(ref_normal).normalized()
-		var radius: float = CONDUIT_OUTER_RADIUS if (r % 2 == 1) else CONDUIT_INNER_RADIUS
-		var v_coord: float = t * 16.0
+		# Right-handed frame: ref_normal (-X left), tangent (+Y along curve), binormal (+Z forward)
+		binormal = tangent.cross(ref_normal).normalized()
+		ref_normal = binormal.cross(tangent).normalized()
+
+		# Smooth organic cephalopod taper + subtle muscular peristalsis ripple
+		var base_r: float = lerpf(TENTACLE_BASE_RADIUS, TENTACLE_TIP_RADIUS, pow(t, 0.82))
+		var muscle_ripple: float = 1.0 + (0.035 * sin(t * TAU * 7.0 - _organic_phase * 2.0))
+		var radius: float = base_r * muscle_ripple
+		var v_coord: float = t * 6.0
 
 		var base_idx: int = r * ring_stride
 		for s: int in range(ring_stride):
 			var u_coord: float = float(s) / float(CONDUIT_RADIAL_SEGS)
 			var ang: float = u_coord * TAU
-			var radial_dir: Vector3 = (ref_normal * cos(ang)) + (binormal * sin(ang))
-			_conduit_verts[base_idx + s] = center + (radial_dir * radius)
+			var ca: float = cos(ang)
+			var sa: float = sin(ang)
+			# Slightly flatten ventral front side (sa > 0) where suction cups sit
+			var ventral_flatten: float = 0.90 if sa > 0.0 else 1.0
+			var radial_dir: Vector3 = (
+				((ref_normal * ca) + (binormal * (sa * ventral_flatten))).normalized()
+			)
+			_conduit_verts[base_idx + s] = center + (radial_dir * (radius * ventral_flatten))
 			_conduit_normals[base_idx + s] = radial_dir
 			_conduit_uvs[base_idx + s] = Vector2(u_coord, v_coord)
 
 		prev_tangent = tangent
 
+	# Root cap center vertex at r = 0
+	var root_center_idx: int = (CONDUIT_RINGS + 1) * ring_stride
+	_conduit_verts[root_center_idx] = p0
+	_conduit_normals[root_center_idx] = -up_dir
+	_conduit_uvs[root_center_idx] = Vector2(0.5, 0.0)
+
+	# Populate Surface 1: paired rows of fleshy suction cups along ventral curve
+	_update_sucker_geometry(p0, p1, p2, p3, up_dir, fwd_dir)
+
 	_conduit_arrays[Mesh.ARRAY_VERTEX] = _conduit_verts
 	_conduit_arrays[Mesh.ARRAY_NORMAL] = _conduit_normals
 	_conduit_arrays[Mesh.ARRAY_TEX_UV] = _conduit_uvs
 	_conduit_arrays[Mesh.ARRAY_INDEX] = _conduit_indices
+
+	_sucker_arrays[Mesh.ARRAY_VERTEX] = _sucker_verts
+	_sucker_arrays[Mesh.ARRAY_NORMAL] = _sucker_normals
+	_sucker_arrays[Mesh.ARRAY_TEX_UV] = _sucker_uvs
+	_sucker_arrays[Mesh.ARRAY_INDEX] = _sucker_indices
+
 	_conduit_mesh.clear_surfaces()
 	_conduit_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, _conduit_arrays)
+	_conduit_mesh.surface_set_material(0, OCTOPUS_MAT)
+	_conduit_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, _sucker_arrays)
+	_conduit_mesh.surface_set_material(1, _sucker_material)
 
+	# Orient tip nozzle directly from the final ring's twist-free orthonormal basis (zero spin!)
 	if is_instance_valid(_nozzle_instance):
-		var end_tangent: Vector3 = _get_quadratic_bezier_tangent(p0, p1, p2, 1.0)
-		_orient_along_segment(_nozzle_instance, p2 - end_tangent, p2)
-		_nozzle_instance.global_position = p2
-		_nozzle_instance.scale = Vector3.ONE
+		var tip_basis: Basis = Basis(ref_normal, prev_tangent, binormal).orthonormalized()
+		_nozzle_instance.global_transform = Transform3D(tip_basis, p3)
 
 
-## Computes point along quadratic bezier curve for normalized time.
-func _get_quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
-	var q0: Vector3 = p0.lerp(p1, t)
-	var q1: Vector3 = p1.lerp(p2, t)
-	return q0.lerp(q1, t)
+## Updates pre-allocated 3D suction cup vertices along the tentacle's ventral side.
+func _update_sucker_geometry(
+	p0: Vector3,
+	p1: Vector3,
+	p2: Vector3,
+	p3: Vector3,
+	up_dir: Vector3,
+	fwd_dir: Vector3,
+) -> void:
+	var verts_per_sucker: int = (SUCKER_RADIAL_SEGS * 2) + 1
+	var prev_tangent: Vector3 = up_dir
+	var ref_normal: Vector3 = up_dir.cross(-fwd_dir).normalized()
+
+	for row: int in range(SUCKER_ROWS):
+		var t: float = lerpf(0.06, 0.94, float(row) / float(SUCKER_ROWS - 1))
+		var center: Vector3 = _get_cubic_bezier(p0, p1, p2, p3, t)
+		var tangent: Vector3 = _get_cubic_bezier_tangent(p0, p1, p2, p3, t)
+		if tangent.length_squared() > 0.000001:
+			tangent = tangent.normalized()
+		else:
+			tangent = prev_tangent
+
+		if row == 0:
+			var wall_ref: Vector3 = up_dir if absf(tangent.dot(fwd_dir)) >= 0.95 else (-fwd_dir)
+			ref_normal = tangent.cross(wall_ref).normalized()
+		else:
+			var rot_quat: Quaternion = Quaternion(prev_tangent, tangent)
+			ref_normal = (rot_quat * ref_normal).normalized()
+
+		var binormal: Vector3 = tangent.cross(ref_normal).normalized()
+		ref_normal = binormal.cross(tangent).normalized()
+		prev_tangent = tangent
+
+		var body_r: float = lerpf(TENTACLE_BASE_RADIUS, TENTACLE_TIP_RADIUS, pow(t, 0.82)) * 0.90
+		var cup_r: float = body_r * 0.38
+		var cup_h: float = cup_r * 0.72
+
+		for side_idx: int in range(2):
+			var side_sign: float = -1.0 if side_idx == 0 else 1.0
+			var sc_idx: int = (row * 2) + side_idx
+			var v_base: int = sc_idx * verts_per_sucker
+			var rim_base: int = v_base + SUCKER_RADIAL_SEGS
+			var cup_center_idx: int = v_base + (SUCKER_RADIAL_SEGS * 2)
+
+			# Position paired suckers on the front-outer (+binormal / +ref_normal) side facing player
+			var cup_axis: Vector3 = (
+				((binormal * 0.82) + (ref_normal * (side_sign * 0.48 + 0.22))).normalized()
+			)
+			var u_axis: Vector3 = cup_axis.cross(tangent).normalized()
+			var v_axis: Vector3 = cup_axis.cross(u_axis).normalized()
+			var root_pos: Vector3 = center + (cup_axis * (body_r * 0.92))
+			var rim_center: Vector3 = root_pos + (cup_axis * cup_h)
+
+			for s: int in range(SUCKER_RADIAL_SEGS):
+				var ang: float = (float(s) / float(SUCKER_RADIAL_SEGS)) * TAU
+				var ring_dir: Vector3 = (u_axis * cos(ang)) + (v_axis * sin(ang))
+				_sucker_verts[v_base + s] = root_pos + (ring_dir * (cup_r * 0.78))
+				_sucker_normals[v_base + s] = (ring_dir + (cup_axis * 0.35)).normalized()
+				_sucker_uvs[v_base + s] = Vector2(float(s) / float(SUCKER_RADIAL_SEGS), 0.0)
+
+				_sucker_verts[rim_base + s] = rim_center + (ring_dir * cup_r)
+				_sucker_normals[rim_base + s] = (cup_axis + (ring_dir * 0.55)).normalized()
+				_sucker_uvs[rim_base + s] = Vector2(float(s) / float(SUCKER_RADIAL_SEGS), 1.0)
+
+			# Deeply recessed suction cavity center with inverted normal for dark hollow shading
+			_sucker_verts[cup_center_idx] = root_pos - (cup_axis * (cup_h * 0.25))
+			_sucker_normals[cup_center_idx] = -cup_axis
+			_sucker_uvs[cup_center_idx] = Vector2(0.5, 0.5)
 
 
-## Computes analytical tangent vector along quadratic bezier curve.
-func _get_quadratic_bezier_tangent(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
-	return (2.0 * (1.0 - t) * (p1 - p0)) + (2.0 * t * (p2 - p1))
+## Computes point along cubic bezier curve for normalized time t in [0..1].
+func _get_cubic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: float) -> Vector3:
+	var u: float = 1.0 - t
+	var tt: float = t * t
+	var uu: float = u * u
+	return (p0 * (uu * u)) + (p1 * (3.0 * uu * t)) + (p2 * (3.0 * u * tt)) + (p3 * (tt * t))
 
 
-## Orients a +Y-aligned node so its local +Y axis points from p1 toward p2.
-func _orient_along_segment(node: Node3D, p1: Vector3, p2: Vector3) -> void:
-	var dir: Vector3 = p2 - p1
-	if dir.length_squared() > 0.000001:
-		var is_parallel: bool = absf(dir.normalized().y) >= 0.99
-		var up: Vector3 = Vector3.RIGHT if is_parallel else Vector3.UP
-		node.look_at(p2, up)
-		node.rotate_object_local(Vector3.RIGHT, PI * 0.5)
+## Computes analytical tangent vector along cubic bezier curve for normalized time t.
+func _get_cubic_bezier_tangent(
+	p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: float
+) -> Vector3:
+	var u: float = 1.0 - t
+	return ((p1 - p0) * (3.0 * u * u)) + ((p2 - p1) * (6.0 * u * t)) + ((p3 - p2) * (3.0 * t * t))
 
 
-## Initializes Lex Pertizan glowing semi-transparent liquid reservoir parameters.
+## Initializes Lex Pertizan glowing emerald-green liquid reservoir parameters.
 func _setup_health_cylinder() -> void:
 	if not is_instance_valid(health_cylinder):
 		return
@@ -539,7 +789,7 @@ func _setup_health_cylinder() -> void:
 	health_cylinder.material_override = LIQUID_BOTTLE_MAT
 
 	var radius: float = 0.095
-	var half_height: float = 0.36
+	var half_height: float = 0.34
 	var cyl_mesh: CylinderMesh = (
 		health_cylinder.mesh if health_cylinder.mesh is CylinderMesh else null
 	)
@@ -548,10 +798,10 @@ func _setup_health_cylinder() -> void:
 		half_height = cyl_mesh.height * 0.5
 
 	health_cylinder.set_instance_shader_parameter(PARAM_SIZE, Vector2(radius, half_height))
-	health_cylinder.set_instance_shader_parameter(PARAM_THICKNESS, 0.008)
-	health_cylinder.set_instance_shader_parameter(PARAM_SCALE, 1.05)
-	health_cylinder.set_instance_shader_parameter(PARAM_VEL, 1.0)
-	health_cylinder.set_instance_shader_parameter(PARAM_EMISSION, 2.4)
+	health_cylinder.set_instance_shader_parameter(PARAM_THICKNESS, 0.005)
+	health_cylinder.set_instance_shader_parameter(PARAM_SCALE, 1.35)
+	health_cylinder.set_instance_shader_parameter(PARAM_VEL, 1.15)
+	health_cylinder.set_instance_shader_parameter(PARAM_EMISSION, 0.35)
 
 	_displayed_fill = 1.0
 	_displayed_color = COLOR_LIQUID_HIGH
@@ -607,7 +857,7 @@ func _apply_liquid_shader_state() -> void:
 	health_cylinder.set_instance_shader_parameter(PARAM_COLOR, _displayed_color)
 
 
-## Closes shutter doors, removes health bar & conduit, and displays medieval text.
+## Closes shutter doors, hides liquid & tentacle, and displays medieval text.
 func _on_dispenser_depleted() -> void:
 	if _is_depleted:
 		return
@@ -641,7 +891,7 @@ func _on_dispenser_depleted() -> void:
 		depleted_label.visible = true
 
 
-## Enables conduit targeting loop when player enters detection area.
+## Enables tentacle targeting loop when player enters detection area.
 func _on_body_entered(body: Node3D) -> void:
 	if _is_depleted:
 		return
@@ -654,7 +904,7 @@ func _on_body_entered(body: Node3D) -> void:
 		set_physics_process(true)
 
 
-## Cleans up references and puts conduit to sleep when player exits.
+## Cleans up references and returns tentacle to S-curve rest when player exits.
 func _on_body_exited(body: Node3D) -> void:
 	if body == _nearby_player:
 		print("HealthDispenser: _on_body_exited() - Player departed.")

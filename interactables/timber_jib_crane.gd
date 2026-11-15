@@ -575,8 +575,8 @@ func push(delta: float) -> void:
 
 	var actual_deg_delta: float = current_angle_deg - prev_angle
 	var dir_sign: float = -1.0 if turn_clockwise else 1.0
-	if delta > 0.0001 and not is_zero_approx(actual_deg_delta):
-		current_angular_velocity_rad = deg_to_rad(actual_deg_delta * dir_sign) / delta
+	if absf(delta) > 0.0001 and not is_zero_approx(actual_deg_delta):
+		current_angular_velocity_rad = deg_to_rad(actual_deg_delta * dir_sign) / absf(delta)
 		_set_rotate_audio_playing(true)
 	else:
 		current_angular_velocity_rad = 0.0
