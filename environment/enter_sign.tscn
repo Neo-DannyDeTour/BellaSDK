@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://bti5v4tlnmavx" path="res://environment/powered_light_3d.gd" id="1_pwlgt"]
+[ext_resource type="PackedScene" uid="uid://c4ghfab6uakyu" path="res://assets/models/exit_sign/exit_sign.glb" id="2_model"]
+[ext_resource type="Script" uid="uid://c6vsx15ci2q2y" path="res://core/components/powered_object.gd" id="3_pwrcmp"]
+[ext_resource type="Material" path="res://assets/materials/exit_sign_housing/exit_sign_housing.tres" id="4_housmat"]
+[ext_resource type="Material" path="res://assets/materials/enter_sign_face/enter_sign_face.tres" id="5_facemat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_sign"]
+size = Vector3(0.46, 0.24, 0.06)
+
+[node name="EnterSign" type="Node3D" node_paths=PackedStringArray("emissive_mesh")]
+script = ExtResource("1_pwlgt")
+start_on = true
+light_color = Color(0.15, 1, 0.25, 1)
+base_energy = 1.2
+spot_range = 3.5
+emissive_mesh = NodePath("Model/SignFace")
+base_emission_energy = 4.0
+flicker_preset = 1
+
+[node name="Model" parent="." instance=ExtResource("2_model")]
+
+[node name="Housing" parent="Model" index="0"]
+surface_material_override/0 = ExtResource("4_housmat")
+
+[node name="SignFace" parent="Model" index="1"]
+surface_material_override/0 = ExtResource("5_facemat")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.16)
+light_color = Color(0.15, 1, 0.25, 1)
+light_energy = 1.2
+omni_range = 3.5
+light_bake_mode = 1
+
+[node name="PowerComponent" type="Node3D" parent="."]
+script = ExtResource("3_pwrcmp")
+metadata/_custom_type_script = "uid://c6vsx15ci2q2y"
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.03)
+shape = SubResource("BoxShape3D_sign")
+
+[editable path="Model"]

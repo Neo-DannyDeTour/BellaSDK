@@ -34,6 +34,7 @@ func clear_all() -> void:
 			cloud.queue_free()
 	_grenade_clouds.clear()
 	_zones.clear()
+	_sync_clouds_with_sunshine()
 
 
 ## Registers an active [FogVolume] ([DynamicFogZone] or [SmokeHazard]) for carving and LoS.
@@ -59,6 +60,7 @@ func register_cloud(cloud: SmokeGrenadeCloud) -> void:
 		return
 	_grenade_clouds.append(cloud)
 	_ensure_sky_affect_for_local_fog(cloud)
+	_sync_clouds_with_sunshine()
 	print("[SmokeManager] Registered SmokeGrenadeCloud: ", cloud.name)
 
 
@@ -67,6 +69,7 @@ func unregister_cloud(cloud: SmokeGrenadeCloud) -> void:
 	var idx: int = _grenade_clouds.find(cloud)
 	if idx != -1:
 		_grenade_clouds.remove_at(idx)
+		_sync_clouds_with_sunshine()
 		print("[SmokeManager] Unregistered SmokeGrenadeCloud: ", cloud.name)
 
 
@@ -227,3 +230,29 @@ func _ensure_sky_affect_for_local_fog(volume: FogVolume) -> void:
 			print("[SmokeManager] Enforced volumetric_fog_sky_affect = 1.0 for zero-density env.")
 		if env.volumetric_fog_ambient_inject < 1.0:
 			env.volumetric_fog_ambient_inject = 1.0
+
+
+## Synchronizes active smoke clouds with [SunshineCloudsDriverGD] effectors.
+func _sync_clouds_with_sunshine() -> void:
+	if not is_inside_tree():
+		return
+	var tree: SceneTree = get_tree()
+	if not is_instance_valid(tree):
+		return
+	var drivers: Array[Node] = tree.get_nodes_in_group(&"sunshine_clouds")
+	if drivers.is_empty():
+		return
+
+	var effector_data: Array[Vector4] = []
+	for cloud: SmokeGrenadeCloud in _grenade_clouds:
+		if is_instance_valid(cloud) and cloud.is_inside_tree() and cloud.visible:
+			var pos: Vector3 = cloud.global_position
+			var r: float = cloud.max_radius * 1.15
+			effector_data.append(Vector4(pos.x, pos.y, pos.z, r))
+			effector_data.append(Vector4(-4.5, 0.0, 0.0, 0.0))
+
+	for driver_node: Node in drivers:
+		var driver: SunshineCloudsDriverGD = driver_node as SunshineCloudsDriverGD
+		if is_instance_valid(driver) and is_instance_valid(driver.clouds_resource):
+			driver.clouds_resource.point_effector_data = effector_data
+			driver.clouds_resource.lights_updated = true

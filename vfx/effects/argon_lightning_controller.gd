@@ -105,6 +105,8 @@ func _ready() -> void:
 
 ## Triggers a lightning strike between specific marker array indices.
 func strike_between_markers(start_idx: int, end_idx: int) -> void:
+	if not is_inside_tree():
+		return
 	if start_idx < 0 or start_idx >= start_markers.size():
 		return
 	if end_idx < 0 or end_idx >= end_markers.size():
@@ -121,6 +123,8 @@ func strike_between_markers(start_idx: int, end_idx: int) -> void:
 
 ## Triggers a lightning strike between two arbitrary world-space coordinates.
 func strike_custom(start_pos: Vector3, end_pos: Vector3) -> void:
+	if not is_inside_tree():
+		return
 	#print("Lightning strike: ", start_pos, " -> ", end_pos)
 	_generate_bolt(start_pos, end_pos)
 	_schedule_thunder(end_pos)
@@ -138,7 +142,7 @@ func _schedule_next_strike() -> void:
 
 ## Executes a single lightning strike between randomly chosen markers.
 func _on_strike_timeout() -> void:
-	if not auto_strike:
+	if not auto_strike or not is_inside_tree():
 		return
 	if not start_markers.is_empty() and not end_markers.is_empty():
 		var s_idx: int = randi() % start_markers.size()
@@ -150,10 +154,13 @@ func _on_strike_timeout() -> void:
 
 ## Builds trunk and forked child branches into a single triangle surface.
 func _generate_bolt(start_pos: Vector3, end_pos: Vector3) -> void:
+	if not is_inside_tree() or not is_instance_valid(_imm_mesh):
+		return
 	_imm_mesh.clear_surfaces()
 	_imm_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 
-	var cam: Camera3D = get_viewport().get_camera_3d()
+	var vp: Viewport = get_viewport()
+	var cam: Camera3D = vp.get_camera_3d() if is_instance_valid(vp) else null
 	var cam_pos: Vector3 = Vector3.ZERO
 	if is_instance_valid(cam):
 		cam_pos = cam.global_position
@@ -300,7 +307,8 @@ func _schedule_thunder(impact_pos: Vector3) -> void:
 		return
 
 	_thunder_player.global_position = impact_pos
-	var cam: Camera3D = get_viewport().get_camera_3d()
+	var vp: Viewport = get_viewport()
+	var cam: Camera3D = vp.get_camera_3d() if is_instance_valid(vp) else null
 	var delay: float = 0.0
 	if is_instance_valid(cam) and speed_of_sound > 0.0:
 		var dist_sq: float = cam.global_position.distance_squared_to(impact_pos)

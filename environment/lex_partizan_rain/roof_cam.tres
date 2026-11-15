@@ -2,4 +2,4 @@
 
 [resource]
 resource_local_to_scene = true
-viewport_path = NodePath("SubViewport")
+viewport_path = NodePath("")

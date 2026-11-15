@@ -1,4 +1,4 @@
-## Spotlight controller with [PowerComponent] integration and Quake/Valve flicker patterns.
+## Light controller with [PowerComponent] integration and Quake/Valve flicker patterns.
 @tool
 class_name PoweredLight3D
 extends Node3D
@@ -177,8 +177,8 @@ var _bulb_material: BaseMaterial3D = null
 ## Child [PowerComponent] managing power counter thresholds.
 @onready var power_component: PowerComponent = get_node_or_null("PowerComponent") as PowerComponent
 
-## Child [SpotLight3D] rendering the illumination cone.
-@onready var light: SpotLight3D = get_node_or_null("SpotLight3D") as SpotLight3D
+## Child [Light3D] ([SpotLight3D] or [OmniLight3D]) rendering the illumination.
+@onready var light: Light3D = _resolve_light_child()
 
 
 ## Connects power signals, builds culling notifier, and initializes light state.
@@ -195,7 +195,7 @@ func _ready() -> void:
 		_update_process_state()
 		return
 
-	assert(is_instance_valid(light), "PoweredLight3D: Missing SpotLight3D child.")
+	assert(is_instance_valid(light), "PoweredLight3D: Missing Light3D child.")
 	assert(is_instance_valid(power_component), "PoweredLight3D: Missing PowerComponent child.")
 
 	_setup_screen_notifier()
@@ -307,20 +307,34 @@ func set_flicker_preset(preset_idx: FlickerPreset) -> void:
 	flicker_preset = preset_idx
 
 
-## Applies exported appearance properties to the child [SpotLight3D].
+## Applies exported appearance properties to the child [Light3D].
 func _sync_light_properties() -> void:
-	var spot: SpotLight3D = (
-		light if is_instance_valid(light) else get_node_or_null("SpotLight3D") as SpotLight3D
-	)
-	if not is_instance_valid(spot):
+	var target_light: Light3D = light if is_instance_valid(light) else _resolve_light_child()
+	if not is_instance_valid(target_light):
 		return
-	spot.light_color = light_color
-	spot.light_energy = base_energy
-	spot.light_indirect_energy = indirect_energy
-	spot.light_volumetric_fog_energy = volumetric_fog_energy
-	spot.spot_range = spot_range
-	spot.spot_angle = spot_angle
-	spot.shadow_enabled = shadows_enabled
+	target_light.light_color = light_color
+	target_light.light_energy = base_energy
+	target_light.light_indirect_energy = indirect_energy
+	target_light.light_volumetric_fog_energy = volumetric_fog_energy
+	target_light.shadow_enabled = shadows_enabled
+	if target_light is SpotLight3D:
+		var spot: SpotLight3D = target_light as SpotLight3D
+		spot.spot_range = spot_range
+		spot.spot_angle = spot_angle
+	elif target_light is OmniLight3D:
+		var omni: OmniLight3D = target_light as OmniLight3D
+		omni.omni_range = spot_range
+
+
+## Resolves the child [SpotLight3D] or [OmniLight3D] node.
+func _resolve_light_child() -> Light3D:
+	var spot: Light3D = get_node_or_null("SpotLight3D") as Light3D
+	if is_instance_valid(spot):
+		return spot
+	var omni: Light3D = get_node_or_null("OmniLight3D") as Light3D
+	if is_instance_valid(omni):
+		return omni
+	return NodeQuery.find_first_child_of_type(self, Light3D) as Light3D
 
 
 ## Duplicates active material once to prevent mutating shared project resources.

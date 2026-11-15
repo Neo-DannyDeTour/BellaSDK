@@ -6,7 +6,6 @@
 [ext_resource type="Texture2D" uid="uid://b1ipxds3ilyap" path="res://environment/lex_partizan_rain/streaks512.png" id="4_streaks"]
 [ext_resource type="Texture2D" uid="uid://0k4m0ysx7xrk" path="res://environment/lex_partizan_rain/Snow005_2K_Normal.jpg" id="5_snownorm"]
 [ext_resource type="Shader" uid="uid://c0wquhweyi7nd" path="res://environment/lex_partizan_rain/rain.gdshader" id="6_shader"]
-[ext_resource type="Texture2D" uid="uid://droofcamtex01" path="res://environment/lex_partizan_rain/roof_cam.tres" id="7_roof"]
 [ext_resource type="Texture2D" uid="uid://dculpby7luo66" path="res://environment/lex_partizan_rain/Road005_2K_Color.jpg" id="8_albedo"]
 [ext_resource type="Texture2D" uid="uid://b2q0ljpx1brdi" path="res://environment/lex_partizan_rain/simple_noise.png" id="9_noise"]
 [ext_resource type="Texture2D" uid="uid://byi06vwebe7j" path="res://environment/lex_partizan_rain/Road005_2K_Normal.jpg" id="10_norm"]
@@ -55,7 +54,6 @@ shader_parameter/ripple_density = 0.15
 shader_parameter/ripple_speed = 1.0
 shader_parameter/ripple_intensity = 1.2
 shader_parameter/use_roof_occlusion = true
-shader_parameter/roofing_height = ExtResource("7_roof")
 shader_parameter/cam_heightmap_world_position = Vector3(0, 20, 0)
 shader_parameter/cam_heightmap_size = 30.0
 shader_parameter/occlusion_bias = 0.25

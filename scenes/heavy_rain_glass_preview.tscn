@@ -1,0 +1,119 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Shader" path="res://shaders/heavy_rain_glass.gdshader" id="1_rain_shader"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_horizon_color = Color(0.646, 0.656, 0.67, 1)
+ground_horizon_color = Color(0.646, 0.656, 0.67, 1)
+
+[sub_resource type="Sky" id="Sky_env"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_env")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rain"]
+render_priority = 0
+shader = ExtResource("1_rain_shader")
+shader_parameter/speed = 1.0
+shader_parameter/zoom = 20.0
+shader_parameter/blur = 0.5
+shader_parameter/fluctuations = 5.0
+shader_parameter/size = 10.0
+shader_parameter/refraction = 10.0
+shader_parameter/density = 3.0
+shader_parameter/uv_aspect = 1.0
+shader_parameter/tint_color = Color(0.88, 0.94, 1, 1)
+shader_parameter/roughness = 0.08
+shader_parameter/specular = 0.6
+shader_parameter/normal_strength = 0.6
+
+[sub_resource type="BoxMesh" id="BoxMesh_pane"]
+size = Vector3(2, 2, 0.08)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_brick"]
+render_priority = 0
+shader = ExtResource("1_rain_shader")
+shader_parameter/speed = 0.0
+shader_parameter/zoom = 12.0
+shader_parameter/blur = 0.65
+shader_parameter/fluctuations = 5.0
+shader_parameter/size = 6.0
+shader_parameter/refraction = 8.0
+shader_parameter/density = 2.0
+shader_parameter/uv_aspect = 1.0
+shader_parameter/tint_color = Color(0.82, 0.92, 0.98, 1)
+shader_parameter/roughness = 0.14
+shader_parameter/specular = 0.7
+shader_parameter/normal_strength = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pillar_red"]
+albedo_color = Color(0.9, 0.25, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_pillar"]
+size = Vector3(0.6, 3, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pillar_gold"]
+albedo_color = Color(0.95, 0.75, 0.15, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_orb"]
+radius = 0.55
+height = 1.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pillar_teal"]
+albedo_color = Color(0.15, 0.75, 0.85, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.22, 0.24, 0.28, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(12, 0.2, 12)
+
+[node name="HeavyRainGlassPreview" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 4, 3)
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 0, 1.4, 3.6)
+
+[node name="RainWindowMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, 1.1, 0)
+layers = 1
+mesh = SubResource("BoxMesh_pane")
+surface_material_override/0 = SubResource("ShaderMaterial_rain")
+
+[node name="GlassBrickMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 1.1, 0)
+layers = 1
+mesh = SubResource("BoxMesh_pane")
+surface_material_override/0 = SubResource("ShaderMaterial_brick")
+
+[node name="BackdropProps" type="Node3D" parent="."]
+
+[node name="RedPillar" type="MeshInstance3D" parent="BackdropProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1.5, -2)
+mesh = SubResource("BoxMesh_pillar")
+surface_material_override/0 = SubResource("StandardMaterial3D_pillar_red")
+
+[node name="GoldOrb" type="MeshInstance3D" parent="BackdropProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -1.8)
+mesh = SubResource("SphereMesh_orb")
+surface_material_override/0 = SubResource("StandardMaterial3D_pillar_gold")
+
+[node name="TealPillar" type="MeshInstance3D" parent="BackdropProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 1.5, -2)
+mesh = SubResource("BoxMesh_pillar")
+surface_material_override/0 = SubResource("StandardMaterial3D_pillar_teal")
+
+[node name="Floor" type="MeshInstance3D" parent="BackdropProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, -1)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("StandardMaterial3D_floor")

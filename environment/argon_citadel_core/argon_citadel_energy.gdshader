@@ -9,6 +9,7 @@ instance uniform float arc_seed = 0.0;
 
 uniform vec4 cyan_energy : source_color = vec4(0.2, 0.88, 1.0, 1.0);
 uniform float arc_half_length = 2.1;
+uniform sampler2D depth_texture : hint_depth_texture, repeat_disable, filter_nearest;
 
 varying vec3 v_obj_pos;
 
@@ -69,6 +70,12 @@ void fragment() {
 		final_rgb = mix(cyan_energy.rgb, vec3(1.0), 0.45) * 5.5;
 		final_alpha = clamp(end_fade * pulse_phase * (0.5 + flicker * 0.5), 0.0, 1.0);
 	}
+
+	float depth_raw = texture(depth_texture, SCREEN_UV).r;
+	vec4 upos = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, depth_raw, 1.0);
+	float scene_depth = -upos.z / upos.w;
+	float depth_fade = clamp((scene_depth + VERTEX.z) / 0.55, 0.0, 1.0);
+	final_alpha *= depth_fade;
 
 	ALBEDO = final_rgb * final_alpha;
 	ALPHA = final_alpha;

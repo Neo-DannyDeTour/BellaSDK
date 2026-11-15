@@ -14,9 +14,12 @@ const SHAPE_TYPE: Variant = EditorTriggerVisualizer.ShapeType
 @export_range(0.1, 50.0, 0.1) var arrival_radius: float = 1.0:
 	set(value):
 		arrival_radius = maxf(0.1, value)
-		trigger_size = Vector3.ONE * (arrival_radius * 2.0)
-		if is_inside_tree():
-			_update_visuals()
+		if not _syncing_bounds:
+			_syncing_bounds = true
+			trigger_size = Vector3.ONE * (arrival_radius * 2.0)
+			_syncing_bounds = false
+			if is_inside_tree():
+				_update_visuals()
 
 ## Next sequential waypoint in path chain for patrol loops or sequences.
 @export var next_waypoint: Waypoint3D:
@@ -53,9 +56,12 @@ const SHAPE_TYPE: Variant = EditorTriggerVisualizer.ShapeType
 @export var trigger_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		trigger_size = value
-		arrival_radius = trigger_size.x * 0.5
-		if is_inside_tree():
-			_update_visuals()
+		if not _syncing_bounds:
+			_syncing_bounds = true
+			arrival_radius = trigger_size.x * 0.5
+			_syncing_bounds = false
+			if is_inside_tree():
+				_update_visuals()
 
 ## Local offset applied to detection shape and visualizer node.
 @export var trigger_offset: Vector3 = Vector3.ZERO:
@@ -122,6 +128,9 @@ var _detector_area: Area3D = null
 
 ## Cached collision shape child defining player proximity bounds.
 var _collision_shape: CollisionShape3D = null
+
+## Re-entrancy guard preventing [member arrival_radius] and [member trigger_size] recursion.
+var _syncing_bounds: bool = false
 
 
 ## Initializes visualizer, collision hull, and transforms.

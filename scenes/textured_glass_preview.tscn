@@ -1,0 +1,125 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Shader" path="res://shaders/textured_glass.gdshader" id="1_glass_shader"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.28, 0.45, 0.68, 1)
+sky_horizon_color = Color(0.75, 0.78, 0.82, 1)
+ground_horizon_color = Color(0.32, 0.34, 0.38, 1)
+
+[sub_resource type="Sky" id="Sky_env"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_env")
+ambient_light_source = 3
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rippled"]
+render_priority = 0
+shader = ExtResource("1_glass_shader")
+shader_parameter/pattern_scale = 8.0
+shader_parameter/voronoi_mix = 0.65
+shader_parameter/normal_strength = 0.45
+shader_parameter/smudge_scale = 3.5
+shader_parameter/smudge_strength = 0.25
+shader_parameter/refraction_strength = 0.045
+shader_parameter/chromatic_aberration = 0.002
+shader_parameter/frost_blur = 0.3
+shader_parameter/base_roughness = 0.05
+shader_parameter/specular = 0.8
+shader_parameter/fresnel_power = 4.0
+shader_parameter/fresnel_strength = 0.35
+shader_parameter/glass_tint = Color(0.86, 0.96, 0.94, 0.14)
+shader_parameter/fresnel_color = Color(0.92, 0.98, 1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_pane"]
+size = Vector3(2, 2, 0.08)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_frosted"]
+render_priority = 0
+shader = ExtResource("1_glass_shader")
+shader_parameter/pattern_scale = 16.0
+shader_parameter/voronoi_mix = 0.8
+shader_parameter/normal_strength = 0.75
+shader_parameter/smudge_scale = 5.0
+shader_parameter/smudge_strength = 0.4
+shader_parameter/refraction_strength = 0.06
+shader_parameter/chromatic_aberration = 0.0035
+shader_parameter/frost_blur = 1.6
+shader_parameter/base_roughness = 0.18
+shader_parameter/specular = 0.7
+shader_parameter/fresnel_power = 3.5
+shader_parameter/fresnel_strength = 0.45
+shader_parameter/glass_tint = Color(0.82, 0.92, 0.98, 0.2)
+shader_parameter/fresnel_color = Color(0.95, 0.99, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pillar_red"]
+albedo_color = Color(0.9, 0.25, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_pillar"]
+size = Vector3(0.6, 3, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pillar_gold"]
+albedo_color = Color(0.95, 0.75, 0.15, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_orb"]
+radius = 0.55
+height = 1.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pillar_teal"]
+albedo_color = Color(0.15, 0.75, 0.85, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.22, 0.24, 0.28, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(12, 0.2, 12)
+
+[node name="TexturedGlassPreview" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 4, 3)
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 0, 1.4, 3.6)
+
+[node name="RippledGlassPane" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.965926, 0, 0.258819, 0, 1, 0, -0.258819, 0, 0.965926, -1.25, 1.1, 0)
+layers = 1
+mesh = SubResource("BoxMesh_pane")
+surface_material_override/0 = SubResource("ShaderMaterial_rippled")
+
+[node name="FrostedGlassPane" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, 0.965926, 1.25, 1.1, 0)
+layers = 1
+mesh = SubResource("BoxMesh_pane")
+surface_material_override/0 = SubResource("ShaderMaterial_frosted")
+
+[node name="BackdropProps" type="Node3D" parent="."]
+
+[node name="RedPillar" type="MeshInstance3D" parent="BackdropProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1.5, -2)
+mesh = SubResource("BoxMesh_pillar")
+surface_material_override/0 = SubResource("StandardMaterial3D_pillar_red")
+
+[node name="GoldOrb" type="MeshInstance3D" parent="BackdropProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -1.8)
+mesh = SubResource("SphereMesh_orb")
+surface_material_override/0 = SubResource("StandardMaterial3D_pillar_gold")
+
+[node name="TealPillar" type="MeshInstance3D" parent="BackdropProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 1.5, -2)
+mesh = SubResource("BoxMesh_pillar")
+surface_material_override/0 = SubResource("StandardMaterial3D_pillar_teal")
+
+[node name="Floor" type="MeshInstance3D" parent="BackdropProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, -1)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("StandardMaterial3D_floor")
