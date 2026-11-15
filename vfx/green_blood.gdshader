@@ -1,13 +1,13 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_opaque;
 
-// Green blood flipbook particle shader for unpacked 4x4 animated metaball atlases.
+// Green blood flipbook particle shader for unpacked 8x8 microgravity alien gore flipbook atlases.
 // Samples particle progress from INSTANCE_CUSTOM.z (or INSTANCE_CUSTOM.y lifetime fallback).
 
 uniform sampler2D atlas_texture : source_color, filter_linear_mipmap;
-uniform int columns : hint_range(1, 16) = 4;
-uniform int rows : hint_range(1, 16) = 4;
-uniform vec3 emissive_tint : source_color = vec3(0.2, 1.5, 0.3);
+uniform int columns : hint_range(1, 16) = 8;
+uniform int rows : hint_range(1, 16) = 8;
+uniform vec3 emissive_tint : source_color = vec3(1.2, 1.2, 1.2);
 uniform float alpha_discard_threshold : hint_range(0.0, 1.0) = 0.1;
 
 varying vec4 v_custom;

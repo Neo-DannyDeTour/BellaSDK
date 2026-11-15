@@ -1,0 +1,77 @@
+[gd_scene format=3 uid="uid://dgr0vifqutplo"]
+
+[ext_resource type="Script" uid="uid://cxv0rki0ewxav" path="res://enemies/imp/imp.gd" id="1_imp"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://core/components/health_component.gd" id="2_hc"]
+[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://core/components/faction_component.gd" id="3_fc"]
+[ext_resource type="Script" uid="uid://dww5pnhpd1rfn" path="res://enemies/tactical/tactical_agent.gd" id="4_ta"]
+[ext_resource type="PackedScene" uid="uid://d0sietvqvxq52" path="res://assets/models/imp/imp_rigged.glb" id="5_glb"]
+[ext_resource type="Script" path="res://enemies/imp/imp_mood_component.gd" id="6_mood"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_imp"]
+radius = 0.45
+height = 1.15
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_detect"]
+radius = 18.0
+
+[node name="EnemyImp" type="CharacterBody3D" unique_id=330235263 node_paths=PackedStringArray("health_component", "faction_component", "tactical_agent", "nav_agent", "visibility_notifier", "mood_component") groups=["damageable", "enemy", "tactical_agent"]]
+collision_layer = 16
+collision_mask = 19
+script = ExtResource("1_imp")
+health_component = NodePath("HealthComponent")
+faction_component = NodePath("FactionComponent")
+tactical_agent = NodePath("TacticalAgent")
+nav_agent = NodePath("NavigationAgent3D")
+visibility_notifier = NodePath("VisibleOnScreenNotifier3D")
+mood_component = NodePath("ImpMoodComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1645010141]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.575, 0)
+shape = SubResource("CapsuleShape3D_imp")
+
+[node name="VisualRoot" type="Node3D" parent="." unique_id=742315172]
+
+[node name="ImpModel" parent="VisualRoot" unique_id=1038367683 instance=ExtResource("5_glb")]
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1261791280]
+script = ExtResource("2_hc")
+max_health = 360
+
+[node name="FactionComponent" type="Node" parent="." unique_id=1031930033]
+script = ExtResource("3_fc")
+
+[node name="TacticalAgent" type="Node" parent="." unique_id=651346034]
+script = ExtResource("4_ta")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=1723546399]
+
+[node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="." unique_id=1608256949]
+aabb = AABB(-0.7, 0, -0.7, 1.4, 1.3, 1.4)
+
+[node name="DetectionArea" type="Area3D" parent="." unique_id=506955578]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DetectionArea" unique_id=1678536484]
+shape = SubResource("SphereShape3D_detect")
+
+[node name="LosRay" type="RayCast3D" parent="." unique_id=768442029]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+enabled = false
+collision_mask = 3
+
+[node name="ObstacleLowRay" type="RayCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+enabled = false
+target_position = Vector3(0, 0, -1.25)
+collision_mask = 5
+
+[node name="ObstacleMidRay" type="RayCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+enabled = false
+target_position = Vector3(0, 0, -1.35)
+collision_mask = 5
+
+[node name="ImpMoodComponent" type="Node" parent="."]
+script = ExtResource("6_mood")

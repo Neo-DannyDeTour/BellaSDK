@@ -28,7 +28,7 @@ const SQUID_SHADER: Shader = preload("res://shaders/squid_tentacle.gdshader")
 ## Preloaded green blood flipbook spatial shader.
 const GREEN_BLOOD_SHADER: Shader = preload("res://vfx/green_blood.gdshader")
 
-## Preloaded green blood 4x4 atlas texture.
+## Preloaded green blood 8x8 atlas texture.
 const GREEN_BLOOD_ATLAS: Texture2D = preload("res://assets/vfx/green_blood_atlas.png")
 
 ## Per-instance shader parameter name for accumulated wave phase.
@@ -184,9 +184,6 @@ var _attack_hitbox: Area3D = null
 ## Line-of-sight raycast verifying unobstructed path to [member _target].
 var _los_ray: RayCast3D = null
 
-## Non-volumetric camera-facing particle burst emitted upon death.
-var _ink_particles: GPUParticles3D = null
-
 ## Greenish-yellow alien ichor burst particles emitted upon taking damage.
 var _ichor_particles: GPUParticles3D = null
 
@@ -213,7 +210,6 @@ func _ready() -> void:
 	_ensure_collision_body()
 	_build_ugly_squid_visuals()
 	_build_sensors()
-	_build_ink_particles()
 	_build_ichor_particles()
 	call_deferred(&"_init_puddle_pool")
 
@@ -531,49 +527,15 @@ func _build_sensors() -> void:
 	add_child(_los_ray)
 
 
-## Builds a non-volumetric GPUParticles3D ink-burst effect using camera-facing quad meshes.
-func _build_ink_particles() -> void:
-	_ink_particles = GPUParticles3D.new()
-	_ink_particles.name = "InkBurstParticles"
-	_ink_particles.emitting = false
-	_ink_particles.one_shot = true
-	_ink_particles.explosiveness = 1.0
-	_ink_particles.amount = 24
-	_ink_particles.lifetime = 0.75
-	_ink_particles.position = Vector3(0.0, 0.6, 0.0)
-
-	var proc_mat: ParticleProcessMaterial = ParticleProcessMaterial.new()
-	proc_mat.direction = Vector3(0.0, 1.0, 0.0)
-	proc_mat.spread = 180.0
-	proc_mat.initial_velocity_min = 2.5
-	proc_mat.initial_velocity_max = 5.5
-	proc_mat.gravity = Vector3(0.0, -1.8, 0.0)
-	proc_mat.scale_min = 0.35
-	proc_mat.scale_max = 1.15
-	proc_mat.color = Color(0.12, 0.06, 0.18, 0.92)
-	_ink_particles.process_material = proc_mat
-
-	var quad: QuadMesh = QuadMesh.new()
-	quad.size = Vector2(0.5, 0.5)
-	var mat: StandardMaterial3D = StandardMaterial3D.new()
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.albedo_color = Color(0.15, 0.08, 0.22, 0.88)
-	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	quad.material = mat
-	_ink_particles.draw_pass_1 = quad
-
-	add_child(_ink_particles)
-
-
 ## Builds a greenish-yellow ichor particle burst emitted on bullet and melee impacts.
 func _build_ichor_particles() -> void:
 	if not is_instance_valid(_shared_blood_material):
 		_shared_blood_material = ShaderMaterial.new()
 		_shared_blood_material.shader = GREEN_BLOOD_SHADER
 		_shared_blood_material.set_shader_parameter(&"atlas_texture", GREEN_BLOOD_ATLAS)
-		_shared_blood_material.set_shader_parameter(&"columns", 4)
-		_shared_blood_material.set_shader_parameter(&"rows", 4)
-		_shared_blood_material.set_shader_parameter(&"emissive_tint", Vector3(0.2, 1.5, 0.3))
+		_shared_blood_material.set_shader_parameter(&"columns", 8)
+		_shared_blood_material.set_shader_parameter(&"rows", 8)
+		_shared_blood_material.set_shader_parameter(&"emissive_tint", Vector3(1.2, 1.2, 1.2))
 		_shared_blood_material.set_shader_parameter(&"alpha_discard_threshold", 0.1)
 
 	_ichor_particles = GPUParticles3D.new()
@@ -584,15 +546,17 @@ func _build_ichor_particles() -> void:
 	_ichor_particles.one_shot = true
 	_ichor_particles.explosiveness = 0.95
 	_ichor_particles.amount = 16
-	_ichor_particles.lifetime = 0.6
+	_ichor_particles.lifetime = 1.0
 	_ichor_particles.position = Vector3(0.0, 0.55, 0.0)
 
 	var proc_mat: ParticleProcessMaterial = ParticleProcessMaterial.new()
-	proc_mat.direction = Vector3(0.0, 0.0, -1.0)
-	proc_mat.spread = 45.0
-	proc_mat.initial_velocity_min = 2.5
-	proc_mat.initial_velocity_max = 5.5
-	proc_mat.gravity = Vector3(0.0, -9.8, 0.0)
+	proc_mat.direction = Vector3(0.0, 0.2, -1.0)
+	proc_mat.spread = 180.0
+	proc_mat.initial_velocity_min = 1.5
+	proc_mat.initial_velocity_max = 3.5
+	proc_mat.gravity = Vector3(0.0, -0.5, 0.0)
+	proc_mat.damping_min = 1.5
+	proc_mat.damping_max = 3.0
 	proc_mat.anim_speed_min = 1.0
 	proc_mat.anim_speed_max = 1.0
 	proc_mat.anim_offset_min = 0.0
@@ -600,7 +564,7 @@ func _build_ichor_particles() -> void:
 	_ichor_particles.process_material = proc_mat
 
 	var quad: QuadMesh = QuadMesh.new()
-	quad.size = Vector2(0.45, 0.45)
+	quad.size = Vector2(0.55, 0.55)
 	_ichor_particles.draw_pass_1 = quad
 
 	add_child(_ichor_particles)
@@ -987,7 +951,7 @@ func _on_health_changed(current_hp: int) -> void:
 		_set_state(SquidState.PATROL)
 
 
-## Halts AI, cleans up tweens, triggers ink burst particles, and broadcasts death.
+## Halts AI, cleans up tweens, triggers alien gore burst, and broadcasts death.
 func _on_died() -> void:
 	print("EnemySquid: Died.")
 	_state_token += 1
@@ -995,15 +959,6 @@ func _on_died() -> void:
 
 	Utilities.safe_kill_tween(_active_tween)
 	_active_tween = null
-
-	if is_instance_valid(_ink_particles):
-		var parent_node: Node = get_parent()
-		if is_instance_valid(parent_node) and is_inside_tree():
-			Utilities.reparent_keep_transform(_ink_particles, parent_node)
-		_ink_particles.restart()
-		_ink_particles.emitting = true
-		var timer: SceneTreeTimer = get_tree().create_timer(_ink_particles.lifetime + 0.1)
-		timer.timeout.connect(_ink_particles.queue_free)
 
 	if is_instance_valid(_ichor_particles):
 		var parent_node: Node = get_parent()

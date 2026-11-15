@@ -1,0 +1,127 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://cikp4skjknyj1" path="res://vfx/imp/imp_charge_vfx.gd" id="1_script"]
+[ext_resource type="Shader" uid="uid://ccqajk5ca7ef6" path="res://vfx/imp/imp_flipbook.gdshader" id="2_flipbook"]
+[ext_resource type="Texture2D" uid="uid://rcv84rae2xsk" path="res://vfx/imp/imp_lightning_flipbook.png" id="3_tex"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_aura"]
+render_priority = 0
+shader = ExtResource("2_flipbook")
+shader_parameter/flipbook_texture = ExtResource("3_tex")
+shader_parameter/tint_color = Color(0.35, 0.85, 1, 1)
+shader_parameter/hdr_intensity = 6.5
+shader_parameter/h_frames = 8
+shader_parameter/v_frames = 8
+shader_parameter/manual_progress = 0.0
+shader_parameter/use_particle_lifetime = true
+shader_parameter/billboard = true
+shader_parameter/alpha_boost = 1.6
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_aura"]
+emission_shape = 1
+emission_sphere_radius = 0.35
+angle_min = -180.0
+angle_max = 180.0
+gravity = Vector3(0, 0, 0)
+scale_min = 1.1
+scale_max = 1.65
+
+[sub_resource type="QuadMesh" id="QuadMesh_aura"]
+
+[sub_resource type="Shader" id="Shader_spark"]
+code = "shader_type spatial;
+render_mode unshaded, cull_disabled, blend_add, depth_draw_never, shadows_disabled;
+
+uniform vec4 core_color : source_color = vec4(0.88, 0.98, 1.0, 1.0);
+uniform vec4 ray_color : source_color = vec4(0.2, 0.72, 1.0, 1.0);
+uniform float hdr_intensity : hint_range(1.0, 20.0) = 7.5;
+
+varying float v_life;
+varying float v_seed;
+
+void vertex() {
+	float c = cos(INSTANCE_CUSTOM.x);
+	float s = sin(INSTANCE_CUSTOM.x);
+	float sx = length(MODELVIEW_MATRIX[0].xyz);
+	float sy = length(MODELVIEW_MATRIX[1].xyz);
+	float sz = length(MODELVIEW_MATRIX[2].xyz);
+	MODELVIEW_MATRIX = mat4(
+		vec4(c * sx, s * sx, 0.0, 0.0),
+		vec4(-s * sy, c * sy, 0.0, 0.0),
+		vec4(0.0, 0.0, sz, 0.0),
+		MODELVIEW_MATRIX[3]
+	);
+	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+	v_life = clamp(INSTANCE_CUSTOM.y, 0.0, 1.0);
+	v_seed = INSTANCE_CUSTOM.x * 3.17 + MODELVIEW_MATRIX[3].x * 7.13 + MODELVIEW_MATRIX[3].y * 11.7;
+}
+
+void fragment() {
+	vec2 p = (UV - vec2(0.5)) * 2.0;
+	float r = length(p);
+	float angle = atan(p.y, p.x);
+
+	float core = exp(-r * r * 16.0);
+	float halo = exp(-r * r * 5.0) * 0.4;
+	float ray_a = pow(abs(cos(angle * 3.0 + v_seed + TIME * 14.0)), 7.0) * 0.7;
+	float ray_b = pow(abs(sin(angle * 5.0 - v_seed * 1.7 - TIME * 19.0)), 11.0) * 0.6;
+	float rays = (ray_a + ray_b) * smoothstep(0.95, 0.06, r);
+
+	float radial_mask = smoothstep(0.98, 0.45, r);
+	float life_fade = smoothstep(0.0, 0.1, v_life) * smoothstep(1.0, 0.65, v_life);
+	float intensity = (core + halo + rays) * radial_mask * life_fade;
+
+	vec3 rgb = mix(ray_color.rgb, core_color.rgb, clamp(core * 1.3, 0.0, 1.0)) * COLOR.rgb * hdr_intensity;
+	ALBEDO = rgb;
+	ALPHA = clamp(intensity * COLOR.a, 0.0, 1.0);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_spark"]
+render_priority = 0
+shader = SubResource("Shader_spark")
+shader_parameter/core_color = Color(0.88, 0.98, 1, 1)
+shader_parameter/ray_color = Color(0.2, 0.72, 1, 1)
+shader_parameter/hdr_intensity = 7.5
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_spark"]
+emission_shape = 2
+emission_sphere_radius = 0.65
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.4
+initial_velocity_max = 1.4
+radial_velocity_min = -1.6
+radial_velocity_max = -0.6
+gravity = Vector3(0, 0, 0)
+scale_min = 0.12
+scale_max = 0.26
+
+[sub_resource type="QuadMesh" id="QuadMesh_spark"]
+
+[node name="ImpChargeVFX" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="AuraParticles" type="GPUParticles3D" parent="."]
+layers = 513
+material_override = SubResource("ShaderMaterial_aura")
+emitting = false
+amount = 8
+lifetime = 0.45
+fixed_fps = 60
+visibility_aabb = AABB(-2, -2, -2, 4, 4, 4)
+process_material = SubResource("ParticleProcessMaterial_aura")
+draw_pass_1 = SubResource("QuadMesh_aura")
+
+[node name="SparkParticles" type="GPUParticles3D" parent="."]
+layers = 513
+material_override = SubResource("ShaderMaterial_spark")
+emitting = false
+amount = 18
+lifetime = 0.35
+fixed_fps = 60
+visibility_aabb = AABB(-2, -2, -2, 4, 4, 4)
+process_material = SubResource("ParticleProcessMaterial_spark")
+draw_pass_1 = SubResource("QuadMesh_spark")

@@ -6,9 +6,12 @@
 
 [resource]
 resource_name = "rusted_steel"
+albedo_color = Color(0.82, 0.78, 0.74, 1)
 albedo_texture = ExtResource("1_albedo")
 orm_texture = ExtResource("2_orm")
 normal_enabled = true
+normal_scale = 0.45
 normal_texture = ExtResource("3_normal")
+uv1_scale = Vector3(0.85, 0.85, 0.85)
 uv1_triplanar = true
 uv1_world_triplanar = true

@@ -6,12 +6,12 @@
 
 [resource]
 resource_name = "gothic_wrought_metal"
+albedo_color = Color(0.75, 0.77, 0.8, 1)
 albedo_texture = ExtResource("1_albedo")
 orm_texture = ExtResource("2_orm")
-roughness = 1.0
-metallic = 1.0
 normal_enabled = true
+normal_scale = 0.35
 normal_texture = ExtResource("3_normal")
-uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_scale = Vector3(1.0, 1.0, 1.0)
 uv1_triplanar = true
 uv1_world_triplanar = true

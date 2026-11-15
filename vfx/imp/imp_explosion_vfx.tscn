@@ -1,0 +1,71 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://djh33qod1dxqg" path="res://vfx/imp/imp_explosion_vfx.gd" id="1_script"]
+[ext_resource type="Shader" uid="uid://ccqajk5ca7ef6" path="res://vfx/imp/imp_flipbook.gdshader" id="2_flipbook"]
+[ext_resource type="Texture2D" uid="uid://bm5u4rg4q6yvh" path="res://vfx/imp/imp_mantaflow_explosion_flipbook.png" id="3_tex"]
+[ext_resource type="Shader" uid="uid://bfleep3u6m7x2" path="res://vfx/imp/imp_lightning_circle.gdshader" id="4_shock"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_flipbook"]
+render_priority = 0
+shader = ExtResource("2_flipbook")
+shader_parameter/flipbook_texture = ExtResource("3_tex")
+shader_parameter/tint_color = Color(0.55, 0.9, 1, 1)
+shader_parameter/hdr_intensity = 3.5
+shader_parameter/h_frames = 8
+shader_parameter/v_frames = 8
+shader_parameter/manual_progress = 0.0
+shader_parameter/use_particle_lifetime = true
+shader_parameter/billboard = true
+shader_parameter/alpha_boost = 1.4
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_expl"]
+emission_shape = 1
+emission_sphere_radius = 0.25
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.4
+initial_velocity_max = 1.2
+gravity = Vector3(0, 0.4, 0)
+scale_min = 2.4
+scale_max = 3.4
+
+[sub_resource type="QuadMesh" id="QuadMesh_flipbook"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_shockwave"]
+render_priority = 0
+shader = ExtResource("4_shock")
+shader_parameter/telegraph_color = Color(0.2, 0.65, 1, 1)
+shader_parameter/active_color = Color(0.75, 0.95, 1, 1)
+shader_parameter/hdr_intensity = 7.5
+shader_parameter/expand_progress = 0.0
+shader_parameter/active_phase = 1.0
+shader_parameter/fade_alpha = 1.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_shockwave"]
+size = Vector2(6, 6)
+orientation = 1
+
+[node name="ImpExplosionVFX" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="FlipbookParticles" type="GPUParticles3D" parent="."]
+layers = 513
+material_override = SubResource("ShaderMaterial_flipbook")
+emitting = false
+amount = 4
+lifetime = 0.85
+one_shot = true
+explosiveness = 0.95
+fixed_fps = 60
+visibility_aabb = AABB(-4, -4, -4, 8, 8, 8)
+process_material = SubResource("ParticleProcessMaterial_expl")
+draw_pass_1 = SubResource("QuadMesh_flipbook")
+
+[node name="ShockwaveMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+layers = 513
+visible = false
+material_override = SubResource("ShaderMaterial_shockwave")
+mesh = SubResource("QuadMesh_shockwave")

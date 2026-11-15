@@ -1,0 +1,47 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://cqr7d487jnrs" path="res://vfx/imp/imp_lightning_line.gd" id="1_script"]
+[ext_resource type="Shader" uid="uid://jxites6ct3ou" path="res://vfx/imp/imp_lightning_line.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_beam_a"]
+render_priority = 0
+shader = ExtResource("2_shader")
+shader_parameter/core_color = Color(0.85, 0.97, 1, 1)
+shader_parameter/edge_color = Color(0.15, 0.55, 1, 1)
+shader_parameter/hdr_core_intensity = 12.0
+shader_parameter/hdr_edge_intensity = 4.5
+shader_parameter/jaggedness = 16.0
+shader_parameter/sway_amplitude = 0.18
+shader_parameter/scroll_speed = 8.0
+shader_parameter/beam_alpha = 1.0
+shader_parameter/seed_offset = 0.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_beam"]
+size = Vector2(0.75, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_beam_b"]
+render_priority = 0
+shader = ExtResource("2_shader")
+shader_parameter/core_color = Color(0.85, 0.97, 1, 1)
+shader_parameter/edge_color = Color(0.15, 0.55, 1, 1)
+shader_parameter/hdr_core_intensity = 12.0
+shader_parameter/hdr_edge_intensity = 4.5
+shader_parameter/jaggedness = 16.0
+shader_parameter/sway_amplitude = 0.18
+shader_parameter/scroll_speed = 8.0
+shader_parameter/beam_alpha = 1.0
+shader_parameter/seed_offset = 17.3
+
+[node name="ImpLightningLine" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="BeamA" type="MeshInstance3D" parent="."]
+layers = 513
+material_override = SubResource("ShaderMaterial_beam_a")
+mesh = SubResource("QuadMesh_beam")
+
+[node name="BeamB" type="MeshInstance3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0, 0)
+layers = 513
+material_override = SubResource("ShaderMaterial_beam_b")
+mesh = SubResource("QuadMesh_beam")

@@ -1,0 +1,81 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://enemies/imp/imp_homing_orb.gd" id="1_orb"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_orb"]
+radius = 0.28
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_core"]
+shading_mode = 0
+albedo_color = Color(0.65, 0.95, 1, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_core"]
+radius = 0.18
+height = 0.36
+radial_segments = 16
+rings = 8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_halo"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+albedo_color = Color(0.18, 0.72, 1, 0.38)
+
+[sub_resource type="SphereMesh" id="SphereMesh_halo"]
+radius = 0.28
+height = 0.56
+radial_segments = 12
+rings = 6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_trail"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+albedo_color = Color(0.28, 0.82, 1, 0.85)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_trail"]
+emission_shape = 1
+emission_sphere_radius = 0.14
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.2
+initial_velocity_max = 0.8
+gravity = Vector3(0, 0, 0)
+scale_min = 0.4
+scale_max = 1.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_spark"]
+radius = 0.045
+height = 0.09
+radial_segments = 6
+rings = 4
+
+[node name="ImpHomingOrb" type="Area3D"]
+collision_layer = 4
+collision_mask = 3
+monitorable = false
+script = ExtResource("1_orb")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_orb")
+
+[node name="OrbMesh" type="MeshInstance3D" parent="."]
+layers = 513
+material_override = SubResource("StandardMaterial3D_core")
+mesh = SubResource("SphereMesh_core")
+
+[node name="HaloMesh" type="MeshInstance3D" parent="."]
+layers = 513
+material_override = SubResource("StandardMaterial3D_halo")
+mesh = SubResource("SphereMesh_halo")
+
+[node name="TrailParticles" type="GPUParticles3D" parent="."]
+layers = 513
+material_override = SubResource("StandardMaterial3D_trail")
+emitting = false
+amount = 14
+lifetime = 0.32
+fixed_fps = 60
+visibility_aabb = AABB(-1.5, -1.5, -1.5, 3, 3, 3)
+process_material = SubResource("ParticleProcessMaterial_trail")
+draw_pass_1 = SubResource("SphereMesh_spark")

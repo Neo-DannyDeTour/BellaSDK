@@ -6,10 +6,16 @@
 
 [resource]
 resource_name = "octopus_flesh"
+albedo_color = Color(0.95, 0.85, 1.0, 1)
 albedo_texture = ExtResource("1_albedo")
 orm_texture = ExtResource("2_orm")
-roughness = 1.0
-metallic = 1.0
 normal_enabled = true
+normal_scale = 0.85
 normal_texture = ExtResource("3_normal")
+rim_enabled = true
+rim = 0.42
+rim_tint = 0.65
+clearcoat_enabled = true
+clearcoat = 0.92
+clearcoat_roughness = 0.06
 uv1_scale = Vector3(1.0, 1.0, 1.0)

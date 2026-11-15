@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bkl41cyv8u4xu" path="res://scenes/vfx/explosion_crysis.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://mpc6axbfwyt3" path="res://assets/vfx/explosion/explosion_core_8x8.png" id="2_flipbook"]
 [ext_resource type="Shader" uid="uid://dbuao7wa4enfq" path="res://vfx/explosion_shockwave.gdshader" id="3_shockwave"]
+[ext_resource type="Texture2D" uid="uid://dr6fnsnqugctj" path="res://assets/vfx/explosion/explosion_emissive_8x8.png" id="4_emissive"]
 
 [sub_resource type="Curve" id="Curve_fireball_alpha"]
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.8, 1), 0.0, -5.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
@@ -30,6 +31,11 @@ transparency = 1
 shading_mode = 0
 vertex_color_use_as_albedo = true
 albedo_texture = ExtResource("2_flipbook")
+emission_enabled = true
+emission = Color(1, 0.65, 0.25, 1)
+emission_energy_multiplier = 3.5
+emission_operator = 0
+emission_texture = ExtResource("4_emissive")
 billboard_mode = 3
 billboard_keep_scale = true
 particles_anim_h_frames = 8
