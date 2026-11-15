@@ -4,6 +4,34 @@
 [ext_resource type="Script" uid="uid://bn2c3dhhdm3g0" path="res://interactables/cell_recharger.gd" id="1_gf7i7"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_gf7i7"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_gf7i7"]
+[ext_resource type="PackedScene" uid="uid://rwhokj2r2fr6" path="res://interactables/cell_recharger.glb" id="4_charger_glb"]
+[ext_resource type="Shader" uid="uid://hj3ot7oa74a0" path="res://interactables/rusted_horror_metal.gdshader" id="5_rust_shader"]
+[ext_resource type="Texture2D" uid="uid://dn013mtxxijlp" path="res://interactables/liquid_bottle/worley.png" id="6_worley"]
+[ext_resource type="Texture2D" uid="uid://b2nj30qinow5l" path="res://interactables/liquid_bottle/noise.png" id="7_noise"]
+[ext_resource type="Shader" uid="uid://ckdcxd3gq3o7g" path="res://interactables/energy_bar.gdshader" id="8_bar_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rust"]
+render_priority = 0
+shader = ExtResource("5_rust_shader")
+shader_parameter/worley_tex = ExtResource("6_worley")
+shader_parameter/grain_tex = ExtResource("7_noise")
+shader_parameter/base_iron_color = Color(0.11, 0.1, 0.09, 1)
+shader_parameter/deep_rust_color = Color(0.24, 0.07, 0.03, 1)
+shader_parameter/orange_rust_color = Color(0.48, 0.18, 0.05, 1)
+shader_parameter/oil_grime_color = Color(0.03, 0.03, 0.025, 1)
+shader_parameter/triplanar_scale = 2.8
+shader_parameter/rust_coverage = 0.62
+shader_parameter/bump_strength = 0.65
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bar"]
+render_priority = 0
+shader = ExtResource("8_bar_shader")
+shader_parameter/empty_bg_color = Color(0.04, 0.04, 0.04, 1)
+shader_parameter/low_color = Color(0.95, 0.12, 0.06, 1)
+shader_parameter/mid_color = Color(0.95, 0.65, 0.08, 1)
+shader_parameter/full_color = Color(0.15, 0.95, 0.28, 1)
+shader_parameter/emission_strength = 3.2
+shader_parameter/segments = 10.0
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_aff5k"]
 size = Vector3(1, 1.5, 0.5)
@@ -29,6 +57,8 @@ dock_area = NodePath("DockArea")
 status_label = NodePath("StatusLabel")
 interact_comp = NodePath("InteractComponent")
 highlight_comp = NodePath("HighlightComponent")
+rusted_material = SubResource("ShaderMaterial_rust")
+energy_bar_material = SubResource("ShaderMaterial_bar")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=540645013]
 shape = SubResource("BoxShape3D_aff5k")
@@ -44,7 +74,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.25)
 shape = SubResource("BoxShape3D_534t5")
 
 [node name="StatusLabel" type="Label3D" parent="." unique_id=1259710428]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0.3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.02, 0.3)
 double_sided = false
 no_depth_test = true
 
@@ -57,11 +87,4 @@ metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 script = ExtResource("2_gf7i7")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
-[node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=287134402]
-size = Vector3(1, 1.5, 0.5)
-
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGBox3D" unique_id=716555510]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.25)
-operation = 2
-radius = 0.25
-height = 1.0
+[node name="Model" parent="." unique_id=287134402 instance=ExtResource("4_charger_glb")]

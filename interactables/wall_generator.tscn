@@ -5,7 +5,28 @@
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_4myyk"]
 [ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="3_7n1kx"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_7n1kx"]
-[ext_resource type="ArrayMesh" path="res://interactables/wall_generator.mesh" id="5_gen_mesh"]
+[ext_resource type="PackedScene" uid="uid://dscpskwds2cbs" path="res://interactables/wall_generator.glb" id="5_gen_glb"]
+[ext_resource type="Shader" uid="uid://hj3ot7oa74a0" path="res://interactables/rusted_horror_metal.gdshader" id="6_rust_shader"]
+[ext_resource type="Texture2D" uid="uid://dn013mtxxijlp" path="res://interactables/liquid_bottle/worley.png" id="7_worley"]
+[ext_resource type="Texture2D" uid="uid://b2nj30qinow5l" path="res://interactables/liquid_bottle/noise.png" id="8_noise"]
+[ext_resource type="Shader" uid="uid://cthtv3kmipy7" path="res://interactables/indicator_led.gdshader" id="9_led_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rust"]
+render_priority = 0
+shader = ExtResource("6_rust_shader")
+shader_parameter/worley_tex = ExtResource("7_worley")
+shader_parameter/grain_tex = ExtResource("8_noise")
+shader_parameter/base_iron_color = Color(0.11, 0.1, 0.09, 1)
+shader_parameter/deep_rust_color = Color(0.24, 0.07, 0.03, 1)
+shader_parameter/orange_rust_color = Color(0.48, 0.18, 0.05, 1)
+shader_parameter/oil_grime_color = Color(0.03, 0.03, 0.025, 1)
+shader_parameter/triplanar_scale = 2.8
+shader_parameter/rust_coverage = 0.62
+shader_parameter/bump_strength = 0.65
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_led"]
+render_priority = 0
+shader = ExtResource("9_led_shader")
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_backplate"]
 size = Vector3(1, 1.8, 0.08)
@@ -40,6 +61,8 @@ status_label = NodePath("StatusLabel")
 transmitter = NodePath("OutputTransmitter3D")
 interact_comp = NodePath("InteractComponent")
 highlight_comp = NodePath("HighlightComponent")
+rusted_material = SubResource("ShaderMaterial_rust")
+led_material = SubResource("ShaderMaterial_led")
 
 [node name="Collision_Backplate" type="CollisionShape3D" parent="." unique_id=466194530]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, -0.21)
@@ -84,8 +107,7 @@ metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 script = ExtResource("3_7n1kx")
 metadata/_custom_type_script = "uid://cnmn3hgnt0afn"
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=263128864]
-mesh = ExtResource("5_gen_mesh")
+[node name="Model" parent="." unique_id=263128864 instance=ExtResource("5_gen_glb")]
 
 [node name="StatusLabel" type="Label3D" parent="." unique_id=1128405937]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.08, 0.35)

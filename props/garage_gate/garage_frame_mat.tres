@@ -1,0 +1,14 @@
+[gd_resource type="ORMMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://props/garage_gate/textures/frame_albedo.png" id="1_alb"]
+[ext_resource type="Texture2D" path="res://props/garage_gate/textures/frame_orm.png" id="2_orm"]
+[ext_resource type="Texture2D" path="res://props/garage_gate/textures/frame_normal.png" id="3_nrm"]
+
+[resource]
+albedo_texture = ExtResource("1_alb")
+metallic = 1.0
+orm_texture = ExtResource("2_orm")
+normal_enabled = true
+normal_texture = ExtResource("3_nrm")
+ao_enabled = true
+uv1_scale = Vector3(1, 1, 1)

@@ -9,6 +9,7 @@ instance uniform float glass_thickness = 0.001;
 instance uniform float scale = 1.0463;
 instance uniform vec4 liquid_color : source_color = vec4(0.05, 0.82, 0.96, 0.45);
 instance uniform float held_fade = 0.0;
+instance uniform float emission_energy = 0.0;
 
 uniform float wave_intensity : hint_range(0.0, 1.0) = 0.08;
 uniform float refraction_strength : hint_range(0.0, 0.25) = 0.045;
@@ -141,6 +142,7 @@ void fragment() {
 
 	ROUGHNESS = mix(roughness_value, 0.6, clamp(foam * vel + bubbles_total, 0.0, 1.0));
 	SPECULAR = specular_value;
+	EMISSION = surface_col * emission_energy * (1.0 + bubbles_total * 0.65 + foam * 0.35);
 	bubble_glow = bubbles_total;
 }
 

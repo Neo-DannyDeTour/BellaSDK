@@ -20,6 +20,8 @@ const PARAM_SCALE: StringName = &"scale"
 const PARAM_COLOR: StringName = &"liquid_color"
 ## Pre-allocated shader instance parameter name for held transparency fade.
 const PARAM_HELD_FADE: StringName = &"held_fade"
+## Pre-allocated shader instance parameter name for outer glass held transparency fade.
+const PARAM_GLASS_HELD_FADE: StringName = &"glass_held_fade"
 
 ## Spring restoring stiffness for the 2D liquid surface plane.
 const SPRING_CONSTANT: float = 180.0
@@ -151,6 +153,7 @@ func set_model_transparency(parent_node: Node, alpha: float) -> void:
 
 	if parent_node == _bottle_mesh:
 		_bottle_mesh.set_instance_shader_parameter(PARAM_HELD_FADE, alpha)
+		_bottle_mesh.set_instance_shader_parameter(PARAM_GLASS_HELD_FADE, alpha)
 	elif parent_node is GeometryInstance3D:
 		var geom: GeometryInstance3D = parent_node as GeometryInstance3D
 		geom.transparency = alpha

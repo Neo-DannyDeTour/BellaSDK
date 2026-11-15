@@ -11,15 +11,23 @@ uniform float uv_scale : hint_range(0.1, 10.0) = 1.0;
 instance uniform float wear_offset : hint_range(0.0, 1.0) = 0.0;
 
 void fragment() {
-	vec2 uv = UV * uv_scale + vec2(wear_offset * 0.37, wear_offset * 0.19);
-	vec3 albedo_tex = texture(albedo_texture, uv).rgb;
-	vec3 orm = texture(orm_texture, uv).rgb;
+	// Keep V locked so horizontal stamped sheet-metal ribs align; offset U per panel
+	vec2 uv_primary = UV * uv_scale + vec2(wear_offset * 0.43, 0.0);
+	// Secondary rotated/scaled lookup breaks up macro tiling across panels
+	vec2 uv_breakup = UV * (uv_scale * 1.67) + vec2(0.29 + wear_offset * 0.71, 0.37);
 
-	// Subtle per-panel grime modulation via instance uniform
+	vec3 albedo_tex = texture(albedo_texture, uv_primary).rgb;
+	vec3 albedo_detail = texture(albedo_texture, uv_breakup).rgb;
+	vec3 orm = texture(orm_texture, uv_primary).rgb;
+	vec3 orm_detail = texture(orm_texture, uv_breakup).rgb;
+
+	// Blend subtle macro breakup without disturbing horizontal rib normal alignment
+	vec3 blended_albedo = mix(albedo_tex, albedo_tex * (0.75 + 0.5 * albedo_detail), 0.35);
 	float grime = mix(1.0, 0.88, wear_offset);
-	ALBEDO = albedo_tex * base_tint.rgb * grime;
-	AO = orm.r;
-	ROUGHNESS = clamp(orm.g + (wear_offset * 0.08), 0.05, 1.0);
+
+	ALBEDO = blended_albedo * base_tint.rgb * grime;
+	AO = min(orm.r, mix(orm.r, orm_detail.r, 0.35));
+	ROUGHNESS = clamp(mix(orm.g, orm_detail.g, 0.25) + (wear_offset * 0.06), 0.05, 1.0);
 	METALLIC = orm.b;
-	NORMAL_MAP = texture(normal_texture, uv).rgb;
+	NORMAL_MAP = texture(normal_texture, uv_primary).rgb;
 }

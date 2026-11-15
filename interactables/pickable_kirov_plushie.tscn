@@ -1,0 +1,59 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_base"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="2_outline"]
+[ext_resource type="PackedScene" uid="uid://dk6y047dseqa0" path="res://assets/models/kirov_plushie/kirov_plushie.glb" id="3_kirov"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
+render_priority = 0
+shader = ExtResource("2_outline")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_plushie"]
+size = Vector3(0.22, 0.25, 0.35)
+
+[node name="PickableKirovPlushie" node_paths=PackedStringArray("mesh") instance=ExtResource("1_base")]
+mass = 0.4
+mesh = NodePath("kirov_plushie")
+float_force = 2.5
+water_drag = 5.0
+water_angular_drag = 5.0
+hold_at_chest = true
+custom_hold_distance = 0.45
+hold_vertical_offset = -0.1
+held_transparency = 0.75
+
+[node name="HighlightComponent" parent="." index="1"]
+outline_material = SubResource("ShaderMaterial_outline")
+
+[node name="MeshInstance3D" parent="." index="2"]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.125, 0)
+shape = SubResource("BoxShape3D_plushie")
+
+[node name="Label3D" parent="." index="4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.38, 0)
+
+[node name="PromptIcon" parent="." index="5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.38, 0)
+
+[node name="Marker3D" parent="ProbeContainer" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.125, 0.12)
+
+[node name="Marker3D2" parent="ProbeContainer" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.125, 0.12)
+
+[node name="Marker3D3" parent="ProbeContainer" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.125, -0.12)
+
+[node name="Marker3D4" parent="ProbeContainer" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.125, -0.12)
+
+[node name="kirov_plushie" parent="." index="7" instance=ExtResource("3_kirov")]
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0, 0.125, 0)

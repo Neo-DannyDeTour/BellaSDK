@@ -1,22 +1,47 @@
 @tool
-## Generator socket that accepts a charged cell to power targets.
+## Generator socket with articulated claw that accepts a charged cell to power targets.
 class_name WallGenerator
 extends StaticBody3D
 
+# --------------------------------------
+# SIGNALS
+# --------------------------------------
 ## Emitted when an [EnergyCell] is successfully inserted.
 signal cell_inserted(cell: EnergyCell)
 
 ## Emitted when an [EnergyCell] is removed from the generator.
-@warning_ignore("unused_signal")
 signal cell_ejected(cell: EnergyCell)
 
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
+## Pre-allocated shader uniform name for indicator LED color.
+const PARAM_LED_COLOR: StringName = &"led_color"
+## Pre-allocated shader uniform name for indicator LED blink speed.
+const PARAM_BLINK_SPEED: StringName = &"blink_speed"
+## Pre-allocated shader uniform name for indicator LED emission intensity.
+const PARAM_INTENSITY: StringName = &"intensity"
+## Retracted local Z offset of [member _claw_arm] inside the socket bay.
+const CLAW_RETRACT_Z: float = 0.05
+## Extended local Z offset of [member _claw_arm] when reaching for or presenting a cell.
+const CLAW_EXTEND_Z: float = 0.24
+## Open pincer yaw angle in degrees.
+const CLAW_OPEN_DEG: float = 28.0
+## Closed pincer yaw angle in degrees when gripping a cell.
+const CLAW_GRIP_DEG: float = 6.0
+## Blink frequency in radians per second when generator is empty or depleted.
+const RED_BLINK_SPEED: float = 8.0
+
+# --------------------------------------
+# EXPORTS
+# --------------------------------------
 @export_category("Transmitter")
 ## Targets powered by the generator. Forwarded to [OutputTransmitter3D].
 @export var transmitter_targets: Array[Node3D] = []:
 	set(value):
 		transmitter_targets = value
 		if not is_instance_valid(transmitter):
-			transmitter = (get_node_or_null("OutputTransmitter3D") as OutputTransmitter3D)
+			transmitter = get_node_or_null("OutputTransmitter3D") as OutputTransmitter3D
 		if is_instance_valid(transmitter):
 			transmitter.targets = value
 
@@ -29,6 +54,9 @@ signal cell_ejected(cell: EnergyCell)
 
 ## Cooldown duration in seconds before cell can re-enter after pickup.
 @export var reinsertion_cooldown: float = 1.0
+
+## Forward offset in meters when the claw presents a depleted cell to the player.
+@export var present_forward_offset: float = 0.20
 
 @export_category("Components")
 ## The [Marker3D] socket where the energy cell rests inside.
@@ -49,26 +77,39 @@ signal cell_ejected(cell: EnergyCell)
 ## The [HighlightComponent] managing outline effects on focus.
 @export var highlight_comp: HighlightComponent
 
+@export_category("Materials")
+## Triplanar horror rusted metal material applied to housing and claw parts.
+@export var rusted_material: ShaderMaterial
+
+## Emissive LED shader material applied to indicator bulbs.
+@export var led_material: ShaderMaterial
+
+# --------------------------------------
+# PUBLIC VARIABLES
+# --------------------------------------
 ## The currently slotted [EnergyCell] powering the generator.
 var current_cell: EnergyCell = null
 
-## Indicates whether an insertion animation is currently running.
+# --------------------------------------
+# PRIVATE VARIABLES
+# --------------------------------------
 var _is_animating: bool = false
-
-## Tracks cooldown flag preventing immediate re-entry on grab.
 var _is_reinsert_locked: bool = false
+var _claw_tween: Tween = null
+var _red_led: MeshInstance3D = null
+var _green_led: MeshInstance3D = null
+var _claw_arm: Node3D = null
+var _claw_finger_l: Node3D = null
+var _claw_finger_r: Node3D = null
 
-## Dynamic material controlling red indicator button glow state.
-var _red_indicator_mat: StandardMaterial3D = null
 
-## Dynamic material controlling green indicator button glow state.
-var _green_indicator_mat: StandardMaterial3D = null
-
-
-## Sets up transmitter targets, connections, and hides initial label.
+# --------------------------------------
+# LIFECYCLE METHODS
+# --------------------------------------
+## Sets up transmitter targets, claw rig, materials, and signal connections.
 func _ready() -> void:
 	if not is_instance_valid(transmitter):
-		transmitter = (get_node_or_null("OutputTransmitter3D") as OutputTransmitter3D)
+		transmitter = get_node_or_null("OutputTransmitter3D") as OutputTransmitter3D
 	if is_instance_valid(transmitter):
 		transmitter.targets = transmitter_targets
 
@@ -76,47 +117,26 @@ func _ready() -> void:
 		return
 
 	print("WallGenerator: Initializing generator: ", name)
-	if not is_instance_valid(socket_marker):
-		socket_marker = get_node_or_null("SocketMarker") as Marker3D
-	if not is_instance_valid(socket_area):
-		socket_area = get_node_or_null("SocketArea") as Area3D
-	if not is_instance_valid(status_label):
-		status_label = get_node_or_null("StatusLabel") as Label3D
-	if not is_instance_valid(interact_comp):
-		interact_comp = (get_node_or_null("InteractComponent") as InteractComponent)
-	if not is_instance_valid(highlight_comp):
-		highlight_comp = (get_node_or_null("HighlightComponent") as HighlightComponent)
-
-	if is_instance_valid(socket_area):
-		socket_area.body_entered.connect(_on_socket_area_body_entered)
-		socket_area.body_exited.connect(_on_socket_area_body_exited)
-
-	if is_instance_valid(interact_comp):
-		interact_comp.focused.connect(_on_focus_gained)
-		interact_comp.unfocused.connect(_on_focus_lost)
+	_cache_nodes()
+	_apply_horror_materials()
+	_bind_signals()
 
 	if is_instance_valid(status_label):
 		status_label.hide()
 
-	_setup_indicator_materials()
 	_update_label()
 	_update_indicator_lights()
 
 
-## Reveals floating label when focused by player crosshair.
-func _on_focus_gained() -> void:
-	print("WallGenerator: Focus gained. Showing status label.")
-	if is_instance_valid(status_label):
-		status_label.show()
+## Disconnects global event listeners when leaving the scene tree.
+func _exit_tree() -> void:
+	if Events.item_picked_up.is_connected(_on_cell_picked_up):
+		Events.item_picked_up.disconnect(_on_cell_picked_up)
 
 
-## Hides floating label when player crosshair turns away.
-func _on_focus_lost() -> void:
-	print("WallGenerator: Focus lost. Hiding status label.")
-	if is_instance_valid(status_label):
-		status_label.hide()
-
-
+# --------------------------------------
+# PUBLIC METHODS
+# --------------------------------------
 ## Handles player interaction; retrieves empty cell or docks held cell.
 func interact_with(character: CharacterBody3D) -> void:
 	print("WallGenerator: interact_with() called by ", character.name)
@@ -144,23 +164,7 @@ func interact_with(character: CharacterBody3D) -> void:
 		_show_feedback("Find the energy cell")
 
 
-## Triggered when an entity enters the socket detection area.
-func _on_socket_area_body_entered(body: Node3D) -> void:
-	if _is_animating or is_instance_valid(current_cell) or _is_reinsert_locked:
-		return
-
-	if body is EnergyCell:
-		print("WallGenerator: Detected cell in proximity: ", body.name)
-		insert_cell(body as EnergyCell)
-
-
-## Triggered when an entity exits socket trigger bounds.
-func _on_socket_area_body_exited(body: Node3D) -> void:
-	if body is EnergyCell:
-		print("WallGenerator: Cell cleared socket trigger bounds: ", body.name)
-
-
-## Inserts the specified [EnergyCell] into the generator socket.
+## Inserts the specified [EnergyCell] into the generator socket using the metal claw.
 func insert_cell(cell: EnergyCell) -> void:
 	if (
 		not is_instance_valid(cell)
@@ -194,70 +198,277 @@ func insert_cell(cell: EnergyCell) -> void:
 		socket_marker.global_position if is_instance_valid(socket_marker) else global_position
 	)
 
-	var target_quat: Quaternion
-	var target_pos: Vector3
-
 	if cell.is_charged:
-		target_quat = base_basis.get_rotation_quaternion()
-		target_pos = base_pos
+		_animate_claw_insert(cell, base_pos, base_basis.get_rotation_quaternion())
 	else:
-		var tilt_rot: Basis = Basis(Vector3.RIGHT, deg_to_rad(eject_tilt_degrees))
-		var tilted_basis: Basis = (base_basis * tilt_rot).orthonormalized()
-		target_quat = tilted_basis.get_rotation_quaternion()
+		_animate_claw_reject_present(cell, base_pos, base_basis)
 
-		var bottom_pivot: Vector3 = base_pos - (base_basis.y * cell_half_height)
-		target_pos = bottom_pivot + (tilted_basis.y * cell_half_height)
 
-	var tween: Tween = create_tween()
+# --------------------------------------
+# PRIVATE METHODS
+# --------------------------------------
+## Caches required scene components and articulated claw nodes from the model.
+func _cache_nodes() -> void:
+	if not is_instance_valid(socket_marker):
+		socket_marker = get_node_or_null("SocketMarker") as Marker3D
+	if not is_instance_valid(socket_area):
+		socket_area = get_node_or_null("SocketArea") as Area3D
+	if not is_instance_valid(status_label):
+		status_label = get_node_or_null("StatusLabel") as Label3D
+	if not is_instance_valid(interact_comp):
+		interact_comp = get_node_or_null("InteractComponent") as InteractComponent
+	if not is_instance_valid(highlight_comp):
+		highlight_comp = get_node_or_null("HighlightComponent") as HighlightComponent
+
+	var model: Node = get_node_or_null("Model")
+	if not is_instance_valid(model):
+		return
+
+	_red_led = model.find_child("RedLED", true, false) as MeshInstance3D
+	_green_led = model.find_child("GreenLED", true, false) as MeshInstance3D
+	_claw_arm = model.find_child("ClawArm", true, false) as Node3D
+	_claw_finger_l = model.find_child("ClawFingerL", true, false) as Node3D
+	_claw_finger_r = model.find_child("ClawFingerR", true, false) as Node3D
+
+
+## Applies shared rusted steel and LED materials to the imported GLB sub-meshes.
+func _apply_horror_materials() -> void:
+	var model: Node = get_node_or_null("Model")
+	if not is_instance_valid(model):
+		return
+
+	if is_instance_valid(rusted_material):
+		var steel_names: Array[String] = [
+			"Housing",
+			"ClawBaseMesh",
+			"ClawArmMesh",
+			"ClawFingerLMesh",
+			"ClawFingerRMesh",
+		]
+		for mesh_name: String in steel_names:
+			var mi: MeshInstance3D = model.find_child(mesh_name, true, false) as MeshInstance3D
+			if is_instance_valid(mi):
+				mi.set_surface_override_material(0, rusted_material)
+
+	if is_instance_valid(led_material):
+		if is_instance_valid(_red_led):
+			_red_led.set_surface_override_material(0, led_material)
+			_red_led.set_instance_shader_parameter(PARAM_LED_COLOR, Color(0.95, 0.08, 0.08, 1.0))
+		if is_instance_valid(_green_led):
+			_green_led.set_surface_override_material(0, led_material)
+			_green_led.set_instance_shader_parameter(PARAM_LED_COLOR, Color(0.15, 0.95, 0.25, 1.0))
+
+
+## Connects socket area and interaction focus signals.
+func _bind_signals() -> void:
+	if is_instance_valid(socket_area):
+		Utilities.safe_connect(socket_area.body_entered, _on_socket_area_body_entered)
+		Utilities.safe_connect(socket_area.body_exited, _on_socket_area_body_exited)
+
+	if is_instance_valid(interact_comp):
+		Utilities.safe_connect(interact_comp.focused, _on_focus_gained)
+		Utilities.safe_connect(interact_comp.unfocused, _on_focus_lost)
+
+
+## Animates the metal claw reaching out, gripping the charged cell, and seating it in socket.
+func _animate_claw_insert(cell: EnergyCell, target_pos: Vector3, target_quat: Quaternion) -> void:
+	_claw_tween = Utilities.reset_tween(self, _claw_tween)
+	if is_instance_valid(_claw_arm):
+		_claw_tween.tween_property(_claw_arm, "position:z", CLAW_EXTEND_Z, 0.14)
+		_claw_tween.parallel().tween_property(_claw_arm, "rotation_degrees:x", 0.0, 0.14)
+	if is_instance_valid(_claw_finger_l) and is_instance_valid(_claw_finger_r):
+		_claw_tween.parallel().tween_property(
+			_claw_finger_l, "rotation_degrees:y", -CLAW_OPEN_DEG, 0.12
+		)
+		_claw_tween.parallel().tween_property(
+			_claw_finger_r, "rotation_degrees:y", CLAW_OPEN_DEG, 0.12
+		)
+
+	if is_instance_valid(_claw_finger_l) and is_instance_valid(_claw_finger_r):
+		_claw_tween.tween_property(_claw_finger_l, "rotation_degrees:y", CLAW_GRIP_DEG, 0.12)
+		_claw_tween.parallel().tween_property(
+			_claw_finger_r, "rotation_degrees:y", -CLAW_GRIP_DEG, 0.12
+		)
+
 	(
-		tween
-		. tween_property(cell, "global_position", target_pos, 0.45)
+		_claw_tween
+		. tween_property(cell, "global_position", target_pos, 0.34)
 		. set_trans(Tween.TRANS_QUAD)
 		. set_ease(Tween.EASE_OUT)
 	)
 	(
-		tween
+		_claw_tween
 		. parallel()
-		. tween_property(cell, "quaternion", target_quat, 0.45)
+		. tween_property(cell, "quaternion", target_quat, 0.34)
 		. set_trans(Tween.TRANS_QUAD)
 		. set_ease(Tween.EASE_OUT)
 	)
+	if is_instance_valid(_claw_arm):
+		(
+			_claw_tween
+			. parallel()
+			. tween_property(_claw_arm, "position:z", CLAW_RETRACT_Z, 0.34)
+			. set_trans(Tween.TRANS_QUAD)
+			. set_ease(Tween.EASE_OUT)
+		)
 
-	tween.tween_callback(
-		func() -> void:
-			_is_animating = false
-			if cell.is_charged:
-				print("WallGenerator: Cell inserted. Energizing system.")
-				if is_instance_valid(transmitter):
-					transmitter.power_on()
-				_update_label()
-				_update_indicator_lights()
-				cell_inserted.emit(cell)
-			else:
-				print("WallGenerator: Uncharged cell inserted. Tilted out.")
-				cell.is_locked = false
-				cell.freeze = true
-				if is_instance_valid(cell.interact_comp):
-					cell.interact_comp.process_mode = (Node.PROCESS_MODE_INHERIT)
-					cell.interact_comp.is_currently_focused = false
-				if is_instance_valid(status_label):
-					status_label.text = "Cell Depleted - Recharge Required"
-				_update_indicator_lights()
+	if is_instance_valid(_claw_finger_l) and is_instance_valid(_claw_finger_r):
+		_claw_tween.tween_property(_claw_finger_l, "rotation_degrees:y", -CLAW_OPEN_DEG, 0.12)
+		_claw_tween.parallel().tween_property(
+			_claw_finger_r, "rotation_degrees:y", CLAW_OPEN_DEG, 0.12
+		)
 
-				if not Events.item_picked_up.is_connected(_on_cell_picked_up):
-					Events.item_picked_up.connect(_on_cell_picked_up)
+	_claw_tween.tween_callback(_on_charged_cell_seated.bind(cell))
+
+
+## Animates the metal claw grabbing a depleted cell and presenting it outward to the player.
+func _animate_claw_reject_present(cell: EnergyCell, base_pos: Vector3, base_basis: Basis) -> void:
+	var tilt_rot: Basis = Basis(Vector3.RIGHT, deg_to_rad(eject_tilt_degrees))
+	var tilted_basis: Basis = (base_basis * tilt_rot).orthonormalized()
+	var target_quat: Quaternion = tilted_basis.get_rotation_quaternion()
+	var bottom_pivot: Vector3 = base_pos - (base_basis.y * cell_half_height)
+	var target_pos: Vector3 = (
+		bottom_pivot + (tilted_basis.y * cell_half_height) + (base_basis.z * present_forward_offset)
 	)
 
+	_claw_tween = Utilities.reset_tween(self, _claw_tween)
+	if is_instance_valid(_claw_finger_l) and is_instance_valid(_claw_finger_r):
+		_claw_tween.tween_property(_claw_finger_l, "rotation_degrees:y", CLAW_GRIP_DEG, 0.12)
+		_claw_tween.parallel().tween_property(
+			_claw_finger_r, "rotation_degrees:y", -CLAW_GRIP_DEG, 0.12
+		)
 
-## Clears tracking state and initiates lockout when retrieved.
+	(
+		_claw_tween
+		. tween_property(cell, "global_position", target_pos, 0.36)
+		. set_trans(Tween.TRANS_BACK)
+		. set_ease(Tween.EASE_OUT)
+	)
+	(
+		_claw_tween
+		. parallel()
+		. tween_property(cell, "quaternion", target_quat, 0.36)
+		. set_trans(Tween.TRANS_BACK)
+		. set_ease(Tween.EASE_OUT)
+	)
+	if is_instance_valid(_claw_arm):
+		(
+			_claw_tween
+			. parallel()
+			. tween_property(_claw_arm, "position:z", CLAW_EXTEND_Z, 0.36)
+			. set_trans(Tween.TRANS_BACK)
+			. set_ease(Tween.EASE_OUT)
+		)
+		(
+			_claw_tween
+			. parallel()
+			. tween_property(_claw_arm, "rotation_degrees:x", 18.0, 0.36)
+			. set_trans(Tween.TRANS_BACK)
+			. set_ease(Tween.EASE_OUT)
+		)
+
+	if is_instance_valid(_claw_finger_l) and is_instance_valid(_claw_finger_r):
+		_claw_tween.tween_property(_claw_finger_l, "rotation_degrees:y", -CLAW_OPEN_DEG, 0.12)
+		_claw_tween.parallel().tween_property(
+			_claw_finger_r, "rotation_degrees:y", CLAW_OPEN_DEG, 0.12
+		)
+
+	_claw_tween.tween_callback(_on_depleted_cell_presented.bind(cell))
+
+
+## Finalizes generator online state once a charged cell is seated.
+func _on_charged_cell_seated(cell: EnergyCell) -> void:
+	_is_animating = false
+	if not is_instance_valid(cell):
+		return
+	print("WallGenerator: Cell inserted. Energizing system.")
+	if is_instance_valid(transmitter):
+		transmitter.power_on()
+	_update_label()
+	_update_indicator_lights()
+	cell_inserted.emit(cell)
+
+
+## Unlocks a presented depleted cell so the player can grab it.
+func _on_depleted_cell_presented(cell: EnergyCell) -> void:
+	_is_animating = false
+	if not is_instance_valid(cell):
+		return
+	print("WallGenerator: Uncharged cell presented by claw.")
+	cell.is_locked = false
+	cell.freeze = true
+	if is_instance_valid(cell.interact_comp):
+		cell.interact_comp.process_mode = Node.PROCESS_MODE_INHERIT
+		cell.interact_comp.is_currently_focused = false
+	if is_instance_valid(status_label):
+		status_label.text = "Cell Depleted - Recharge Required"
+	_update_indicator_lights()
+	Utilities.safe_connect(Events.item_picked_up, _on_cell_picked_up)
+
+
+## Retracts the claw back into the housing after presenting a cell.
+func _retract_claw_to_rest() -> void:
+	_claw_tween = Utilities.reset_tween(self, _claw_tween)
+	if is_instance_valid(_claw_arm):
+		(
+			_claw_tween
+			. tween_property(_claw_arm, "position:z", CLAW_RETRACT_Z, 0.25)
+			. set_trans(Tween.TRANS_QUAD)
+			. set_ease(Tween.EASE_OUT)
+		)
+		(
+			_claw_tween
+			. parallel()
+			. tween_property(_claw_arm, "rotation_degrees:x", 0.0, 0.25)
+			. set_trans(Tween.TRANS_QUAD)
+			. set_ease(Tween.EASE_OUT)
+		)
+	if is_instance_valid(_claw_finger_l) and is_instance_valid(_claw_finger_r):
+		_claw_tween.parallel().tween_property(_claw_finger_l, "rotation_degrees:y", 0.0, 0.25)
+		_claw_tween.parallel().tween_property(_claw_finger_r, "rotation_degrees:y", 0.0, 0.25)
+
+
+## Reveals floating label when focused by player crosshair.
+func _on_focus_gained() -> void:
+	print("WallGenerator: Focus gained. Showing status label.")
+	if is_instance_valid(status_label):
+		status_label.show()
+
+
+## Hides floating label when player crosshair turns away.
+func _on_focus_lost() -> void:
+	print("WallGenerator: Focus lost. Hiding status label.")
+	if is_instance_valid(status_label):
+		status_label.hide()
+
+
+## Triggered when an entity enters the socket detection area.
+func _on_socket_area_body_entered(body: Node3D) -> void:
+	if _is_animating or is_instance_valid(current_cell) or _is_reinsert_locked:
+		return
+
+	if body is EnergyCell:
+		print("WallGenerator: Detected cell in proximity: ", body.name)
+		insert_cell(body as EnergyCell)
+
+
+## Triggered when an entity exits socket trigger bounds.
+func _on_socket_area_body_exited(body: Node3D) -> void:
+	if body is EnergyCell:
+		print("WallGenerator: Cell cleared socket trigger bounds: ", body.name)
+
+
+## Clears tracking state, retracts claw, and initiates lockout when retrieved.
 func _on_cell_picked_up(item: PickableObject, _holder: Node3D) -> void:
 	if item == current_cell:
 		print("WallGenerator: Empty cell retrieved. Locking reinsertion.")
 		var released_cell: EnergyCell = current_cell
 		current_cell = null
 		_is_reinsert_locked = true
+		_retract_claw_to_rest()
 		_update_label()
 		_update_indicator_lights()
+		cell_ejected.emit(released_cell)
 
 		if Events.item_picked_up.is_connected(_on_cell_picked_up):
 			Events.item_picked_up.disconnect(_on_cell_picked_up)
@@ -327,10 +538,10 @@ func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
 		return held_cell
 
 	var tree: SceneTree = get_tree()
-	if not tree:
+	if not tree or not is_instance_valid(tree.root):
 		return null
 
-	for node: Node in tree.get_nodes_in_group("pickable_objects"):
+	for node: Node in NodeQuery.find_children_in_group(tree.root, &"pickable_objects"):
 		if node is EnergyCell:
 			var cell: EnergyCell = node
 			if cell.holder == character:
@@ -339,36 +550,14 @@ func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
 	return null
 
 
-## Initializes dynamic indicator materials for hood button status feedback.
-func _setup_indicator_materials() -> void:
-	var mesh_inst: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
-	if not is_instance_valid(mesh_inst):
-		return
-
-	_red_indicator_mat = StandardMaterial3D.new()
-	_red_indicator_mat.albedo_color = Color(0.95, 0.08, 0.08, 1.0)
-	_red_indicator_mat.metallic = 0.2
-	_red_indicator_mat.roughness = 0.2
-	_red_indicator_mat.emission_enabled = true
-	_red_indicator_mat.emission = Color(1.0, 0.08, 0.08, 1.0)
-	_red_indicator_mat.emission_energy_multiplier = 3.0
-
-	_green_indicator_mat = StandardMaterial3D.new()
-	_green_indicator_mat.albedo_color = Color(0.15, 0.95, 0.25, 1.0)
-	_green_indicator_mat.metallic = 0.2
-	_green_indicator_mat.roughness = 0.2
-	_green_indicator_mat.emission_enabled = true
-	_green_indicator_mat.emission = Color(0.15, 0.95, 0.25, 1.0)
-	_green_indicator_mat.emission_energy_multiplier = 0.0
-
-	mesh_inst.set_surface_override_material(4, _red_indicator_mat)
-	mesh_inst.set_surface_override_material(5, _green_indicator_mat)
-
-
-## Updates hood button indicator light emissions based on power state.
+## Updates hood button indicator light emissions; blinks red when empty or depleted.
 func _update_indicator_lights() -> void:
 	var is_online: bool = is_instance_valid(current_cell) and current_cell.is_charged
-	if is_instance_valid(_red_indicator_mat):
-		_red_indicator_mat.emission_energy_multiplier = 0.0 if is_online else 3.0
-	if is_instance_valid(_green_indicator_mat):
-		_green_indicator_mat.emission_energy_multiplier = 3.0 if is_online else 0.0
+	if is_instance_valid(_red_led):
+		_red_led.set_instance_shader_parameter(PARAM_INTENSITY, 0.0 if is_online else 3.2)
+		_red_led.set_instance_shader_parameter(
+			PARAM_BLINK_SPEED, 0.0 if is_online else RED_BLINK_SPEED
+		)
+	if is_instance_valid(_green_led):
+		_green_led.set_instance_shader_parameter(PARAM_INTENSITY, 3.0 if is_online else 0.0)
+		_green_led.set_instance_shader_parameter(PARAM_BLINK_SPEED, 0.0)

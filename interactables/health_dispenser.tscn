@@ -8,12 +8,11 @@
 [ext_resource type="Texture2D" uid="uid://bx7riingyhi5v" path="res://assets/images/healthcharger_bella_almost_censored.png" id="4_0y2jq"]
 [ext_resource type="Texture2D" uid="uid://bt8jnb8vysa1c" path="res://assets/images/healthcharger_bella_full_censored.png" id="5_dwsg7"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="8_1d2q4"]
+[ext_resource type="PackedScene" uid="uid://fihsikqtd1gl" path="res://assets/models/health_dispenser/health_dispenser_chassis.glb" id="9_chassis"]
+[ext_resource type="Material" uid="uid://d1b0kt3u8rt2y" path="res://interactables/liquid_bottle/liquid_bottle_material.tres" id="10_liquid"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_mtknx"]
 size = Vector3(1.5, 1.5, 0.5)
-
-[sub_resource type="BoxMesh" id="BoxMesh_1pc3e"]
-size = Vector3(1.5, 1.5, 0.2)
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_mtknx"]
 radius = 3.0
@@ -28,13 +27,13 @@ shader_parameter/max_intensity = 1.0
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_534t5"]
-top_radius = 0.1
-bottom_radius = 0.1
-height = 1.0
-radial_segments = 8
-rings = 0
+top_radius = 0.095
+bottom_radius = 0.095
+height = 0.72
+radial_segments = 24
+rings = 8
 
-[node name="HealthDispenser" type="StaticBody3D" unique_id=1629233460 node_paths=PackedStringArray("screen_sprite", "tentacle_pivot", "detection_area", "health_cylinder") groups=["interactables"]]
+[node name="HealthDispenser" type="StaticBody3D" unique_id=1629233460 node_paths=PackedStringArray("screen_sprite", "tentacle_pivot", "detection_area", "health_cylinder", "chassis_model", "depleted_label") groups=["interactables"]]
 script = ExtResource("1_hf1jj")
 tex_low_health = ExtResource("2_1d2q4")
 tex_mid_health = ExtResource("3_5tgvb")
@@ -44,24 +43,34 @@ screen_sprite = NodePath("ScreenSprite")
 tentacle_pivot = NodePath("TentaclePivot")
 detection_area = NodePath("DetectionArea")
 health_cylinder = NodePath("HealthCylinder")
-thickness = 0.05
-max_reach = 1.5
+chassis_model = NodePath("ChassisModel")
+depleted_label = NodePath("DepletedLabel")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=792176276]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.19707033)
 shape = SubResource("BoxShape3D_mtknx")
 
-[node name="BlockMesh" type="MeshInstance3D" parent="." unique_id=1148041408]
-mesh = SubResource("BoxMesh_1pc3e")
+[node name="ChassisModel" parent="." unique_id=1148041408 instance=ExtResource("9_chassis")]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0)
 
 [node name="ScreenSprite" type="Sprite3D" parent="." unique_id=1645974949]
-transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0.2, 0.175, 0.11)
+transform = Transform3D(0.088, 0, 0, 0, 0.088, 0, 0, 0, 0.088, 0, 0.08, 0.105)
 double_sided = false
 alpha_cut = 1
 texture = ExtResource("5_dwsg7")
 
+[node name="DepletedLabel" type="Label3D" parent="." unique_id=1745974950]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.18)
+visible = false
+pixel_size = 0.004
+modulate = Color(0.85, 0.22, 0.16, 1)
+outline_modulate = Color(0.05, 0.03, 0.03, 1)
+text = "Out of Lifeblood!"
+font_size = 42
+outline_size = 10
+
 [node name="TentaclePivot" type="Node3D" parent="." unique_id=324808458]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.5, 0, 0.1)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.5, -0.22, 0.22)
 
 [node name="DetectionArea" type="Area3D" parent="." unique_id=930658938]
 collision_layer = 5
@@ -74,13 +83,14 @@ shape = SubResource("SphereShape3D_mtknx")
 script = ExtResource("1_mtknx")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
-[node name="HighlightComponent" type="Node" parent="." unique_id=23654351 node_paths=PackedStringArray("target_meshes", "interact_component")]
+[node name="HighlightComponent" type="Node" parent="." unique_id=23654351 node_paths=PackedStringArray("interact_component")]
 script = ExtResource("2_1pc3e")
 outline_material = SubResource("ShaderMaterial_hf1jj")
-target_meshes = [NodePath("../BlockMesh")]
 interact_component = NodePath("../InteractComponent")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="HealthCylinder" type="MeshInstance3D" parent="." unique_id=1993709096]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59915245, 0.13124895, 0.15518296)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.52, 0.02, 0.19)
+layers = 4
 mesh = SubResource("CylinderMesh_534t5")
+surface_material_override/0 = ExtResource("10_liquid")

@@ -1,0 +1,27 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_cgl81"]
+[ext_resource type="PackedScene" path="res://assets/models/props/oil_drums/oil_drum_green.tscn" id="2_drum"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_cgl81"]
+height = 0.89
+radius = 0.312
+
+[node name="PickableOilDrumGreen" node_paths=PackedStringArray("mesh") groups=["magnetizable"] instance=ExtResource("1_cgl81")]
+mass = 10.0
+mesh = NodePath("OilDrumGreen")
+custom_hold_distance = 1.0
+hold_vertical_offset = 0.0
+held_transparency = 0.75
+
+[node name="MeshInstance3D" parent="." index="2"]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.445, 0)
+shape = SubResource("CylinderShape3D_cgl81")
+
+[node name="Label3D" parent="." index="4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+
+[node name="OilDrumGreen" parent="." index="5" instance=ExtResource("2_drum")]

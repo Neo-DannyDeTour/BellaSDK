@@ -2,39 +2,81 @@
 
 [ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_8h0al"]
 [ext_resource type="Script" uid="uid://bcmaglss3ivsl" path="res://interactables/energy_cell.gd" id="2_b3mxu"]
-[ext_resource type="Shader" uid="uid://p5vvkb1mlxfe" path="res://interactables/energy_cell_fill.gdshader" id="3_dv72c"]
 [ext_resource type="ArrayMesh" path="res://interactables/energy_cell.mesh" id="4_cell_mesh"]
+[ext_resource type="Shader" uid="uid://dj0fyrb342r0p" path="res://interactables/liquid_bottle/liquid_bottle.gdshader" id="5_liquid_shader"]
+[ext_resource type="Texture2D" uid="uid://dn013mtxxijlp" path="res://interactables/liquid_bottle/worley.png" id="6_worley"]
+[ext_resource type="Texture2D" uid="uid://b2nj30qinow5l" path="res://interactables/liquid_bottle/noise.png" id="7_noise"]
+[ext_resource type="Shader" uid="uid://bam31gkefdrio" path="res://interactables/grimy_horror_glass.gdshader" id="8_glass_shader"]
+[ext_resource type="Shader" uid="uid://hj3ot7oa74a0" path="res://interactables/rusted_horror_metal.gdshader" id="9_rust_shader"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_1lwv0"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_liquid"]
 render_priority = 0
-shader = ExtResource("3_dv72c")
-shader_parameter/discharged_color = Color(0.9, 0.15, 0.15, 1)
-shader_parameter/charged_color = Color(0.15, 0.95, 0.25, 1)
-shader_parameter/fill_progress = 0.0
-shader_parameter/min_height = -0.5
-shader_parameter/max_height = 0.5
-shader_parameter/edge_softness = 0.02
-shader_parameter/glow_energy = 2.5
+shader = ExtResource("5_liquid_shader")
+shader_parameter/wave_intensity = 0.1
+shader_parameter/refraction_strength = 0.05
+shader_parameter/absorption_density = 14.0
+shader_parameter/meniscus_height = 0.06
+shader_parameter/roughness_value = 0.15
+shader_parameter/specular_value = 0.7
+shader_parameter/waves_noise = ExtResource("6_worley")
+shader_parameter/bubbles_tex = ExtResource("7_noise")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_glass"]
+render_priority = 0
+next_pass = SubResource("ShaderMaterial_liquid")
+shader = ExtResource("8_glass_shader")
+shader_parameter/worley_tex = ExtResource("6_worley")
+shader_parameter/grain_tex = ExtResource("7_noise")
+shader_parameter/glass_tint = Color(0.12, 0.15, 0.13, 0.16)
+shader_parameter/sludge_color = Color(0.06, 0.04, 0.03, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rust"]
+render_priority = 0
+shader = ExtResource("9_rust_shader")
+shader_parameter/worley_tex = ExtResource("6_worley")
+shader_parameter/grain_tex = ExtResource("7_noise")
+shader_parameter/base_iron_color = Color(0.11, 0.1, 0.09, 1)
+shader_parameter/deep_rust_color = Color(0.24, 0.07, 0.03, 1)
+shader_parameter/orange_rust_color = Color(0.48, 0.18, 0.05, 1)
+shader_parameter/oil_grime_color = Color(0.03, 0.03, 0.025, 1)
+shader_parameter/triplanar_scale = 2.8
+shader_parameter/rust_coverage = 0.62
+shader_parameter/bump_strength = 0.65
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_8h0al"]
 height = 1.0
 radius = 0.25
 
-[node name="EnergyCell" unique_id=594279821 instance=ExtResource("1_8h0al")]
+[node name="EnergyCell" unique_id=594279821 node_paths=PackedStringArray("mesh") instance=ExtResource("1_8h0al")]
 mass = 5.0
 script = ExtResource("2_b3mxu")
+fill = 0.78
+glass_thickness = 0.012
+liquid_color = Color(0.48, 0.03, 0.02, 0.88)
+discharged_color = Color(0.48, 0.03, 0.02, 0.88)
+charged_color = Color(0.12, 0.95, 0.22, 0.78)
+glow_energy = 2.8
+is_charged = false
+mesh = NodePath("BottleMesh")
 held_transparency = 0.0
 heavy_held_transparency = 0.0
-fill_shader = ExtResource("3_dv72c")
-discharged_color = Color(1, 0, 0, 1)
-charged_color = Color(0, 1, 0, 1)
-glow_energy = 3.0
-is_charged = null
 vision_assist_material = null
 
+[node name="HighlightComponent" parent="." index="1" unique_id=1233358358 node_paths=PackedStringArray("target_meshes", "visibility_notifier")]
+target_meshes = [NodePath("../BottleMesh")]
+visibility_notifier = NodePath("../LiquidVisibilityNotifier")
+
 [node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
-mesh = ExtResource("4_cell_mesh")
-surface_material_override/0 = SubResource("ShaderMaterial_1lwv0")
+visible = false
 
 [node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
 shape = SubResource("CylinderShape3D_8h0al")
+
+[node name="BottleMesh" type="MeshInstance3D" parent="." index="7" unique_id=1894421101]
+layers = 4
+mesh = ExtResource("4_cell_mesh")
+surface_material_override/0 = SubResource("ShaderMaterial_glass")
+surface_material_override/1 = SubResource("ShaderMaterial_rust")
+
+[node name="LiquidVisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="." index="8" unique_id=1894421102]
+aabb = AABB(-0.28, -0.52, -0.28, 0.56, 1.04, 0.56)
