@@ -69,9 +69,9 @@ theme_override_styles/panel = SubResource("StyleBoxTexture_6bivr")
 unique_name_in_owner = true
 anchors_preset = -1
 anchor_left = 0.05
-anchor_top = 0.04
+anchor_top = 0.03
 anchor_right = 0.95
-anchor_bottom = 0.22
+anchor_bottom = 0.19
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 75
@@ -84,7 +84,7 @@ autowrap_mode = 2
 unique_name_in_owner = true
 anchors_preset = -1
 anchor_left = 0.05
-anchor_top = 0.22
+anchor_top = 0.20
 anchor_right = 0.95
 anchor_bottom = 0.96
 grow_horizontal = 2
@@ -95,6 +95,7 @@ mouse_filter = 2
 layout_mode = 2
 
 [node name="PlateContainer" type="MarginContainer" parent="PlateCenterContainer/MarginContainer" unique_id=2102469252]
+custom_minimum_size = Vector2(760, 760)
 layout_mode = 2
 
 [node name="MetalPlate" type="TextureRect" parent="PlateCenterContainer/MarginContainer/PlateContainer" unique_id=705311146]
@@ -105,15 +106,15 @@ stretch_mode = 5
 
 [node name="MenuMargin" type="MarginContainer" parent="PlateCenterContainer/MarginContainer/PlateContainer" unique_id=2084975143]
 layout_mode = 2
-theme_override_constants/margin_left = 80
-theme_override_constants/margin_top = 48
-theme_override_constants/margin_right = 80
-theme_override_constants/margin_bottom = 48
+theme_override_constants/margin_left = 140
+theme_override_constants/margin_top = 110
+theme_override_constants/margin_right = 140
+theme_override_constants/margin_bottom = 110
 
 [node name="MainButtons" type="VBoxContainer" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin" unique_id=988684812]
 unique_name_in_owner = true
 process_mode = 3
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(360, 520)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4

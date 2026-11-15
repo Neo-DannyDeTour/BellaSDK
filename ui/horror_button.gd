@@ -28,14 +28,14 @@ static var active_horror_buttons: int = 0
 		if is_instance_valid(text_label) and is_inside_tree():
 			text_label.text = value
 		if is_inside_tree():
-			update_minimum_size()
+			_refresh_minimum_size()
 
 ## Horizontal and vertical padding for container layout calculations.
 @export var text_padding: Vector2 = Vector2(32.0, 16.0):
 	set(value):
 		text_padding = value
 		if is_inside_tree():
-			update_minimum_size()
+			_refresh_minimum_size()
 
 ## Visual scale multiplier applied to offset transform when hovered.
 @export var hover_scale: Vector2 = Vector2(1.08, 1.08)
@@ -76,7 +76,7 @@ static var active_horror_buttons: int = 0
 		glitch_text = value
 		can_glitch = not value.is_empty()
 		if is_inside_tree():
-			update_minimum_size()
+			_refresh_minimum_size()
 
 ## Duration in seconds that text corruption glitch remains active.
 @export var glitch_duration: float = 0.666
@@ -200,7 +200,7 @@ var is_chapter_card: bool = false
 ## Handles engine notifications for layout resizing and theme updates.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED:
-		update_minimum_size()
+		_refresh_minimum_size()
 		_sync_child_rects()
 	elif what == NOTIFICATION_RESIZED:
 		_sync_child_rects()
@@ -267,6 +267,13 @@ func _ready() -> void:
 
 	if is_instance_valid(bg_rect):
 		bg_rect.visible = not invisible_background
+
+	if is_instance_valid(text_label) and not custom_text.is_empty():
+		text_label.text = custom_text
+
+	_refresh_minimum_size()
+	_sync_child_rects()
+	_update_corner_cuts()
 
 	if Engine.is_editor_hint():
 		return
@@ -359,9 +366,19 @@ func _ready() -> void:
 	Utilities.safe_connect(mouse_entered, _on_mouse_entered)
 	Utilities.safe_connect(mouse_exited, _on_mouse_exited)
 
-	update_minimum_size()
+	_refresh_minimum_size()
 	_sync_child_rects()
 	_update_corner_cuts()
+
+
+## Synchronizes [member Control.custom_minimum_size] with calculated text bounds.
+func _refresh_minimum_size() -> void:
+	if not is_chapter_card:
+		var calc_min: Vector2 = _get_minimum_size()
+		custom_minimum_size = Vector2(
+			maxf(custom_minimum_size.x, calc_min.x), maxf(custom_minimum_size.y, calc_min.y)
+		)
+	update_minimum_size()
 
 
 ## Locates internal child nodes and enforces input passthrough filters.

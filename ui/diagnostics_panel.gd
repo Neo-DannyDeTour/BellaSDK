@@ -30,6 +30,20 @@ const MAX_HITCH_RECORDS: int = 5
 ## Maximum tail byte window read from log file during orphan inspection.
 const LOG_READ_WINDOW_BYTES: int = 16384
 
+## Default prompt shown in the hover explanation box when no button is hovered.
+const DEFAULT_HOVER_HINT: String = (
+	"[color=gray][i]Hover over any button above to inspect its diagnostic "
+	+ "or triage action.[/i][/color]"
+)
+
+## Pre-allocated StringName constants for compositor and group lookups.
+const GROUP_SUNSHINE_CLOUDS: StringName = &"sunshine_clouds"
+const GROUP_SCREEN_EFFECTS: StringName = &"screen_effects_manager"
+const PROP_IGNORE_ACCUM: StringName = &"ignore_accumilation"
+const METHOD_REFRESH_COMPUTE: StringName = &"refresh_compute"
+const NODE_PLAYER: StringName = &"Player"
+const NODE_ENVIRONMENT: StringName = &"Environment"
+
 ## Lookup table mapping [enum SubViewport.UpdateMode] integers to BBCode labels.
 const UPDATE_MODE_LABELS: Dictionary[int, String] = {
 	0: "[color=gray]DISABLED[/color]",
@@ -38,6 +52,134 @@ const UPDATE_MODE_LABELS: Dictionary[int, String] = {
 	3: "[color=green]PARENT_VISIBLE[/color]",
 	4: "[color=red]ALWAYS[/color]",
 }
+
+## Hover explanation text keyed by logical button identifier.
+const BUTTON_HOVER_DOCS: Dictionary[StringName, String] = {
+	&"subviewports":
+	(
+		"[b][color=cyan]SubViewports & Pipeline Tab:[/color][/b] Displays active "
+		+ "SubViewport update modes, GPU render times, and SDFGI / Volumetric Fog "
+		+ "/ Clouds instance audits."
+	),
+	&"performance":
+	(
+		"[b][color=cyan]Performance Tab:[/color][/b] Displays real-time GPU/CPU "
+		+ "frame budgets, Spike Root Cause Audit, draw calls, shader compilations, "
+		+ "and physics broadphase."
+	),
+	&"scan_geometry":
+	(
+		"[b][color=yellow]Scan Scene Geometry (1-Shot):[/color][/b] Traverses "
+		+ "Root Window and SubViewports to count visible MeshInstance3D, "
+		+ "MultiMesh instances, and shadow-casting Light3D per branch."
+	),
+	&"scan_orphans":
+	(
+		"[b][color=yellow]Scan Orphans (1-Shot):[/color][/b] Queries unparented "
+		+ "Node count, invokes Node.print_orphan_nodes(), and extracts the live "
+		+ "leak list from user://logs/godot.log."
+	),
+	&"dump_audit":
+	(
+		"[b][color=yellow]Dump Audit (1-Shot):[/color][/b] Runs a full geometry "
+		+ "scan and prints Performance, Pipeline, Branch Survey, and Orphan "
+		+ "reports to standard output."
+	),
+	&"shadows":
+	(
+		"[b][color=orange]Toggle Shadows:[/color][/b] Enables or disables "
+		+ "shadow_enabled across all Light3D nodes in current_scene to isolate "
+		+ "shadow map atlas GPU cost."
+	),
+	&"sdfgi":
+	(
+		"[b][color=orange]Toggle SDFGI:[/color][/b] Toggles Signed Distance Field "
+		+ "Global Illumination on the active Environment to isolate cascade "
+		+ "voxel compute overhead."
+	),
+	&"fog":
+	(
+		"[b][color=orange]Toggle Fog:[/color][/b] Toggles both depth fog and "
+		+ "Volumetric Fog froxel compute on the active Environment."
+	),
+	&"clouds":
+	(
+		"[b][color=orange]Toggle Volumetric Clouds:[/color][/b] Enables/disables "
+		+ "the SunshineCloudsGD compositor effect and refreshes compute buffers "
+		+ "to isolate 4-pass RD raymarching."
+	),
+	&"flush_buffers":
+	(
+		"[b][color=green]Flush VRAM & History Buffers (1-Shot):[/color][/b] "
+		+ "Sets SunshineCloudsGD.ignore_accumilation = true, reallocates cloud "
+		+ "compute RIDs, and jitters 3D scale (-0.01) + resets TAA for 1 frame "
+		+ "to purge NaN/Inf history streaks."
+	),
+	&"water_fx":
+	(
+		"[b][color=orange]Toggle Water & Particles:[/color][/b] Hides or restores "
+		+ "all visible Node3D branches matching 'ocean' or 'water' plus all "
+		+ "GPUParticles3D to isolate refraction/splash glitches."
+	),
+	&"overlays":
+	(
+		"[b][color=orange]Toggle Screen Overlays:[/color][/b] Shows or hides "
+		+ "ScreenEffectsManager fullscreen shaders (vignettes, glitch, water "
+		+ "wipe, fisheye, wolf vision)."
+	),
+	&"diorama":
+	(
+		"[b][color=orange]Diorama Mode:[/color][/b] Hides all root Node3D "
+		+ "children in current_scene except 'Player' and 'Environment' to "
+		+ "benchmark baseline world rendering."
+	),
+	&"live_isolator":
+	(
+		"[b][color=orange]Live Layer Isolator:[/color][/b] Toggles active "
+		+ "Camera3D.cull_mask between Layer 1 only (1 = Environment) and All "
+		+ "Layers (0xFFFFF). Hides Player (L2), Interactive (L3), Portals (L4), "
+		+ "and Volumetrics (L10) to isolate non-world render artifacts."
+	),
+}
+
+## Current active diagnostic tab.
+var _current_tab: DiagnosticTab = DiagnosticTab.PERFORMANCE
+
+## Frame accumulation timer to throttle GUI updates.
+var _refresh_timer: float = 0.0
+
+## Ring buffer storing recent hitch events exceeding threshold.
+var _recent_hitches: Array[Dictionary] = []
+
+## Static snapshot text for scene geometry to eliminate tree recursion.
+var _cached_branch_survey: String = "Press [Scan Scene Geometry] to inspect hierarchy.\n"
+
+## Tracks active isolation pass state for rendering layers.
+var _is_isolating_layers: bool = false
+
+## Tracks active diorama mode state for scene isolation.
+var _is_diorama_active: bool = false
+
+## Tracks whether water and particle nodes are currently muted by triage.
+var _are_water_particles_muted: bool = false
+
+## Cached visibility states of water and particle nodes muted during triage.
+var _triage_muted_nodes: Array[Node3D] = []
+
+## Dynamically created button to toggle volumetric clouds compositor.
+var clouds_toggle_button: Button = null
+
+## Dynamically created 1-shot button to flush TAA and cloud history buffers.
+var flush_buffers_button: Button = null
+
+## Dynamically created button to mute/restore water and GPU particle nodes.
+var water_fx_toggle_button: Button = null
+
+## Dynamically created button to mute/restore fullscreen overlay shaders.
+var overlays_toggle_button: Button = null
+
+## Dedicated RichTextLabel displaying hover documentation for each control.
+var hover_info_label: RichTextLabel = null
 
 ## RichTextLabel displaying real-time formatted diagnostics.
 @onready var diagnostics_label: RichTextLabel = %DiagnosticsLabel
@@ -84,65 +226,24 @@ var sdfgi_toggle_button: Button = %ToggleSdfgiButton if has_node("%ToggleSdfgiBu
 @onready
 var diorama_button: Button = %ToggleDioramaButton if has_node("%ToggleDioramaButton") else null
 
-## Button cycling through VRAM buffer flush and suspect isolation stages.
+## Legacy cycling triage button (hidden and replaced by explicit controls).
 @onready
 var triage_glitch_button: Button = %TriageGlitchButton if has_node("%TriageGlitchButton") else null
 
-## Current active diagnostic tab.
-var _current_tab: DiagnosticTab = DiagnosticTab.PERFORMANCE
 
-## Frame accumulation timer to throttle GUI updates.
-var _refresh_timer: float = 0.0
-
-## Ring buffer storing recent hitch events exceeding threshold.
-var _recent_hitches: Array[Dictionary] = []
-
-## Static snapshot text for scene geometry to eliminate tree recursion.
-var _cached_branch_survey: String = "Press [Scan Scene Geometry] to inspect hierarchy.\n"
-
-## Tracks active isolation pass state for rendering layers.
-var _is_isolating_layers: bool = false
-
-## Tracks active diorama mode state for scene isolation.
-var _is_diorama_active: bool = false
-
-## Current step index (0-4) of the diagonal artifact triage state machine.
-var _triage_step: int = 0
-
-## Cached visibility states of water and particle nodes muted during triage.
-var _triage_muted_nodes: Array[Node3D] = []
-
-
-## Connects UI signals, sets constraints, and initializes measuring.
+## Connects UI signals, reorganizes header rows, and initializes measuring.
 func _ready() -> void:
-	print("RenderDiagnosticsPanel: Initializing diagnostic hooks.")
+	assert(is_instance_valid(diagnostics_label), "DiagnosticsLabel required.")
+	assert(is_instance_valid(subviewports_tab_button), "SubViewportsTabButton required.")
+	assert(is_instance_valid(perf_tab_button), "PerfTabButton required.")
+
 	visible = false
 	_apply_layout_constraints()
 	get_viewport().size_changed.connect(_apply_layout_constraints)
 
-	subviewports_tab_button.pressed.connect(_on_pipeline_tab_pressed)
-	perf_tab_button.pressed.connect(_on_perf_tab_pressed)
-	scan_geometry_button.pressed.connect(_on_scan_geometry_pressed)
-
-	if is_instance_valid(scan_orphans_button):
-		scan_orphans_button.pressed.connect(_on_scan_orphans_pressed)
-	if is_instance_valid(live_isolator_button):
-		live_isolator_button.pressed.connect(_on_live_isolator_pressed)
-	if is_instance_valid(dump_audit_button):
-		dump_audit_button.pressed.connect(_on_dump_audit_pressed)
-	if is_instance_valid(diorama_button):
-		diorama_button.pressed.connect(_on_diorama_pressed)
-	if is_instance_valid(shadows_toggle_button):
-		shadows_toggle_button.pressed.connect(_on_shadows_toggled)
-	if is_instance_valid(sdfgi_toggle_button):
-		sdfgi_toggle_button.pressed.connect(_on_sdfgi_toggled)
-	if is_instance_valid(fog_toggle_button):
-		fog_toggle_button.pressed.connect(_on_fog_toggled)
-
-	_ensure_triage_button()
-	if is_instance_valid(triage_glitch_button):
-		triage_glitch_button.pressed.connect(_on_triage_glitch_pressed)
-
+	_build_organized_header_layout()
+	_connect_button_signals()
+	_bind_all_hover_descriptions()
 	_update_tab_button_visuals()
 
 	if (
@@ -155,9 +256,12 @@ func _ready() -> void:
 	_update_processing_state()
 
 
-## Disconnects forensic signals on tree exit.
+## Disconnects forensic and viewport signals on tree exit.
 func _exit_tree() -> void:
-	print("RenderDiagnosticsPanel: Releasing handles.")
+	var vp: Viewport = get_viewport()
+	if is_instance_valid(vp) and vp.size_changed.is_connected(_apply_layout_constraints):
+		vp.size_changed.disconnect(_apply_layout_constraints)
+
 	if (
 		is_instance_valid(SpikeForensics)
 		and SpikeForensics.spike_detected.is_connected(_on_spike_detected)
@@ -165,21 +269,212 @@ func _exit_tree() -> void:
 		SpikeForensics.spike_detected.disconnect(_on_spike_detected)
 
 
-## Creates the Triage Glitch button dynamically if missing from the scene.
-func _ensure_triage_button() -> void:
-	if is_instance_valid(triage_glitch_button):
+## Throttles live diagnostic label updates while visible.
+func _process(delta: float) -> void:
+	if not visible:
 		return
-	if is_instance_valid(diorama_button) and diorama_button.get_parent():
-		print("RenderDiagnosticsPanel: Creating fallback TriageGlitchButton.")
-		triage_glitch_button = Button.new()
-		triage_glitch_button.name = "TriageGlitchButton"
-		triage_glitch_button.text = "Triage Glitch"
-		diorama_button.get_parent().add_child(triage_glitch_button)
+
+	_refresh_timer += delta
+	if _refresh_timer >= UPDATE_INTERVAL:
+		_refresh_timer = 0.0
+		_refresh_diagnostics_display()
+
+
+## Reorganizes buttons into 3 logical rows and inserts the hover explanation box.
+func _build_organized_header_layout() -> void:
+	var root_vbox: VBoxContainer = (
+		subviewports_tab_button.get_parent().get_parent() as VBoxContainer
+	)
+	if not is_instance_valid(root_vbox):
+		return
+
+	var row_tabs_audits: HBoxContainer = subviewports_tab_button.get_parent() as HBoxContainer
+	var row_env_toggles: HBoxContainer = (
+		scan_geometry_button.get_parent() as HBoxContainer
+		if is_instance_valid(scan_geometry_button)
+		else null
+	)
+	var row_triage_isolation: HBoxContainer = (
+		shadows_toggle_button.get_parent() as HBoxContainer
+		if is_instance_valid(shadows_toggle_button)
+		else null
+	)
+
+	if is_instance_valid(triage_glitch_button):
+		triage_glitch_button.visible = false
+
+	# Row 1: View Tabs | Separator | 1-Shot Scene Audits
+	if is_instance_valid(row_tabs_audits):
+		row_tabs_audits.add_theme_constant_override(&"separation", 6)
+		var sep: VSeparator = VSeparator.new()
+		row_tabs_audits.add_child(sep)
+		_reparent_control(scan_geometry_button, row_tabs_audits)
+		_reparent_control(scan_orphans_button, row_tabs_audits)
+		_reparent_control(dump_audit_button, row_tabs_audits)
+
+	# Row 2: Lighting & Environment Toggles (Shadows, SDFGI, Fog, Clouds)
+	if is_instance_valid(row_env_toggles):
+		row_env_toggles.add_theme_constant_override(&"separation", 6)
+		_reparent_control(shadows_toggle_button, row_env_toggles)
+		_reparent_control(sdfgi_toggle_button, row_env_toggles)
+		_reparent_control(fog_toggle_button, row_env_toggles)
+
+		clouds_toggle_button = Button.new()
+		clouds_toggle_button.name = "ToggleCloudsButton"
+		clouds_toggle_button.text = "Clouds on"
+		row_env_toggles.add_child(clouds_toggle_button)
+
+	# Row 3: Glitch Triage & Isolation Controls
+	if is_instance_valid(row_triage_isolation):
+		row_triage_isolation.add_theme_constant_override(&"separation", 6)
+
+		flush_buffers_button = Button.new()
+		flush_buffers_button.name = "FlushBuffersButton"
+		flush_buffers_button.text = "Flush Buffers"
+		row_triage_isolation.add_child(flush_buffers_button)
+
+		water_fx_toggle_button = Button.new()
+		water_fx_toggle_button.name = "ToggleWaterFxButton"
+		water_fx_toggle_button.text = "Water/FX on"
+		row_triage_isolation.add_child(water_fx_toggle_button)
+
+		overlays_toggle_button = Button.new()
+		overlays_toggle_button.name = "ToggleOverlaysButton"
+		overlays_toggle_button.text = "Overlays on"
+		row_triage_isolation.add_child(overlays_toggle_button)
+
+		_reparent_control(diorama_button, row_triage_isolation)
+		_reparent_control(live_isolator_button, row_triage_isolation)
+
+	# Row 4: Dedicated Hover Explanation Box above ScrollContainer
+	var info_panel: PanelContainer = PanelContainer.new()
+	info_panel.name = "HoverInfoPanel"
+	var box_style: StyleBoxFlat = StyleBoxFlat.new()
+	box_style.bg_color = Color(0.08, 0.09, 0.11, 0.85)
+	box_style.border_width_left = 2
+	box_style.border_width_top = 1
+	box_style.border_width_right = 2
+	box_style.border_width_bottom = 1
+	box_style.border_color = Color(0.3, 0.55, 0.75, 0.6)
+	box_style.content_margin_left = 8.0
+	box_style.content_margin_right = 8.0
+	box_style.content_margin_top = 4.0
+	box_style.content_margin_bottom = 4.0
+	info_panel.add_theme_stylebox_override(&"panel", box_style)
+
+	hover_info_label = RichTextLabel.new()
+	hover_info_label.name = "HoverInfoLabel"
+	hover_info_label.bbcode_enabled = true
+	hover_info_label.fit_content = true
+	hover_info_label.scroll_active = false
+	hover_info_label.custom_minimum_size = Vector2(0.0, 38.0)
+	hover_info_label.text = DEFAULT_HOVER_HINT
+	info_panel.add_child(hover_info_label)
+
+	root_vbox.add_child(info_panel)
+	var target_idx: int = maxi(0, root_vbox.get_child_count() - 2)
+	root_vbox.move_child(info_panel, target_idx)
+
+
+## Safely moves a control to a new parent container.
+func _reparent_control(ctrl: Control, target_parent: Node) -> void:
+	if not is_instance_valid(ctrl) or not is_instance_valid(target_parent):
+		return
+	var old_parent: Node = ctrl.get_parent()
+	if old_parent == target_parent:
+		target_parent.move_child(ctrl, target_parent.get_child_count() - 1)
+		return
+	if is_instance_valid(old_parent):
+		old_parent.remove_child(ctrl)
+	target_parent.add_child(ctrl)
+
+
+## Connects pressed signals for all static and dynamically created buttons.
+func _connect_button_signals() -> void:
+	subviewports_tab_button.pressed.connect(_on_pipeline_tab_pressed)
+	perf_tab_button.pressed.connect(_on_perf_tab_pressed)
+
+	if is_instance_valid(scan_geometry_button):
+		scan_geometry_button.pressed.connect(_on_scan_geometry_pressed)
+	if is_instance_valid(scan_orphans_button):
+		scan_orphans_button.pressed.connect(_on_scan_orphans_pressed)
+	if is_instance_valid(dump_audit_button):
+		dump_audit_button.pressed.connect(_on_dump_audit_pressed)
+
+	if is_instance_valid(shadows_toggle_button):
+		shadows_toggle_button.pressed.connect(_on_shadows_toggled)
+	if is_instance_valid(sdfgi_toggle_button):
+		sdfgi_toggle_button.pressed.connect(_on_sdfgi_toggled)
+	if is_instance_valid(fog_toggle_button):
+		fog_toggle_button.pressed.connect(_on_fog_toggled)
+	if is_instance_valid(clouds_toggle_button):
+		clouds_toggle_button.pressed.connect(_on_clouds_toggled)
+
+	if is_instance_valid(flush_buffers_button):
+		flush_buffers_button.pressed.connect(_on_flush_buffers_pressed)
+	if is_instance_valid(water_fx_toggle_button):
+		water_fx_toggle_button.pressed.connect(_on_water_fx_toggled)
+	if is_instance_valid(overlays_toggle_button):
+		overlays_toggle_button.pressed.connect(_on_overlays_toggled)
+	if is_instance_valid(diorama_button):
+		diorama_button.pressed.connect(_on_diorama_pressed)
+	if is_instance_valid(live_isolator_button):
+		live_isolator_button.pressed.connect(_on_live_isolator_pressed)
+
+
+## Binds mouse hover signals on every button to update the explanation box.
+func _bind_all_hover_descriptions() -> void:
+	_bind_hover_doc(subviewports_tab_button, &"subviewports")
+	_bind_hover_doc(perf_tab_button, &"performance")
+	_bind_hover_doc(scan_geometry_button, &"scan_geometry")
+	_bind_hover_doc(scan_orphans_button, &"scan_orphans")
+	_bind_hover_doc(dump_audit_button, &"dump_audit")
+	_bind_hover_doc(shadows_toggle_button, &"shadows")
+	_bind_hover_doc(sdfgi_toggle_button, &"sdfgi")
+	_bind_hover_doc(fog_toggle_button, &"fog")
+	_bind_hover_doc(clouds_toggle_button, &"clouds")
+	_bind_hover_doc(flush_buffers_button, &"flush_buffers")
+	_bind_hover_doc(water_fx_toggle_button, &"water_fx")
+	_bind_hover_doc(overlays_toggle_button, &"overlays")
+	_bind_hover_doc(diorama_button, &"diorama")
+	_bind_hover_doc(live_isolator_button, &"live_isolator")
+
+
+## Connects mouse_entered and mouse_exited for a single button key.
+func _bind_hover_doc(btn: Button, doc_key: StringName) -> void:
+	if not is_instance_valid(btn):
+		return
+	var raw_doc: String = BUTTON_HOVER_DOCS.get(doc_key, "")
+	btn.mouse_entered.connect(_on_button_hover_entered.bind(raw_doc))
+	btn.mouse_exited.connect(_on_button_hover_exited)
+
+
+## Displays the explanation text for the currently hovered button.
+func _on_button_hover_entered(doc_bbcode: String) -> void:
+	if is_instance_valid(hover_info_label):
+		hover_info_label.text = doc_bbcode
+
+
+## Restores the default hover prompt when cursor leaves a button.
+func _on_button_hover_exited() -> void:
+	if is_instance_valid(hover_info_label):
+		hover_info_label.text = DEFAULT_HOVER_HINT
+
+
+## Toggles panel visibility and manages active process state.
+func toggle_window() -> bool:
+	visible = not visible
+	_update_processing_state()
+
+	if visible:
+		_apply_layout_constraints()
+		sync_toggle_button_labels()
+		_refresh_diagnostics_display()
+	return visible
 
 
 ## Switches active tab to Viewports & Layers pipeline.
 func _on_pipeline_tab_pressed() -> void:
-	print("RenderDiagnosticsPanel: Switched to Pipeline tab.")
 	_current_tab = DiagnosticTab.PIPELINE
 	_update_tab_button_visuals()
 	_refresh_diagnostics_display()
@@ -187,7 +482,6 @@ func _on_pipeline_tab_pressed() -> void:
 
 ## Switches active tab to performance monitors.
 func _on_perf_tab_pressed() -> void:
-	print("RenderDiagnosticsPanel: Switched to Performance tab.")
 	_current_tab = DiagnosticTab.PERFORMANCE
 	_update_tab_button_visuals()
 	_refresh_diagnostics_display()
@@ -201,7 +495,7 @@ func _update_tab_button_visuals() -> void:
 
 ## Aligns panel horizontally centered with full vertical height.
 func _apply_layout_constraints() -> void:
-	var panel_width: float = 640.0
+	var panel_width: float = 680.0
 	var half_width: float = panel_width / 2.0
 
 	anchor_left = 0.5
@@ -225,30 +519,6 @@ func _update_processing_state() -> void:
 	set_process(visible)
 
 
-## Throttles live diagnostic label updates while visible.
-func _process(delta: float) -> void:
-	if not visible:
-		return
-
-	_refresh_timer += delta
-	if _refresh_timer >= UPDATE_INTERVAL:
-		_refresh_timer = 0.0
-		_refresh_diagnostics_display()
-
-
-## Toggles panel visibility and manages active process state.
-func toggle_window() -> bool:
-	visible = not visible
-	print("RenderDiagnosticsPanel: Toggled visibility to ", visible)
-	_update_processing_state()
-
-	if visible:
-		_apply_layout_constraints()
-		sync_toggle_button_labels()
-		_refresh_diagnostics_display()
-	return visible
-
-
 ## Appends attributed spike telemetry from [SpikeForensics] into recent history.
 func _on_spike_detected(record: Dictionary) -> void:
 	_recent_hitches.push_back(record)
@@ -258,7 +528,7 @@ func _on_spike_detected(record: Dictionary) -> void:
 
 ## Refreshes panel display matching currently selected diagnostic tab.
 func _refresh_diagnostics_display() -> void:
-	if not diagnostics_label:
+	if not is_instance_valid(diagnostics_label):
 		return
 
 	match _current_tab:
@@ -270,7 +540,6 @@ func _refresh_diagnostics_display() -> void:
 
 ## Audits geometry branches and active shadow lights for a root node.
 func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
-	print("RenderDiagnosticsPanel: Auditing branch for ", root_node.name)
 	var lines: PackedStringArray = PackedStringArray()
 	var total_meshes: int = 0
 	var total_multimeshes: int = 0
@@ -288,15 +557,15 @@ func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
 		while not stack.is_empty():
 			var curr: Node = stack.pop_back()
 			if curr is MeshInstance3D:
-				var mesh_node: MeshInstance3D = curr
+				var mesh_node: MeshInstance3D = curr as MeshInstance3D
 				if mesh_node.visible and mesh_node.is_inside_tree():
 					branch_meshes += 1
 			elif curr is MultiMeshInstance3D:
-				var multi_node: MultiMeshInstance3D = curr
+				var multi_node: MultiMeshInstance3D = curr as MultiMeshInstance3D
 				if multi_node.visible and multi_node.is_inside_tree() and multi_node.multimesh:
 					branch_multis += multi_node.multimesh.instance_count
 			elif curr is Light3D:
-				var light_node: Light3D = curr
+				var light_node: Light3D = curr as Light3D
 				if light_node.visible and light_node.shadow_enabled:
 					branch_shadows += 1
 
@@ -328,7 +597,6 @@ func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
 
 ## Traverses window hierarchy and compiles geometry statistics.
 func scan_scene_geometry() -> void:
-	print("RenderDiagnosticsPanel: Initiating full-tree geometry audit.")
 	if is_instance_valid(SpikeForensics):
 		SpikeForensics.set_suppressed(true)
 
@@ -360,7 +628,6 @@ func scan_scene_geometry() -> void:
 
 ## Dumps orphan nodes via [method Node.print_orphan_nodes] and parses log.
 func scan_orphan_nodes() -> void:
-	print("RenderDiagnosticsPanel: Scanning for orphan nodes.")
 	if is_instance_valid(SpikeForensics):
 		SpikeForensics.set_suppressed(true)
 
@@ -385,7 +652,7 @@ func scan_orphan_nodes() -> void:
 		var pre_len: int = 0
 		if FileAccess.file_exists(log_path):
 			var pre_file: FileAccess = FileAccess.open(log_path, FileAccess.READ)
-			if pre_file:
+			if is_instance_valid(pre_file):
 				pre_len = pre_file.get_length()
 				pre_file.close()
 
@@ -421,7 +688,7 @@ func _extract_orphan_dump_from_log(log_path: String, start_offset: int) -> Strin
 		return ""
 
 	var file: FileAccess = FileAccess.open(log_path, FileAccess.READ)
-	if not file:
+	if not is_instance_valid(file):
 		return ""
 
 	var file_len: int = file.get_length()
@@ -571,7 +838,7 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 ## Extracts active post-processing features on an [Environment] resource.
 func _get_active_environment_effects(env: Environment) -> PackedStringArray:
 	var active_effects: PackedStringArray = PackedStringArray()
-	if not env:
+	if not is_instance_valid(env):
 		return active_effects
 
 	if env.glow_enabled:
@@ -597,21 +864,21 @@ func _get_active_environment_effects(env: Environment) -> PackedStringArray:
 ## Resolves active post-processing environment resource for a viewport.
 func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
 	if vp is SubViewport:
-		var sub_vp: SubViewport = vp
+		var sub_vp: SubViewport = vp as SubViewport
 		if sub_vp.disable_3d:
 			return PackedStringArray()
 
 	var camera: Camera3D = vp.get_camera_3d()
-	if is_instance_valid(camera) and camera.environment:
+	if is_instance_valid(camera) and is_instance_valid(camera.environment):
 		return _get_active_environment_effects(camera.environment)
 
 	if vp is SubViewport:
-		var sub_vp_world: SubViewport = vp
+		var sub_vp_world: SubViewport = vp as SubViewport
 		if not sub_vp_world.own_world_3d:
 			return PackedStringArray()
 
 	var world_3d: World3D = vp.find_world_3d()
-	if is_instance_valid(world_3d) and world_3d.environment:
+	if is_instance_valid(world_3d) and is_instance_valid(world_3d.environment):
 		return _get_active_environment_effects(world_3d.environment)
 
 	return PackedStringArray()
@@ -641,7 +908,10 @@ func _format_sdfgi_summary_banner(records: Array[Dictionary]) -> String:
 
 	if active_count > 1:
 		return (
-			"[color=red][b]SDFGI STATUS: [CRITICAL: %d ACTIVE COMPUTE CASCADES] (%d dormant)[/b][/color]\n"
+			(
+				"[color=red][b]SDFGI STATUS: [CRITICAL: %d ACTIVE COMPUTE CASCADES] "
+				+ "(%d dormant)[/b][/color]\n"
+			)
 			% [active_count, dormant_count]
 		)
 	if active_count == 1:
@@ -745,7 +1015,10 @@ func _format_volumetric_fog_summary_banner(records: Array[Dictionary]) -> String
 
 	if active_count > 1:
 		return (
-			"[color=red][b]V-FOG STATUS: [CRITICAL: %d ACTIVE COMPUTE FROXELS] (%d dormant)[/b][/color]\n"
+			(
+				"[color=red][b]V-FOG STATUS: [CRITICAL: %d ACTIVE COMPUTE FROXELS] "
+				+ "(%d dormant)[/b][/color]\n"
+			)
 			% [active_count, dormant_count]
 		)
 	if active_count == 1:
@@ -1042,7 +1315,7 @@ func _audit_clouds_instances(
 					)
 				)
 
-	var driver_nodes: Array[Node] = tree.get_nodes_in_group(&"sunshine_clouds")
+	var driver_nodes: Array[Node] = tree.get_nodes_in_group(GROUP_SUNSHINE_CLOUDS)
 	for d_node: Node in driver_nodes:
 		var driver: SunshineCloudsDriverGD = d_node as SunshineCloudsDriverGD
 		if not is_instance_valid(driver) or not is_instance_valid(driver.clouds_resource):
@@ -1061,16 +1334,6 @@ func _audit_clouds_instances(
 			)
 
 	return results
-
-
-## Recursively counts nodes with active process or physics process loops.
-func _count_processing_nodes(node: Node) -> int:
-	if not is_instance_valid(node):
-		return 0
-	var count: int = 1 if (node.is_processing() or node.is_physics_processing()) else 0
-	for child: Node in node.get_children():
-		count += _count_processing_nodes(child)
-	return count
 
 
 ## Recursively collects active processing node count and visible mesh count in a single pass.
@@ -1438,7 +1701,7 @@ func _collect_tree_audit_nodes(
 ## Recursively collects all [SubViewport] instances inside a parent node.
 func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]) -> void:
 	if current_node is SubViewport:
-		out_viewports.append(current_node)
+		out_viewports.append(current_node as SubViewport)
 
 	for child: Node in current_node.get_children(true):
 		_collect_subviewports(child, out_viewports)
@@ -1446,103 +1709,99 @@ func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]
 
 ## Triggers geometry scan when user clicks the audit button.
 func _on_scan_geometry_pressed() -> void:
-	print("RenderDiagnosticsPanel: Triggering scene hierarchy scan.")
 	scan_scene_geometry()
 
 
 ## Triggers orphan node scan when user clicks the scan orphans button.
 func _on_scan_orphans_pressed() -> void:
-	print("RenderDiagnosticsPanel: Triggering orphan node scan.")
 	scan_orphan_nodes()
 
 
-## Toggles rendering cull mask to isolate base rendering layer.
-func _on_live_isolator_pressed() -> void:
-	_is_isolating_layers = not _is_isolating_layers
-	var state_str: String = "on" if _is_isolating_layers else "off"
-	print("RenderDiagnosticsPanel: Live isolator %s" % state_str)
-	var cam: Camera3D = get_viewport().get_camera_3d()
-	if is_instance_valid(cam):
-		if _is_isolating_layers:
-			cam.cull_mask = 1
-		else:
-			cam.cull_mask = 0xFFFFF
-
-
+## Dumps full diagnostic and orphan reports to stdout.
 func _on_dump_audit_pressed() -> void:
-	print("RenderDiagnosticsPanel: Dump audit triggered.")
 	scan_scene_geometry()
-	var report: String = _build_performance_report()
-	print(report)
+	print(_build_performance_report())
 	print(_build_pipeline_report())
 	if is_instance_valid(survey_label):
 		print(_cached_branch_survey)
 	Node.print_orphan_nodes()
 
 
-## Toggles diorama mode hiding background nodes outside player and world.
+## Toggles rendering cull mask to isolate Layer 1 (Environment) vs all layers.
+func _on_live_isolator_pressed() -> void:
+	_is_isolating_layers = not _is_isolating_layers
+	var cam: Camera3D = get_viewport().get_camera_3d()
+	if is_instance_valid(cam):
+		cam.cull_mask = 1 if _is_isolating_layers else 0xFFFFF
+	sync_toggle_button_labels()
+
+
+## Toggles diorama mode hiding background nodes outside Player and Environment.
 func _on_diorama_pressed() -> void:
 	_is_diorama_active = not _is_diorama_active
-	var state_str: String = "on" if _is_diorama_active else "off"
-	print("RenderDiagnosticsPanel: Diorama %s" % state_str)
 	var current_scene: Node = get_tree().current_scene
-	if not is_instance_valid(current_scene):
-		return
-	for child: Node in current_scene.get_children():
-		if child is Node3D and child.name != &"Player" and child.name != &"Environment":
-			var node_3d: Node3D = child
-			node_3d.visible = not _is_diorama_active
+	if is_instance_valid(current_scene):
+		for child: Node in current_scene.get_children():
+			if child is Node3D and child.name != NODE_PLAYER and child.name != NODE_ENVIRONMENT:
+				var node_3d: Node3D = child as Node3D
+				node_3d.visible = not _is_diorama_active
+	sync_toggle_button_labels()
 
 
-## Cycles through the 5-step glitch triage and buffer flush state machine.
-func _on_triage_glitch_pressed() -> void:
-	_triage_step = (_triage_step + 1) % 5
-	print("RenderDiagnosticsPanel: Triage Glitch step -> ", _triage_step)
-
+## Executes a 1-shot VRAM history buffer and cloud compute storage flush.
+func _on_flush_buffers_pressed() -> void:
 	var lines: PackedStringArray = PackedStringArray()
-	lines.append("[b][color=yellow]=== DIAGONAL GLITCH TRIAGE ===[/color][/b]")
-
-	match _triage_step:
-		1:
-			if is_instance_valid(triage_glitch_button):
-				triage_glitch_button.text = "Triage: 1.Flushed"
-			_flush_render_and_cloud_buffers(lines)
-		2:
-			if is_instance_valid(triage_glitch_button):
-				triage_glitch_button.text = "Triage: 2.NoClouds"
-			_set_clouds_compositor_state(false, lines)
-		3:
-			if is_instance_valid(triage_glitch_button):
-				triage_glitch_button.text = "Triage: 3.NoOcean"
-			_set_clouds_compositor_state(true, lines)
-			_set_water_and_particles_state(false, lines)
-		4:
-			if is_instance_valid(triage_glitch_button):
-				triage_glitch_button.text = "Triage: 4.NoOverlay"
-			_set_water_and_particles_state(true, lines)
-			_set_screen_effects_state(false, lines)
-		_:
-			if is_instance_valid(triage_glitch_button):
-				triage_glitch_button.text = "Triage Glitch"
-			_set_clouds_compositor_state(true, lines)
-			_set_water_and_particles_state(true, lines)
-			_set_screen_effects_state(true, lines)
-			lines.append("[color=green]Step 0: All visual subsystems restored.[/color]")
-
+	lines.append("[b][color=yellow]=== VRAM & TEMPORAL BUFFER FLUSH ===[/color][/b]")
+	_flush_render_and_cloud_buffers(lines)
 	_cached_branch_survey = "\n".join(lines) + "\n"
 	_apply_survey_to_ui()
 
 
+## Toggles Volumetric Clouds compositor pass independently.
+func _on_clouds_toggled() -> void:
+	var clouds_fx: CompositorEffect = _find_clouds_compositor_effect()
+	var target_state: bool = not clouds_fx.enabled if is_instance_valid(clouds_fx) else false
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("[b][color=yellow]=== VOLUMETRIC CLOUDS TRIAGE ===[/color][/b]")
+	_set_clouds_compositor_state(target_state, lines)
+	_cached_branch_survey = "\n".join(lines) + "\n"
+	_apply_survey_to_ui()
+	sync_toggle_button_labels()
+	_refresh_diagnostics_display()
+
+
+## Toggles Ocean, Water, and GPUParticles3D visibility independently.
+func _on_water_fx_toggled() -> void:
+	var restore_active: bool = _are_water_particles_muted
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("[b][color=yellow]=== WATER & GPU PARTICLES TRIAGE ===[/color][/b]")
+	_set_water_and_particles_state(restore_active, lines)
+	_cached_branch_survey = "\n".join(lines) + "\n"
+	_apply_survey_to_ui()
+	sync_toggle_button_labels()
+
+
+## Toggles ScreenEffectsManager fullscreen post-process overlays independently.
+func _on_overlays_toggled() -> void:
+	var fx_mgr: Control = _resolve_screen_effects_manager()
+	var target_state: bool = not fx_mgr.visible if is_instance_valid(fx_mgr) else false
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("[b][color=yellow]=== FULLSCREEN OVERLAYS TRIAGE ===[/color][/b]")
+	_set_screen_effects_state(target_state, lines)
+	_cached_branch_survey = "\n".join(lines) + "\n"
+	_apply_survey_to_ui()
+	sync_toggle_button_labels()
+
+
 ## Forces reallocation of viewport history buffers and cloud compute textures.
 func _flush_render_and_cloud_buffers(lines: PackedStringArray) -> void:
-	print("RenderDiagnosticsPanel: Flushing VRAM history and cloud buffers.")
-	lines.append("[color=cyan]Step 1: Flushing VRAM History & Cloud Buffers[/color]")
+	lines.append("[color=cyan]Flushing VRAM History & Cloud Compute Buffers...[/color]")
 
 	var clouds_fx: CompositorEffect = _find_clouds_compositor_effect()
 	if is_instance_valid(clouds_fx):
-		clouds_fx.set(&"ignore_accumilation", true)
-		if clouds_fx.has_method(&"refresh_compute"):
-			clouds_fx.call(&"refresh_compute")
+		clouds_fx.set(PROP_IGNORE_ACCUM, true)
+		if clouds_fx.has_method(METHOD_REFRESH_COMPUTE):
+			clouds_fx.call(METHOD_REFRESH_COMPUTE)
 		lines.append("  |- SunshineCloudsGD: Reallocated compute storage RIDs.")
 	else:
 		lines.append("  |- SunshineCloudsGD: No active compositor found.")
@@ -1554,7 +1813,7 @@ func _flush_render_and_cloud_buffers(lines: PackedStringArray) -> void:
 	vp.scaling_3d_scale = clampf(orig_scale - 0.01, 0.5, 1.0)
 	lines.append("  |- Viewport Buffers: Triggered 1-frame scale jitter & TAA reset.")
 	lines.append(
-		"  [i]If the diagonal lines vanished, history buffer NaN poisoning was the cause![/i]"
+		"  [i]If diagonal streaks vanished, temporal history NaN poisoning was the cause![/i]"
 	)
 
 	await get_tree().process_frame
@@ -1565,12 +1824,11 @@ func _flush_render_and_cloud_buffers(lines: PackedStringArray) -> void:
 
 ## Enables or disables the SunshineCloudsGD [CompositorEffect] at runtime.
 func _set_clouds_compositor_state(is_active: bool, lines: PackedStringArray) -> void:
-	print("RenderDiagnosticsPanel: Setting clouds compositor -> ", is_active)
 	var clouds_fx: CompositorEffect = _find_clouds_compositor_effect()
 	if is_instance_valid(clouds_fx):
 		clouds_fx.enabled = is_active
-		if is_active and clouds_fx.has_method(&"refresh_compute"):
-			clouds_fx.call(&"refresh_compute")
+		if is_active and clouds_fx.has_method(METHOD_REFRESH_COMPUTE):
+			clouds_fx.call(METHOD_REFRESH_COMPUTE)
 		var status: String = "ENABLED" if is_active else "DISABLED"
 		lines.append("  |- SunshineCloudsGD Compositor: [b]%s[/b]" % status)
 	else:
@@ -1579,7 +1837,6 @@ func _set_clouds_compositor_state(is_active: bool, lines: PackedStringArray) -> 
 
 ## Hides or restores ocean meshes, water bodies, and GPU splash particles.
 func _set_water_and_particles_state(is_active: bool, lines: PackedStringArray) -> void:
-	print("RenderDiagnosticsPanel: Setting water/particles -> ", is_active)
 	if is_active:
 		var restored_count: int = 0
 		for node: Node3D in _triage_muted_nodes:
@@ -1587,6 +1844,7 @@ func _set_water_and_particles_state(is_active: bool, lines: PackedStringArray) -
 				node.visible = true
 				restored_count += 1
 		_triage_muted_nodes.clear()
+		_are_water_particles_muted = false
 		lines.append("  |- Ocean / Water / Particles: Restored %d nodes." % restored_count)
 		return
 
@@ -1599,7 +1857,7 @@ func _set_water_and_particles_state(is_active: bool, lines: PackedStringArray) -
 	while not stack.is_empty():
 		var curr: Node = stack.pop_back()
 		if curr is Node3D:
-			var n3d: Node3D = curr
+			var n3d: Node3D = curr as Node3D
 			var n_low: String = str(n3d.name).to_lower()
 			var is_suspect: bool = "ocean" in n_low or "water" in n_low or n3d is GPUParticles3D
 			if is_suspect and n3d.visible:
@@ -1608,6 +1866,7 @@ func _set_water_and_particles_state(is_active: bool, lines: PackedStringArray) -
 		for child: Node in curr.get_children():
 			stack.append(child)
 
+	_are_water_particles_muted = true
 	lines.append(
 		(
 			"  |- Ocean / Water / GPUParticles3D: Muted [b]%d[/b] visible nodes."
@@ -1616,19 +1875,29 @@ func _set_water_and_particles_state(is_active: bool, lines: PackedStringArray) -
 	)
 
 
+## Resolves the active [ScreenEffectsManager] control node in the scene tree.
+func _resolve_screen_effects_manager() -> Control:
+	var group_fx: Node = get_tree().get_first_node_in_group(GROUP_SCREEN_EFFECTS)
+	if group_fx is Control:
+		return group_fx as Control
+
+	var parent_node: Node = get_parent()
+	if is_instance_valid(parent_node):
+		var sibling_fx: Node = parent_node.get_node_or_null("ScreenEffectsManager")
+		if sibling_fx is Control:
+			return sibling_fx as Control
+
+	var root_vp: Window = get_tree().root
+	var direct_fx: Node = root_vp.get_node_or_null("ScreenEffectsManager")
+	if direct_fx is Control:
+		return direct_fx as Control
+
+	return null
+
+
 ## Toggles visibility on the [ScreenEffectsManager] fullscreen overlay node.
 func _set_screen_effects_state(is_active: bool, lines: PackedStringArray) -> void:
-	print("RenderDiagnosticsPanel: Setting ScreenEffectsManager -> ", is_active)
-	var root_vp: Window = get_tree().root
-	var fx_mgr: Control = null
-	var group_fx: Node = get_tree().get_first_node_in_group(&"screen_effects_manager")
-	if group_fx is Control:
-		fx_mgr = group_fx as Control
-	else:
-		var direct_fx: Node = root_vp.get_node_or_null("ScreenEffectsManager")
-		if direct_fx is Control:
-			fx_mgr = direct_fx as Control
-
+	var fx_mgr: Control = _resolve_screen_effects_manager()
 	if is_instance_valid(fx_mgr):
 		fx_mgr.visible = is_active
 		var status: String = "VISIBLE" if is_active else "MUTED"
@@ -1643,7 +1912,7 @@ func _find_clouds_compositor_effect() -> CompositorEffect:
 	var cam: Camera3D = vp.get_camera_3d()
 	if is_instance_valid(cam) and is_instance_valid(cam.compositor):
 		for fx: CompositorEffect in cam.compositor.compositor_effects:
-			if is_instance_valid(fx):
+			if fx is SunshineCloudsGD:
 				return fx
 
 	var current_scene: Node = get_tree().current_scene
@@ -1651,7 +1920,7 @@ func _find_clouds_compositor_effect() -> CompositorEffect:
 		var world_env: WorldEnvironment = _resolve_world_environment(current_scene)
 		if is_instance_valid(world_env) and is_instance_valid(world_env.compositor):
 			for fx: CompositorEffect in world_env.compositor.compositor_effects:
-				if is_instance_valid(fx):
+				if fx is SunshineCloudsGD:
 					return fx
 
 	return null
@@ -1677,17 +1946,17 @@ func _resolve_world_environment(scene_root: Node) -> WorldEnvironment:
 func _get_active_environment() -> Environment:
 	var vp: Viewport = get_viewport()
 	var cam: Camera3D = vp.get_camera_3d()
-	if is_instance_valid(cam) and cam.environment:
+	if is_instance_valid(cam) and is_instance_valid(cam.environment):
 		return cam.environment
 
 	var world_3d: World3D = vp.find_world_3d()
-	if is_instance_valid(world_3d) and world_3d.environment:
+	if is_instance_valid(world_3d) and is_instance_valid(world_3d.environment):
 		return world_3d.environment
 
 	var current_scene: Node = get_tree().current_scene
 	if is_instance_valid(current_scene):
 		var world_env: WorldEnvironment = _resolve_world_environment(current_scene)
-		if is_instance_valid(world_env) and world_env.environment:
+		if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
 			return world_env.environment
 
 	return null
@@ -1699,7 +1968,7 @@ func _are_any_shadows_enabled(root_node: Node) -> bool:
 	while not stack.is_empty():
 		var curr: Node = stack.pop_back()
 		if curr is Light3D:
-			var light_node: Light3D = curr
+			var light_node: Light3D = curr as Light3D
 			if light_node.shadow_enabled:
 				return true
 		for child: Node in curr.get_children():
@@ -1707,9 +1976,8 @@ func _are_any_shadows_enabled(root_node: Node) -> bool:
 	return false
 
 
-## Synchronizes button text states with active environment settings.
+## Synchronizes button text states with active environment and isolation settings.
 func sync_toggle_button_labels() -> void:
-	print("RenderDiagnosticsPanel: Synchronizing toggle buttons.")
 	var env: Environment = _get_active_environment()
 
 	if is_instance_valid(sdfgi_toggle_button):
@@ -1748,8 +2016,33 @@ func sync_toggle_button_labels() -> void:
 
 	if is_instance_valid(shadows_toggle_button):
 		var curr_scene: Node = get_tree().current_scene
-		var has_shadows: bool = _are_any_shadows_enabled(curr_scene) if curr_scene else false
-		shadows_toggle_button.text = ("Shadows %s" % ("on" if has_shadows else "off"))
+		var has_shadows: bool = (
+			_are_any_shadows_enabled(curr_scene) if is_instance_valid(curr_scene) else false
+		)
+		shadows_toggle_button.text = "Shadows %s" % ("on" if has_shadows else "off")
+
+	if is_instance_valid(clouds_toggle_button):
+		var clouds_fx: CompositorEffect = _find_clouds_compositor_effect()
+		var clouds_on: bool = clouds_fx.enabled if is_instance_valid(clouds_fx) else false
+		clouds_toggle_button.text = "Clouds %s" % ("on" if clouds_on else "off")
+
+	if is_instance_valid(water_fx_toggle_button):
+		water_fx_toggle_button.text = (
+			"Water/FX %s" % ("off" if _are_water_particles_muted else "on")
+		)
+
+	if is_instance_valid(overlays_toggle_button):
+		var fx_mgr: Control = _resolve_screen_effects_manager()
+		var fx_on: bool = fx_mgr.visible if is_instance_valid(fx_mgr) else false
+		overlays_toggle_button.text = "Overlays %s" % ("on" if fx_on else "off")
+
+	if is_instance_valid(diorama_button):
+		diorama_button.text = "Diorama %s" % ("ON" if _is_diorama_active else "off")
+
+	if is_instance_valid(live_isolator_button):
+		live_isolator_button.text = (
+			"Live Isolator %s" % ("ON (L1)" if _is_isolating_layers else "off")
+		)
 
 
 ## Toggles shadow casting across all scene lights.
@@ -1765,30 +2058,24 @@ func _on_shadows_toggled() -> void:
 	while not stack.is_empty():
 		var node: Node = stack.pop_back()
 		if node is Light3D:
-			var light_node: Light3D = node
+			var light_node: Light3D = node as Light3D
 			light_node.shadow_enabled = target_state
 		for child: Node in node.get_children():
 			stack.append(child)
 
-	var state_str: String = "on" if target_state else "off"
-	print("RenderDiagnosticsPanel: Shadows %s" % state_str)
-	if is_instance_valid(shadows_toggle_button):
-		shadows_toggle_button.text = "Shadows %s" % state_str
+	sync_toggle_button_labels()
 	_refresh_diagnostics_display()
 
 
 ## Toggles signed distance field global illumination on the environment.
 func _on_sdfgi_toggled() -> void:
 	var env: Environment = _get_active_environment()
-	if not env:
-		print("RenderDiagnosticsPanel: SDFGI off (no active environment)")
+	if not is_instance_valid(env):
 		if is_instance_valid(sdfgi_toggle_button):
 			sdfgi_toggle_button.text = "SDFGI off"
 		return
 
 	env.sdfgi_enabled = not env.sdfgi_enabled
-	var state_str: String = "on" if env.sdfgi_enabled else "off"
-	print("RenderDiagnosticsPanel: SDFGI %s" % state_str)
 	sync_toggle_button_labels()
 	_refresh_diagnostics_display()
 
@@ -1796,8 +2083,7 @@ func _on_sdfgi_toggled() -> void:
 ## Toggles distance fog and volumetric fog on the active environment.
 func _on_fog_toggled() -> void:
 	var env: Environment = _get_active_environment()
-	if not env:
-		print("RenderDiagnosticsPanel: Fog off (no active environment)")
+	if not is_instance_valid(env):
 		if is_instance_valid(fog_toggle_button):
 			fog_toggle_button.text = "Fog off"
 		return
@@ -1805,8 +2091,6 @@ func _on_fog_toggled() -> void:
 	var new_state: bool = not (env.fog_enabled or env.volumetric_fog_enabled)
 	env.fog_enabled = new_state
 	env.volumetric_fog_enabled = new_state
-	var state_str: String = "on" if new_state else "off"
-	print("RenderDiagnosticsPanel: Fog %s" % state_str)
 	sync_toggle_button_labels()
 	_refresh_diagnostics_display()
 
@@ -1817,13 +2101,9 @@ func cycle_debug_draw_mode() -> void:
 	match vp.debug_draw:
 		Viewport.DEBUG_DRAW_DISABLED:
 			vp.debug_draw = Viewport.DEBUG_DRAW_OVERDRAW
-			print("RenderDiagnosticsPanel: Debug draw -> OVERDRAW")
 		Viewport.DEBUG_DRAW_OVERDRAW:
 			vp.debug_draw = Viewport.DEBUG_DRAW_UNSHADED
-			print("RenderDiagnosticsPanel: Debug draw -> UNSHADED")
 		Viewport.DEBUG_DRAW_UNSHADED:
 			vp.debug_draw = Viewport.DEBUG_DRAW_WIREFRAME
-			print("RenderDiagnosticsPanel: Debug draw -> WIREFRAME")
 		_:
 			vp.debug_draw = Viewport.DEBUG_DRAW_DISABLED
-			print("RenderDiagnosticsPanel: Debug draw -> DISABLED")

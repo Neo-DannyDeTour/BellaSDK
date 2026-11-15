@@ -158,3 +158,54 @@ static func is_within_distance_3d(pos_a: Vector3, pos_b: Vector3, max_dist: floa
 		is_within
 	)
 	return is_within
+
+
+## Editor-only helper that bakes a [CSGShape3D] into a sibling [StaticBody3D] + .res mesh.
+static func bake_csg_to_static_body(csg: CSGShape3D) -> void:
+	if not Engine.is_editor_hint() or not is_instance_valid(csg) or not csg.is_inside_tree():
+		return
+	if csg.has_method(&"_update_shape"):
+		csg.call(&"_update_shape")
+	var meshes: Array = csg.get_meshes()
+	var raw_mesh: Variant = meshes[1] if meshes.size() >= 2 else null
+	var array_mesh: ArrayMesh = raw_mesh if raw_mesh is ArrayMesh else null
+	if array_mesh == null:
+		push_error("Utilities: CSG bake failed, no ArrayMesh generated for ", csg.name)
+		return
+	var dir_path: String = "res://levels/baked_csg/"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir_path))
+	var save_path: String = (
+		"%s%s_%d.res"
+		% [dir_path, csg.name.to_snake_case().validate_filename(), Time.get_ticks_msec()]
+	)
+	if ResourceSaver.save(array_mesh, save_path, ResourceSaver.FLAG_COMPRESS) != OK:
+		push_error("Utilities: Failed to save baked CSG mesh to: ", save_path)
+		return
+
+	var saved_mesh: ArrayMesh = ResourceLoader.load(save_path) as ArrayMesh
+	var static_body: StaticBody3D = StaticBody3D.new()
+	static_body.name = String(csg.name) + "_Baked"
+	static_body.transform = csg.transform
+	static_body.collision_layer = csg.collision_layer | CollisionLayers.MASK_ENVIRONMENT
+	static_body.collision_mask = csg.collision_mask
+
+	var mesh_inst: MeshInstance3D = MeshInstance3D.new()
+	mesh_inst.name = "MeshInstance3D"
+	mesh_inst.mesh = saved_mesh
+	static_body.add_child(mesh_inst)
+
+	var col_shape: CollisionShape3D = CollisionShape3D.new()
+	col_shape.name = "CollisionShape3D"
+	var concave: ConcavePolygonShape3D = saved_mesh.create_trimesh_shape()
+	if concave != null:
+		concave.backface_collision = true
+		col_shape.shape = concave
+	static_body.add_child(col_shape)
+
+	var scene_root: Node = csg.get_tree().edited_scene_root
+	csg.get_parent().add_child(static_body)
+	if is_instance_valid(scene_root):
+		static_body.owner = scene_root
+		mesh_inst.owner = scene_root
+		col_shape.owner = scene_root
+	print("Utilities: Baked CSG to ", save_path)

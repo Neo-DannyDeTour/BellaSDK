@@ -4,7 +4,7 @@ extends Node3D
 ## [signal Events.player_chunk_changed] on boundary crossings.
 
 ## World-space width and depth of a single streaming chunk in meters.
-const CHUNK_SIZE: float = 250.0
+const CHUNK_SIZE: float = 50.0
 
 ## Interval in seconds between spatial coordinate checks.
 const POLL_INTERVAL: float = 0.2

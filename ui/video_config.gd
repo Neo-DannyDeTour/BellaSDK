@@ -481,13 +481,6 @@ static func get_native_resolution(screen_idx: int = 0) -> Vector2i:
 	return native_size
 
 
-## Clamps UI scale proportionally for viewports smaller than the 1280x720 reference size.
-static func compute_effective_ui_scale(requested_scale: float, resolution: Vector2i) -> float:
-	if resolution.x <= 0 or resolution.y <= 0:
-		return requested_scale
-	var scale_x: float = float(resolution.x) / 1280.0
-	var scale_y: float = float(resolution.y) / 720.0
-	var viewport_limit: float = minf(scale_x, scale_y)
-	if viewport_limit < 1.0:
-		return minf(requested_scale, maxf(viewport_limit, 0.35))
+## Returns the effective UI scale factor for the fixed 1920x1080 canvas_items stretch base.
+static func compute_effective_ui_scale(requested_scale: float, _resolution: Vector2i) -> float:
 	return requested_scale

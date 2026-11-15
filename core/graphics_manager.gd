@@ -201,11 +201,8 @@ func apply_display_settings() -> void:
 	var ui_scale: float = VideoApplier._get_float(
 		active_config, "ui_scale", VideoConfig.DEFAULT_UI_SCALE
 	)
-	var effective_scale: float = VideoConfig.compute_effective_ui_scale(
-		ui_scale, Vector2i(res_x, res_y)
-	)
-	if not is_equal_approx(win.content_scale_factor, effective_scale):
-		win.content_scale_factor = effective_scale
+	if not is_equal_approx(win.content_scale_factor, ui_scale):
+		win.content_scale_factor = ui_scale
 
 
 ## Updates the isolated diorama environment synchronously for real-time menu preview.

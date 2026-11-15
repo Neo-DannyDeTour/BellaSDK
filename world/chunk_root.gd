@@ -1,10 +1,10 @@
 class_name ChunkRoot
 extends Node3D
-## Root controller for a 250x250m streaming chunk handling off-thread delta
+## Root controller for a 50x50m streaming chunk handling delta
 ## application, roaming identity metadata stamping, and mutation reporting.
 
 ## World-space width and depth of a single streaming chunk in meters.
-const CHUNK_SIZE: float = 250.0
+const CHUNK_SIZE: float = 50.0
 
 ## Sentinel payload indicating an entity was destroyed or collected.
 const DELTA_FREED: StringName = &"freed"

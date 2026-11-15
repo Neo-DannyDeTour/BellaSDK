@@ -21,7 +21,7 @@ config/icon="uid://cijw0jse7sfs8"
 
 [audio]
 
-buses/default_bus_layout="res://core/audio/default_bus_layout.tres"
+buses/default_bus_layout="uid://d3qajd8tvw6tr"
 
 [autoload]
 
@@ -64,9 +64,8 @@ gdscript/warnings/unsafe_call_argument=1
 
 [display]
 
-window/size/viewport_width=1920
-window/size/viewport_height=1080
-window/size/mode=3
+window/size/viewport_width=1280
+window/size/viewport_height=780
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 display_server/driver.linuxbsd="wayland"

@@ -35,8 +35,9 @@ static func apply_window_settings(
 		return
 	print("VideoApplier: Applying window settings -> mode: ", mode, " res: ", resolution)
 
-	if window.content_scale_size != resolution:
-		window.content_scale_size = resolution
+	var design_res: Vector2i = Vector2i(VideoConfig.DEFAULT_RES_X, VideoConfig.DEFAULT_RES_Y)
+	if window.content_scale_size != design_res:
+		window.content_scale_size = design_res
 
 	if Engine.is_embedded_in_editor() or window.is_embedded():
 		return

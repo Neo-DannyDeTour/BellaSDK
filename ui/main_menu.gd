@@ -175,7 +175,7 @@ func _check_game_context() -> void:
 		if is_instance_valid(save_button):
 			save_button.show()
 		if is_instance_valid(new_game_button):
-			new_game_button.text = ""
+			new_game_button.show()
 	else:
 		if is_instance_valid(continue_button):
 			continue_button.hide()

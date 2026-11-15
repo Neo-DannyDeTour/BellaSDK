@@ -1,40 +1,40 @@
 class_name ChunkManager
 extends Node3D
-## Streams 250x250m world chunks around the player using synchronous near-ring
-## loading, threaded I/O, [WorkerThreadPool] instantiation, frame-budgeted
-## attachment, hysteresis radii, and roaming lifecycle management.
+## Streams 50x50m world chunks around the player using synchronous 3x3 near-ring
+## loading, throttled threaded I/O, main-thread frame-budgeted instantiation,
+## and roaming entity management without unloading.
 
 ## State tracking enum for chunk lifecycle transitions.
 enum ChunkState {
+	QUEUED,
 	LOADING,
-	INSTANTIATING,
+	READY_TO_ATTACH,
 	ACTIVE,
-	ABORTED,
 }
 
 ## World-space width and depth of a single chunk in meters.
-const CHUNK_SIZE: float = 250.0
+const CHUNK_SIZE: float = 50.0
 
 ## Minimum chunk grid coordinate along X and Z axes (-2500m).
-const GRID_MIN: int = -10
+const GRID_MIN: int = -50
 
 ## Maximum chunk grid coordinate along X and Z axes (+2500m).
-const GRID_MAX: int = 9
+const GRID_MAX: int = 50
 
-## Integer grid radius scanned when scheduling new chunk loads.
-const LOAD_RADIUS: int = 3
+## Integer grid radius scanned when scheduling new chunk loads (600m).
+const LOAD_RADIUS: int = 12
 
-## Squared grid distance threshold for synchronous loading (player's current chunk only).
-const IMMEDIATE_RADIUS_SQ: float = 0.0
+## Squared grid distance threshold for synchronous loading (3x3 around player).
+const IMMEDIATE_RADIUS_SQ: float = 2.0
 
-## Squared grid distance threshold for loading chunks (3 chunks / 750m).
-const LOAD_RADIUS_SQ: float = 9.0
+## Squared grid distance threshold for background loading (12 chunks / 600m).
+const LOAD_RADIUS_SQ: float = 144.0
 
-## Squared grid distance threshold for unloading chunks (4 chunks / 1000m).
-const UNLOAD_RADIUS_SQ: float = 16.0
+## Maximum concurrent [ResourceLoader] threaded requests in flight.
+const MAX_CONCURRENT_IO: int = 4
 
-## Maximum number of worker-instantiated chunks attached to the scene tree per frame.
-const MAX_ATTACHES_PER_FRAME: int = 1
+## Maximum chunks instantiated and attached to the scene tree per frame.
+const MAX_ATTACHES_PER_FRAME: int = 2
 
 ## Polling interval in seconds for active [ResourceLoader] threaded requests.
 const IO_POLL_INTERVAL: float = 0.05
@@ -51,7 +51,7 @@ const TYPE_HINT_SCENE: String = "PackedScene"
 ## Sentinel payload indicating an entity was destroyed or suppressed as a duplicate.
 const DELTA_FREED: StringName = &"freed"
 
-## Scene group identifying entities that persist across chunk unloads.
+## Scene group identifying entities that persist across chunk boundaries.
 const GROUP_ROAMING: StringName = &"roaming"
 
 ## Metadata key storing a roaming entity's original spawn chunk coordinate.
@@ -63,19 +63,13 @@ const META_ENTITY_ID: StringName = &"entity_id"
 ## Optional method invoked on chunk root nodes during setup to apply saved deltas.
 const METHOD_APPLY_DELTAS: StringName = &"apply_chunk_deltas"
 
-## Optional method invoked on roaming entities to serialize custom state before despawn.
-const METHOD_CAPTURE_DELTA: StringName = &"capture_delta"
-
-## Deferred callback method name invoked when worker instantiation completes.
-const METHOD_FINALIZE: StringName = &"_on_worker_instantiated"
-
 ## Physics collision mask matching Layer 3 (Interactive) and Layer 5 (Enemies).
 const ROAMING_LAYER_MASK: int = CollisionLayers.MASK_INTERACTIVE | CollisionLayers.MASK_ENEMIES
 
 ## Directory path containing streaming chunk scenes.
 @export var chunk_dir: String = "res://world/chunks/"
 
-## Scene container hosting extracted roaming entities across chunk unloads.
+## Scene container hosting extracted roaming entities.
 @export var dynamic_container: Node3D
 
 ## Active and transitioning state per chunk grid coordinate.
@@ -87,14 +81,14 @@ var _active_nodes: Dictionary[Vector2i, Node3D] = {}
 ## Registered living roamers mapped by origin chunk and entity ID.
 var _active_roamers: Dictionary[Vector2i, Dictionary] = {}
 
+## Nearest-first sorted queue of chunk coordinates waiting for threaded I/O.
+var _pending_io: Array[Vector2i] = []
+
 ## In-flight [ResourceLoader] scene paths keyed by chunk coordinate.
 var _in_flight_loads: Dictionary[Vector2i, String] = {}
 
-## Pending background worker thread task IDs keyed by chunk coordinate.
-var _worker_tasks: Dictionary[Vector2i, int] = {}
-
-## Instantiated chunk nodes queued for frame-budgeted tree attachment.
-var _ready_to_attach: Dictionary[Vector2i, Node3D] = {}
+## Loaded chunk [PackedScene]s queued for main-thread instantiation and attachment.
+var _ready_to_attach: Dictionary[Vector2i, PackedScene] = {}
 
 ## Persisted state deltas mapped by origin chunk and entity ID.
 var _chunk_deltas: Dictionary[Vector2i, Dictionary] = {}
@@ -119,27 +113,21 @@ func _ready() -> void:
 	Utilities.safe_connect(Events.chunk_entity_mutated, record_delta)
 
 
-## Attaches up to [constant MAX_ATTACHES_PER_FRAME] queued chunks per frame.
+## Instantiates and attaches up to [constant MAX_ATTACHES_PER_FRAME] loaded chunks.
 func _process(_delta: float) -> void:
 	var attached: int = 0
 	while attached < MAX_ATTACHES_PER_FRAME and not _ready_to_attach.is_empty():
 		var coords: Array[Vector2i] = _ready_to_attach.keys()
 		var coord: Vector2i = coords[0]
-		var instance: Node3D = _ready_to_attach[coord]
+		var packed: PackedScene = _ready_to_attach[coord]
 		_ready_to_attach.erase(coord)
-		if not _chunk_states.has(coord) or _chunk_states[coord] == ChunkState.ABORTED:
-			if is_instance_valid(instance):
-				instance.free()
-			_chunk_states.erase(coord)
-			print("Aborted queued chunk freed: ", coord)
-			continue
-		_attach_chunk(coord, instance)
-		attached += 1
+		if _instantiate_and_attach(coord, packed):
+			attached += 1
 	if _ready_to_attach.is_empty():
 		set_process(false)
 
 
-## Disconnects signals, awaits worker tasks, and frees queued chunks on exit.
+## Disconnects signals and clears pending queues on exit.
 func _exit_tree() -> void:
 	if Events.player_chunk_changed.is_connected(_on_player_chunk_changed):
 		Events.player_chunk_changed.disconnect(_on_player_chunk_changed)
@@ -147,12 +135,8 @@ func _exit_tree() -> void:
 		Events.chunk_entity_mutated.disconnect(record_delta)
 	if is_instance_valid(_io_timer) and _io_timer.timeout.is_connected(_on_io_timer_timeout):
 		_io_timer.timeout.disconnect(_on_io_timer_timeout)
-	for task_id: int in _worker_tasks.values():
-		WorkerThreadPool.wait_for_task_completion(task_id)
-	_worker_tasks.clear()
-	for queued: Node3D in _ready_to_attach.values():
-		if is_instance_valid(queued):
-			queued.free()
+	_pending_io.clear()
+	_in_flight_loads.clear()
 	_ready_to_attach.clear()
 
 
@@ -183,17 +167,9 @@ func has_chunk_delta(coord: Vector2i) -> bool:
 	return _chunk_deltas.has(coord) and not _chunk_deltas[coord].is_empty()
 
 
-## Evaluates hysteresis radii around [param player_coord] and schedules loads nearest-first.
+## Loads near-ring chunks immediately and queues remaining chunks nearest-first.
 func _on_player_chunk_changed(player_coord: Vector2i) -> void:
 	var player_vec: Vector2 = Vector2(player_coord)
-	var tracked_coords: Array[Vector2i] = _chunk_states.keys()
-	for coord: Vector2i in tracked_coords:
-		var dist_sq: float = Vector2(coord).distance_squared_to(player_vec)
-		if dist_sq > UNLOAD_RADIUS_SQ:
-			_unload_chunk(coord)
-
-	_cull_distant_roamers(player_vec)
-
 	var min_x: int = maxi(GRID_MIN, player_coord.x - LOAD_RADIUS)
 	var max_x: int = mini(GRID_MAX, player_coord.x + LOAD_RADIUS)
 	var min_y: int = maxi(GRID_MIN, player_coord.y - LOAD_RADIUS)
@@ -219,50 +195,9 @@ func _on_player_chunk_changed(player_coord: Vector2i) -> void:
 		if dist_sq <= IMMEDIATE_RADIUS_SQ:
 			_load_chunk_immediate(coord)
 		else:
-			_request_chunk_load(coord)
+			_enqueue_chunk_load(coord)
 
-
-## Despawns roaming entities exceeding [constant UNLOAD_RADIUS_SQ] when origin is inactive.
-func _cull_distant_roamers(player_vec: Vector2) -> void:
-	var origin_coords: Array[Vector2i] = _active_roamers.keys()
-	for origin_coord: Vector2i in origin_coords:
-		var roamer_map: Dictionary = _active_roamers[origin_coord]
-		var origin_active: bool = (
-			_chunk_states.has(origin_coord) and _chunk_states[origin_coord] == ChunkState.ACTIVE
-		)
-		var entity_ids: Array = roamer_map.keys()
-		for entity_id: StringName in entity_ids:
-			var roamer: Node3D = roamer_map[entity_id] as Node3D
-			if not is_instance_valid(roamer):
-				roamer_map.erase(entity_id)
-				continue
-			var pos: Vector3 = roamer.global_position
-			var roamer_coord: Vector2i = Vector2i(
-				floori(pos.x / CHUNK_SIZE), floori(pos.z / CHUNK_SIZE)
-			)
-			var dist_sq: float = Vector2(roamer_coord).distance_squared_to(player_vec)
-			if dist_sq > UNLOAD_RADIUS_SQ and not origin_active:
-				_capture_and_despawn_roamer(origin_coord, entity_id, roamer)
-				roamer_map.erase(entity_id)
-		if roamer_map.is_empty():
-			_active_roamers.erase(origin_coord)
-
-
-## Captures state or local [Transform3D] for [param roamer] and queues its removal.
-func _capture_and_despawn_roamer(
-	origin_coord: Vector2i, entity_id: StringName, roamer: Node3D
-) -> void:
-	if roamer.has_method(METHOD_CAPTURE_DELTA):
-		var custom_delta: Variant = roamer.call(METHOD_CAPTURE_DELTA)
-		record_delta(origin_coord, entity_id, custom_delta)
-	else:
-		var local_xform: Transform3D = roamer.global_transform
-		local_xform.origin -= Vector3(
-			float(origin_coord.x) * CHUNK_SIZE, 0.0, float(origin_coord.y) * CHUNK_SIZE
-		)
-		record_delta(origin_coord, entity_id, local_xform)
-	roamer.queue_free()
-	print("Roaming entity despawned: ", entity_id, " from ", origin_coord)
+	_pump_io_queue()
 
 
 ## Resolves the chunk scene path for [param coord], preferring binary `.scn` over `.tscn`.
@@ -282,12 +217,13 @@ func _load_chunk_immediate(coord: Vector2i) -> void:
 	if _missing_coords.has(coord):
 		return
 	if _chunk_states.has(coord):
-		if _chunk_states[coord] == ChunkState.ABORTED:
-			if _in_flight_loads.has(coord):
-				_chunk_states[coord] = ChunkState.LOADING
-			else:
-				_chunk_states[coord] = ChunkState.INSTANTIATING
-			print("Chunk abort canceled: ", coord)
+		var state: ChunkState = _chunk_states[coord]
+		if state == ChunkState.ACTIVE:
+			return
+		if state == ChunkState.READY_TO_ATTACH and _ready_to_attach.has(coord):
+			var queued_packed: PackedScene = _ready_to_attach[coord]
+			_ready_to_attach.erase(coord)
+			_instantiate_and_attach(coord, queued_packed)
 		return
 
 	var path: String = _get_chunk_path(coord)
@@ -300,75 +236,45 @@ func _load_chunk_immediate(coord: Vector2i) -> void:
 	if packed == null:
 		return
 
-	var deltas_snapshot: Dictionary = _build_deltas_snapshot(coord)
-	var instance: Node3D = packed.instantiate() as Node3D
-	if instance == null:
-		return
-	instance.position = Vector3(float(coord.x) * CHUNK_SIZE, 0.0, float(coord.y) * CHUNK_SIZE)
-	if not deltas_snapshot.is_empty() and instance.has_method(METHOD_APPLY_DELTAS):
-		instance.call(METHOD_APPLY_DELTAS, deltas_snapshot)
-	_attach_chunk(coord, instance)
+	_instantiate_and_attach(coord, packed)
 
 
-## Initiates threaded loading for [param coord] or revives an aborted in-flight load.
-func _request_chunk_load(coord: Vector2i) -> void:
-	if _missing_coords.has(coord):
+## Appends [param coord] to the throttled background I/O queue if not already tracked.
+func _enqueue_chunk_load(coord: Vector2i) -> void:
+	if _missing_coords.has(coord) or _chunk_states.has(coord):
 		return
-	if _chunk_states.has(coord):
-		if _chunk_states[coord] == ChunkState.ABORTED:
-			# Restore previous pipeline stage when player re-enters before abort resolves.
-			if _in_flight_loads.has(coord):
-				_chunk_states[coord] = ChunkState.LOADING
-			else:
-				_chunk_states[coord] = ChunkState.INSTANTIATING
-			print("Chunk abort canceled: ", coord)
-		return
-
 	var path: String = _get_chunk_path(coord)
 	if path.is_empty():
 		_missing_coords[coord] = true
 		return
+	_chunk_states[coord] = ChunkState.QUEUED
+	_pending_io.append(coord)
 
-	var err: Error = ResourceLoader.load_threaded_request(path, TYPE_HINT_SCENE)
-	if err != OK:
-		return
 
-	_chunk_states[coord] = ChunkState.LOADING
-	_in_flight_loads[coord] = path
-	print("Chunk load requested: ", coord)
-	if _io_timer.is_stopped():
+## Fills open [constant MAX_CONCURRENT_IO] slots from [member _pending_io].
+func _pump_io_queue() -> void:
+	while _in_flight_loads.size() < MAX_CONCURRENT_IO and not _pending_io.is_empty():
+		var coord: Vector2i = _pending_io.pop_front() as Vector2i
+		if not _chunk_states.has(coord) or _chunk_states[coord] != ChunkState.QUEUED:
+			continue
+		var path: String = _get_chunk_path(coord)
+		if path.is_empty():
+			_missing_coords[coord] = true
+			_chunk_states.erase(coord)
+			continue
+		var err: Error = ResourceLoader.load_threaded_request(path, TYPE_HINT_SCENE)
+		if err != OK:
+			_chunk_states.erase(coord)
+			continue
+		_chunk_states[coord] = ChunkState.LOADING
+		_in_flight_loads[coord] = path
+		print("Chunk load requested: ", coord)
+
+	if not _in_flight_loads.is_empty() and _io_timer.is_stopped():
 		_io_timer.start()
 
 
-## Queues active chunk removal or marks in-flight loads as [constant ChunkState.ABORTED].
-func _unload_chunk(coord: Vector2i) -> void:
-	if not _chunk_states.has(coord):
-		return
-	var state: ChunkState = _chunk_states[coord]
-	if state == ChunkState.ACTIVE:
-		if _active_nodes.has(coord):
-			var node: Node3D = _active_nodes[coord]
-			if is_instance_valid(node):
-				node.queue_free()
-			_active_nodes.erase(coord)
-		_chunk_states.erase(coord)
-		print("Chunk unloaded: ", coord)
-	elif state == ChunkState.LOADING or state == ChunkState.INSTANTIATING:
-		if _ready_to_attach.has(coord):
-			var queued: Node3D = _ready_to_attach[coord]
-			_ready_to_attach.erase(coord)
-			if is_instance_valid(queued):
-				queued.free()
-			_chunk_states.erase(coord)
-			if _ready_to_attach.is_empty():
-				set_process(false)
-			print("Queued chunk aborted and freed: ", coord)
-		else:
-			_chunk_states[coord] = ChunkState.ABORTED
-			print("Chunk load aborted in-flight: ", coord)
-
-
-## Polls [ResourceLoader] status for in-flight chunks and stops when queue empties.
+## Polls [ResourceLoader] status for in-flight chunks and pumps the next queued loads.
 func _on_io_timer_timeout() -> void:
 	if _in_flight_loads.is_empty():
 		_io_timer.stop()
@@ -382,13 +288,12 @@ func _on_io_timer_timeout() -> void:
 			_in_flight_loads.erase(coord)
 			var res: Resource = ResourceLoader.load_threaded_get(path)
 			var packed: PackedScene = res as PackedScene
-			if not _chunk_states.has(coord) or _chunk_states[coord] == ChunkState.ABORTED:
-				_chunk_states.erase(coord)
-				continue
 			if packed == null:
 				_chunk_states.erase(coord)
 				continue
-			_start_worker_instantiation(coord, packed)
+			_chunk_states[coord] = ChunkState.READY_TO_ATTACH
+			_ready_to_attach[coord] = packed
+			set_process(true)
 		elif (
 			status == ResourceLoader.THREAD_LOAD_FAILED
 			or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE
@@ -397,65 +302,44 @@ func _on_io_timer_timeout() -> void:
 			_chunk_states.erase(coord)
 			print("Chunk I/O load failed: ", coord)
 
-	if _in_flight_loads.is_empty():
+	_pump_io_queue()
+	if _in_flight_loads.is_empty() and _pending_io.is_empty():
 		_io_timer.stop()
 
 
-## Builds a thread-safe delta snapshot with active roamer deduplication for [param coord].
+## Instantiates [param packed] on the main thread, applies deltas, and attaches it.
+func _instantiate_and_attach(coord: Vector2i, packed: PackedScene) -> bool:
+	if not is_instance_valid(packed):
+		_chunk_states.erase(coord)
+		return false
+	var deltas_snapshot: Dictionary = _build_deltas_snapshot(coord)
+	var instance: Node3D = packed.instantiate() as Node3D
+	if instance == null:
+		_chunk_states.erase(coord)
+		return false
+	instance.position = Vector3(float(coord.x) * CHUNK_SIZE, 0.0, float(coord.y) * CHUNK_SIZE)
+	if not deltas_snapshot.is_empty() and instance.has_method(METHOD_APPLY_DELTAS):
+		instance.call(METHOD_APPLY_DELTAS, deltas_snapshot)
+	_attach_chunk(coord, instance)
+	return true
+
+
+## Builds a delta snapshot with active roamer deduplication for [param coord].
 func _build_deltas_snapshot(coord: Vector2i) -> Dictionary:
 	var deltas_snapshot: Dictionary = {}
 	if _chunk_deltas.has(coord):
-		# Duplicate dictionary on main thread to avoid concurrent read/write in worker.
 		deltas_snapshot = _chunk_deltas[coord].duplicate()
 	if _active_roamers.has(coord):
 		var roamer_map: Dictionary = _active_roamers[coord]
 		for entity_id: StringName in roamer_map.keys():
 			var roamer: Node3D = roamer_map[entity_id] as Node3D
 			if is_instance_valid(roamer):
-				# Suppress duplicate spawn while living instance exists in dynamic_container.
 				deltas_snapshot[entity_id] = DELTA_FREED
 	return deltas_snapshot
 
 
-## Dispatches off-thread scene instantiation with active roamer deduplication.
-func _start_worker_instantiation(coord: Vector2i, packed: PackedScene) -> void:
-	_chunk_states[coord] = ChunkState.INSTANTIATING
-	var deltas_snapshot: Dictionary = _build_deltas_snapshot(coord)
-	var task_callable: Callable = _instantiate_chunk_worker.bind(coord, packed, deltas_snapshot)
-	var task_id: int = WorkerThreadPool.add_task(task_callable)
-	_worker_tasks[coord] = task_id
-
-
-## Instantiates chunk [PackedScene] and applies deltas on a worker thread.
-func _instantiate_chunk_worker(coord: Vector2i, packed: PackedScene, deltas: Dictionary) -> void:
-	var instance: Node3D = packed.instantiate() as Node3D
-	instance.position = Vector3(float(coord.x) * CHUNK_SIZE, 0.0, float(coord.y) * CHUNK_SIZE)
-	if not deltas.is_empty() and instance.has_method(METHOD_APPLY_DELTAS):
-		instance.call(METHOD_APPLY_DELTAS, deltas)
-	call_deferred(METHOD_FINALIZE, coord, instance)
-
-
-## Finalizes worker task on main thread, freeing aborted chunks or queuing active ones.
-func _on_worker_instantiated(coord: Vector2i, instance: Node3D) -> void:
-	if _worker_tasks.has(coord):
-		var task_id: int = _worker_tasks[coord]
-		WorkerThreadPool.wait_for_task_completion(task_id)
-		_worker_tasks.erase(coord)
-
-	if not _chunk_states.has(coord) or _chunk_states[coord] == ChunkState.ABORTED:
-		if is_instance_valid(instance):
-			instance.free()
-		_chunk_states.erase(coord)
-		print("Aborted chunk freed after worker completion: ", coord)
-		return
-
-	_ready_to_attach[coord] = instance
-	set_process(true)
-
-
 ## Attaches [param instance] to the scene tree, extracts roamers, and marks it active.
 func _attach_chunk(coord: Vector2i, instance: Node3D) -> void:
-	# Attach chunk root first so reparented children preserve world transforms.
 	add_child(instance)
 	_extract_roaming_entities(coord, instance)
 	_active_nodes[coord] = instance
