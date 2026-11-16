@@ -25,11 +25,11 @@ enum SpillMode {
 ## Preloaded tentacle and mantle spatial shader.
 const SQUID_SHADER: Shader = preload("res://shaders/squid_tentacle.gdshader")
 
-## Preloaded green blood flipbook spatial shader.
-const GREEN_BLOOD_SHADER: Shader = preload("res://vfx/green_blood.gdshader")
+## Preloaded radial gibbing splatter burst VFX scene.
+const GIB_BURST_SCENE: PackedScene = preload("res://vfx/gib_burst_emitter.tscn")
 
-## Preloaded green blood 8x8 atlas texture.
-const GREEN_BLOOD_ATLAS: Texture2D = preload("res://assets/vfx/green_blood_atlas.png")
+## Number of reusable [GibBurstEmitter] instances pre-allocated per squid.
+const BLOOD_POOL_SIZE: int = 4
 
 ## Per-instance shader parameter name for accumulated wave phase.
 const PARAM_WAVE_PHASE: StringName = &"wave_phase"
@@ -103,9 +103,6 @@ const HEADCRAB_TARGET_HEIGHT: float = 1.25
 ## Shared [ShaderMaterial] reused across all squid instances to avoid duplication.
 static var _shared_squid_material: ShaderMaterial = null
 
-## Shared [ShaderMaterial] for acid green blood particles across all squids.
-static var _shared_blood_material: ShaderMaterial = null
-
 ## Shared unit [CylinderMesh] scaled per tentacle to produce uneven dimensions.
 static var _shared_tentacle_mesh: CylinderMesh = null
 
@@ -148,6 +145,9 @@ var _next_puddle_slippery: bool = false
 ## Ring buffer index pointing to the next pooled [SquidPuddle].
 var _puddle_pool_index: int = 0
 
+## Ring buffer index pointing to the next pooled [GibBurstEmitter].
+var _blood_pool_index: int = 0
+
 ## Monotonic token used to invalidate stale state [SceneTreeTimer] callbacks on death/reset.
 var _state_token: int = 0
 
@@ -172,6 +172,9 @@ var _tentacle_seeds: Array[float] = []
 ## Pre-allocated pool of [SquidPuddle] floor hazard nodes.
 var _puddle_pool: Array[SquidPuddle] = []
 
+## Pre-allocated pool of [GibBurstEmitter] VFX nodes.
+var _blood_pool: Array[GibBurstEmitter] = []
+
 ## Screen visibility notifier gating per-frame shader uniform updates.
 var _visibility_notifier: VisibleOnScreenNotifier3D = null
 
@@ -183,9 +186,6 @@ var _attack_hitbox: Area3D = null
 
 ## Line-of-sight raycast verifying unobstructed path to [member _target].
 var _los_ray: RayCast3D = null
-
-## Greenish-yellow alien ichor burst particles emitted upon taking damage.
-var _ichor_particles: GPUParticles3D = null
 
 
 ## Initializes components, procedural ugly squid geometry, sensors, and puddle pool.
@@ -210,8 +210,8 @@ func _ready() -> void:
 	_ensure_collision_body()
 	_build_ugly_squid_visuals()
 	_build_sensors()
-	_build_ichor_particles()
 	call_deferred(&"_init_puddle_pool")
+	call_deferred(&"_init_blood_pool")
 
 	assert(is_instance_valid(faction_component), "EnemySquid: Missing FactionComponent.")
 	assert(is_instance_valid(health_component), "EnemySquid: Missing HealthComponent.")
@@ -230,6 +230,11 @@ func _exit_tree() -> void:
 		if is_instance_valid(puddle):
 			puddle.queue_free()
 	_puddle_pool.clear()
+
+	for blood: GibBurstEmitter in _blood_pool:
+		if is_instance_valid(blood):
+			blood.queue_free()
+	_blood_pool.clear()
 
 
 ## Executes state-driven ground skittering, ballistic leaps, and velocity-synced shader updates.
@@ -278,9 +283,6 @@ func reset_squid(new_position: Vector3) -> void:
 	if is_instance_valid(_attack_hitbox):
 		_attack_hitbox.set_deferred(PROP_MONITORING, false)
 
-	if is_instance_valid(_ichor_particles):
-		_ichor_particles.emitting = false
-
 	if is_instance_valid(health_component):
 		health_component.reset()
 
@@ -297,23 +299,11 @@ func take_damage(
 	if not is_instance_valid(health_component):
 		return
 
-	if is_instance_valid(_ichor_particles):
-		var local_pos: Vector3 = (
-			to_local(hit_position) if hit_position != Vector3.ZERO else Vector3(0.0, 0.55, 0.0)
-		)
-		_ichor_particles.position = local_pos
-		if not dir.is_zero_approx():
-			var spray_dir: Vector3 = (-dir.normalized() * 0.75 + Vector3.UP * 0.35).normalized()
-			var look_target: Vector3 = _ichor_particles.global_position + spray_dir
-			if absf(spray_dir.dot(Vector3.UP)) < 0.99:
-				_ichor_particles.look_at(look_target, Vector3.UP)
-			else:
-				_ichor_particles.look_at(look_target, Vector3.FORWARD)
-		else:
-			var default_up: Vector3 = _ichor_particles.global_position + Vector3.UP
-			_ichor_particles.look_at(default_up, Vector3.FORWARD)
-		_ichor_particles.restart()
-		_ichor_particles.emitting = true
+	var impact_pos: Vector3 = (
+		hit_position if hit_position != Vector3.ZERO else global_position + Vector3(0.0, 0.55, 0.0)
+	)
+	var spray_dir: Vector3 = dir if not dir.is_zero_approx() else Vector3.UP
+	_spawn_blood_impact(impact_pos, spray_dir, 1.0)
 
 	if not dir.is_zero_approx():
 		velocity += dir * 2.5
@@ -527,49 +517,6 @@ func _build_sensors() -> void:
 	add_child(_los_ray)
 
 
-## Builds a greenish-yellow ichor particle burst emitted on bullet and melee impacts.
-func _build_ichor_particles() -> void:
-	if not is_instance_valid(_shared_blood_material):
-		_shared_blood_material = ShaderMaterial.new()
-		_shared_blood_material.shader = GREEN_BLOOD_SHADER
-		_shared_blood_material.set_shader_parameter(&"atlas_texture", GREEN_BLOOD_ATLAS)
-		_shared_blood_material.set_shader_parameter(&"columns", 8)
-		_shared_blood_material.set_shader_parameter(&"rows", 8)
-		_shared_blood_material.set_shader_parameter(&"emissive_tint", Vector3(1.2, 1.2, 1.2))
-		_shared_blood_material.set_shader_parameter(&"alpha_discard_threshold", 0.1)
-
-	_ichor_particles = GPUParticles3D.new()
-	_ichor_particles.name = "IchorBloodParticles"
-	_ichor_particles.layers = 4
-	_ichor_particles.material_override = _shared_blood_material
-	_ichor_particles.emitting = false
-	_ichor_particles.one_shot = true
-	_ichor_particles.explosiveness = 0.95
-	_ichor_particles.amount = 16
-	_ichor_particles.lifetime = 1.0
-	_ichor_particles.position = Vector3(0.0, 0.55, 0.0)
-
-	var proc_mat: ParticleProcessMaterial = ParticleProcessMaterial.new()
-	proc_mat.direction = Vector3(0.0, 0.2, -1.0)
-	proc_mat.spread = 180.0
-	proc_mat.initial_velocity_min = 1.5
-	proc_mat.initial_velocity_max = 3.5
-	proc_mat.gravity = Vector3(0.0, -0.5, 0.0)
-	proc_mat.damping_min = 1.5
-	proc_mat.damping_max = 3.0
-	proc_mat.anim_speed_min = 1.0
-	proc_mat.anim_speed_max = 1.0
-	proc_mat.anim_offset_min = 0.0
-	proc_mat.anim_offset_max = 0.0
-	_ichor_particles.process_material = proc_mat
-
-	var quad: QuadMesh = QuadMesh.new()
-	quad.size = Vector2(0.55, 0.55)
-	_ichor_particles.draw_pass_1 = quad
-
-	add_child(_ichor_particles)
-
-
 ## Instantiates the ring buffer of pooled [SquidPuddle] nodes in the active scene.
 func _init_puddle_pool() -> void:
 	if not is_inside_tree():
@@ -586,6 +533,39 @@ func _init_puddle_pool() -> void:
 		puddle.duration = puddle_duration
 		scene_root.add_child(puddle)
 		_puddle_pool.append(puddle)
+
+
+## Instantiates the ring buffer of pooled [GibBurstEmitter] nodes in the active scene.
+func _init_blood_pool() -> void:
+	if not is_inside_tree():
+		return
+	var scene_root: Node = get_tree().current_scene
+	if not is_instance_valid(scene_root):
+		scene_root = get_parent()
+	if not is_instance_valid(scene_root):
+		return
+
+	for i: int in range(BLOOD_POOL_SIZE):
+		var blood_node: Node = GIB_BURST_SCENE.instantiate()
+		if blood_node is GibBurstEmitter:
+			var blood: GibBurstEmitter = blood_node as GibBurstEmitter
+			blood.name = "GibBurstEmitter_%d_%d" % [get_instance_id(), i]
+			scene_root.add_child(blood)
+			_blood_pool.append(blood)
+	print("EnemySquid: Initialized blood pool (", _blood_pool.size(), " instances)")
+
+
+## Plays a pooled [GibBurstEmitter] at [param impact_pos] along [param spray_dir].
+func _spawn_blood_impact(impact_pos: Vector3, spray_dir: Vector3, scale_mult: float) -> void:
+	if _blood_pool.is_empty():
+		return
+	var blood: GibBurstEmitter = _blood_pool[_blood_pool_index]
+	_blood_pool_index = (_blood_pool_index + 1) % _blood_pool.size()
+	if not is_instance_valid(blood):
+		return
+	blood.global_position = impact_pos
+	blood.play(spray_dir, scale_mult)
+	print("EnemySquid: Spawned gib burst at ", impact_pos, " scale=", scale_mult)
 
 
 ## Evaluates target lock or transitions to patrol during [enum SquidState.IDLE].
@@ -960,14 +940,7 @@ func _on_died() -> void:
 	Utilities.safe_kill_tween(_active_tween)
 	_active_tween = null
 
-	if is_instance_valid(_ichor_particles):
-		var parent_node: Node = get_parent()
-		if is_instance_valid(parent_node) and is_inside_tree():
-			Utilities.reparent_keep_transform(_ichor_particles, parent_node)
-		_ichor_particles.restart()
-		_ichor_particles.emitting = true
-		var ichor_timer: SceneTreeTimer = get_tree().create_timer(_ichor_particles.lifetime + 0.1)
-		ichor_timer.timeout.connect(_ichor_particles.queue_free)
+	_spawn_blood_impact(global_position + Vector3(0.0, 0.55, 0.0), Vector3.UP, 2.0)
 
 	_spill_puddle()
 	_set_state(SquidState.IDLE)

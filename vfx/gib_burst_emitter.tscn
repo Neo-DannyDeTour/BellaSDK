@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://vfx/gib_burst_emitter.gd" id="1_emitter"]
+[ext_resource type="Shader" path="res://vfx/gib_splatter_flipbook.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_splatter"]
+shader = ExtResource("2_shader")
+shader_parameter/h_frames = 8
+shader_parameter/v_frames = 8
+shader_parameter/roughness_val = 0.18
+shader_parameter/specular_val = 0.85
+
+[sub_resource type="QuadMesh" id="QuadMesh_splatter"]
+size = Vector2(2, 2)
+
+[node name="GibBurstEmitter" type="Node3D"]
+script = ExtResource("1_emitter")
+
+[node name="QuadMeshInstance" type="MeshInstance3D" parent="."]
+material_override = SubResource("ShaderMaterial_splatter")
+mesh = SubResource("QuadMesh_splatter")
