@@ -1,0 +1,35 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" uid="uid://bjgnc531ro53v" path="res://assets/models/shroud_mannequinn/shroud_mannequinn.glb" id="1_glb"]
+[ext_resource type="Shader" path="res://shaders/shroud_mannequinn.gdshader" id="2_shader"]
+[ext_resource type="Texture2D" uid="uid://chbbs4387bbip" path="res://assets/models/shroud_mannequinn/shroud_mannequinn_albedo.png" id="3_albedo"]
+[ext_resource type="Texture2D" uid="uid://csv55s56rgmnt" path="res://assets/models/shroud_mannequinn/shroud_mannequinn_orm.png" id="4_orm"]
+[ext_resource type="Texture2D" uid="uid://cm06hm8um1kc5" path="res://assets/models/shroud_mannequinn/shroud_mannequinn_normal.png" id="5_normal"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_shroud_mannequinn"]
+radius = 0.28
+height = 1.82
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_shroud_mannequinn"]
+render_priority = 0
+shader = ExtResource("2_shader")
+shader_parameter/tex_albedo = ExtResource("3_albedo")
+shader_parameter/tex_orm = ExtResource("4_orm")
+shader_parameter/tex_normal = ExtResource("5_normal")
+shader_parameter/normal_scale = 1.0
+
+[node name="ShroudMannequinn" type="CharacterBody3D" groups=["enemy"]]
+collision_layer = 20
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.91, 0)
+shape = SubResource("CapsuleShape3D_shroud_mannequinn")
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="geometry_0" parent="Model" index="0"]
+layers = 4
+material_override = SubResource("ShaderMaterial_shroud_mannequinn")
+
+[editable path="Model"]
