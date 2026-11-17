@@ -254,6 +254,47 @@ func test_climb_down_pitch_threshold_ignores_slight_down_look() -> void:
 	)
 
 
+## Verifies looking 180 deg away from ladder climbs up level and down when pitched downward.
+func test_opposite_facing_climbs_and_inverts_when_looking_down() -> void:
+	print("TestStateLadder: test_opposite_facing_climbs_and_inverts_when_looking_down().")
+	mock_player.global_position = Vector3(0.0, 2.0, 0.1)
+	state_ladder.enter({&"ladder_node": ladder_node})
+
+	cam_3d.rotation = Vector3(0.0, deg_to_rad(180.0), 0.0)
+	state_ladder._calculate_ladder_velocity(
+		mock_player,
+		mock_player.locomotion_component,
+		mock_player.camera_controller as CameraController,
+		Vector2(0.0, -1.0)
+	)
+	assert_almost_eq(
+		mock_player.velocity.y,
+		StateLadder.LADDER_SPEED,
+		0.001,
+		"180 deg away level look should climb upward on forward input."
+	)
+	assert_almost_eq(
+		mock_player.velocity.x,
+		0.0,
+		0.001,
+		"180 deg away level look should produce zero lateral velocity."
+	)
+
+	cam_3d.rotation = Vector3(deg_to_rad(-45.0), deg_to_rad(180.0), 0.0)
+	state_ladder._calculate_ladder_velocity(
+		mock_player,
+		mock_player.locomotion_component,
+		mock_player.camera_controller as CameraController,
+		Vector2(0.0, -1.0)
+	)
+	assert_almost_eq(
+		mock_player.velocity.y,
+		-StateLadder.LADDER_SPEED,
+		0.001,
+		"180 deg away with 45 deg down look should descend on forward input."
+	)
+
+
 ## Verifies touching ground unglues only when velocity.y <= 0.0.
 func test_ground_touch_unglues_when_not_ascending() -> void:
 	print("TestStateLadder: test_ground_touch_unglues_when_not_ascending().")

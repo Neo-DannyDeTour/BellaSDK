@@ -17,11 +17,8 @@ const LADDER_DEPTH_OFFSET: float = 0.1
 ## Velocity gain aligning player depth toward [member LADDER_DEPTH_OFFSET].
 const LADDER_DEPTH_PULL_SPEED: float = 8.0
 
-## Minimum inward yaw dot (~50 deg from ladder normal) required for vertical W/S climb.
+## Minimum absolute inward yaw dot (~50 deg from ladder normal) required for vertical W/S climb.
 const CLIMB_FACING_DOT_MIN: float = 0.6428
-
-## Minimum inward yaw dot (~105 deg from ladder normal) before W/S enters opposite deadzone.
-const SIDE_LEAN_DOT_MIN: float = -0.2588
 
 ## Downward look Y component (~30 deg down) required to flip forward input into descent.
 const CLIMB_DOWN_LOOK_PITCH: float = -0.50
@@ -155,15 +152,14 @@ func _calculate_ladder_velocity(
 	var ws_lateral: float = 0.0
 	var ws_vertical: float = 0.0
 
-	if inward_dot >= CLIMB_FACING_DOT_MIN:
-		# Facing ladder: W/S drives vertical climb, inverted when pitched sharply downward.
+	if absf(inward_dot) >= CLIMB_FACING_DOT_MIN:
+		# Facing or opposite ladder: W/S climbs vertically, inverted when pitched sharply down.
 		var climb_sign: float = -1.0 if look_dir.y < CLIMB_DOWN_LOOK_PITCH else 1.0
 		ws_vertical = forward_input * climb_sign
-	elif inward_dot >= SIDE_LEAN_DOT_MIN:
+	else:
 		# Looking to sides: W/S leans laterally toward/away from viewed side with zero climb.
 		var side_sign: float = 1.0 if side_dot >= 0.0 else -1.0
 		ws_lateral = forward_input * side_sign
-	# Opposite direction (inward_dot < SIDE_LEAN_DOT_MIN): W/S produces zero movement.
 
 	var strafe_input: float = input_dir.x
 	var ad_lateral: float = right_dir.dot(ladder_right) * strafe_input
