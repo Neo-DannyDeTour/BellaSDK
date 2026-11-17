@@ -2,9 +2,13 @@
 
 [ext_resource type="Script" path="res://vfx/gib_burst_emitter.gd" id="1_emitter"]
 [ext_resource type="Shader" path="res://vfx/gib_splatter_flipbook.gdshader" id="2_shader"]
+[ext_resource type="Texture2D" uid="uid://dkbuem1mwry3v" path="res://assets/vfx/splatter_8x8_albedo_alpha.png" id="3_albedo"]
+[ext_resource type="Texture2D" uid="uid://byblj7tqyknlk" path="res://assets/vfx/splatter_8x8_normal.png" id="4_normal"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_splatter"]
 shader = ExtResource("2_shader")
+shader_parameter/albedo_atlas = ExtResource("3_albedo")
+shader_parameter/normal_atlas = ExtResource("4_normal")
 shader_parameter/h_frames = 8
 shader_parameter/v_frames = 8
 shader_parameter/roughness_val = 0.18
