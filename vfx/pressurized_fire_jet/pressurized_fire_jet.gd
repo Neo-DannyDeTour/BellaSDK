@@ -145,6 +145,8 @@ func _ready() -> void:
 ## Cancels active cycle loops and stops damage timer when removing from scene tree.
 func _exit_tree() -> void:
 	_cycle_generation += 1
+	Utilities.safe_kill_tween(_tween)
+	_tween = null
 	if is_instance_valid(_damage_timer):
 		_damage_timer.stop()
 	_overlapping_targets.clear()
@@ -156,8 +158,8 @@ func set_pressure(target_pressure: float, transition_time: float = 0.2) -> void:
 	print("PressurizedFireJet [%s]: pressure -> %.2f" % [name, clamped_target])
 
 	if transition_time <= 0.0 or not is_inside_tree():
-		if is_instance_valid(_tween) and _tween.is_valid():
-			_tween.kill()
+		Utilities.safe_kill_tween(_tween)
+		_tween = null
 		_apply_pressure_state(clamped_target)
 		return
 

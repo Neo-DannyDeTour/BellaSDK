@@ -16,9 +16,9 @@ const MAX_ARC_TIME: float = 1.5
 ## Standard downward gravity vector matching [ParticleProcessMaterial] defaults.
 const GRAVITY_VEC: Vector3 = Vector3(0.0, -9.8, 0.0)
 ## Physics collision mask for Layer 1 (Environment).
-const ENV_COLLISION_MASK: int = 1
+const ENV_COLLISION_MASK: int = CollisionLayers.MASK_ENVIRONMENT
 ## Physics collision mask for Layer 2 (Player).
-const PLAYER_COLLISION_MASK: int = 2
+const PLAYER_COLLISION_MASK: int = CollisionLayers.MASK_PLAYER
 
 ## Water color tint applied across all child particle emitters via instance uniforms.
 @export var leak_color: Color = Color(0.4, 0.7, 0.9, 0.6):
@@ -100,7 +100,7 @@ func _ready() -> void:
 	_screen_notifier.screen_entered.connect(_on_screen_entered)
 	_screen_notifier.screen_exited.connect(_on_screen_exited)
 
-	_splash_zone.collision_layer = 0
+	_splash_zone.collision_layer = CollisionLayers.MASK_NONE
 	_splash_zone.collision_mask = PLAYER_COLLISION_MASK
 	_splash_zone.body_entered.connect(_on_player_entered_zone)
 	_splash_zone.body_exited.connect(_on_player_exited_zone)
@@ -242,8 +242,12 @@ func _update_arc() -> void:
 			if raw_normal is Vector3:
 				hit_normal = raw_normal
 
-			var seg_len: float = prev_pt.distance_to(next_pt)
-			var frac: float = prev_pt.distance_to(hit_pos) / seg_len if seg_len > 0.0001 else 1.0
+			var seg_len_sq: float = prev_pt.distance_squared_to(next_pt)
+			var frac: float = (
+				sqrt(prev_pt.distance_squared_to(hit_pos) / seg_len_sq)
+				if seg_len_sq > 0.00000001
+				else 1.0
+			)
 			hit_time = maxf(0.08, (float(i - 1) + frac) * dt)
 			local_bounds = local_bounds.expand(to_local(hit_pos))
 			break

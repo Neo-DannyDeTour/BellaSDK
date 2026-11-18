@@ -7,11 +7,9 @@ class_name SmokeExplosionVfx
 extends Node3D
 
 ## Emitted when the primary [member _smoke_billow_plume] finishes emission.
-@warning_ignore("unused_signal")
 signal detonation_completed(origin: Vector3)
 
 ## Emitted per target on Physics Layers 3, 4, or 5 within unoccluded [constant BLAST_RADIUS].
-@warning_ignore("unused_signal")
 signal blast_impacted(collider: Node3D, impulse: Vector3, distance_ratio: float)
 
 ## Render Layer 1 (Environment); excludes Layer 10 (Volumetrics).

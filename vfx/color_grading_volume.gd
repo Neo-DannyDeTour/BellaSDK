@@ -232,10 +232,8 @@ func _ready() -> void:
 		collision_mask = CollisionLayers.MASK_PLAYER
 		add_to_group(&"color_grading_volumes")
 
-		if not body_entered.is_connected(_on_body_entered):
-			body_entered.connect(_on_body_entered)
-		if not body_exited.is_connected(_on_body_exited):
-			body_exited.connect(_on_body_exited)
+		Utilities.safe_connect(body_entered, _on_body_entered)
+		Utilities.safe_connect(body_exited, _on_body_exited)
 
 		if is_instance_valid(target_environment) and target_environment.environment != null:
 			_original_glow_enabled = target_environment.environment.glow_enabled
@@ -448,10 +446,9 @@ func _fade_effect(target_alpha: float) -> void:
 		_canvas_layer.show()
 		_color_rect.show()
 
-	if _blend_tween != null and _blend_tween.is_valid():
-		_blend_tween.kill()
-
-	_blend_tween = create_tween()
+	_blend_tween = Utilities.reset_tween(self, _blend_tween)
+	if not is_instance_valid(_blend_tween):
+		return
 	_blend_tween.tween_property(_color_rect, "modulate:a", target_alpha, blend_time).set_trans(
 		Tween.TRANS_SINE
 	)
@@ -474,10 +471,9 @@ func _fade_bloom(target_intensity: float) -> void:
 		return
 
 	print("ColorGradingVolume3D: Fading environment bloom to: ", target_intensity)
-	if _bloom_tween != null and _bloom_tween.is_valid():
-		_bloom_tween.kill()
-
-	_bloom_tween = create_tween()
+	_bloom_tween = Utilities.reset_tween(self, _bloom_tween)
+	if not is_instance_valid(_bloom_tween):
+		return
 	(
 		_bloom_tween
 		. tween_property(target_environment.environment, "glow_bloom", target_intensity, blend_time)
@@ -488,10 +484,10 @@ func _fade_bloom(target_intensity: float) -> void:
 ## Resets all color grading overlays and restores default environment glow.
 func reset_to_default() -> void:
 	print("ColorGradingVolume3D: Resetting volume overlay to defaults.")
-	if _blend_tween != null and _blend_tween.is_valid():
-		_blend_tween.kill()
-	if _bloom_tween != null and _bloom_tween.is_valid():
-		_bloom_tween.kill()
+	Utilities.safe_kill_tween(_blend_tween)
+	_blend_tween = null
+	Utilities.safe_kill_tween(_bloom_tween)
+	_bloom_tween = null
 
 	if is_instance_valid(_color_rect):
 		_color_rect.modulate.a = 0.0

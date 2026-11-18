@@ -1,9 +1,8 @@
 @tool
-class_name LightningController
-extends Node3D
-
 ## Manages procedural 3D lightning strikes with forked child branches, custom
 ## FBM shader noise, dynamic impact lighting, and distance-delayed thunder.
+class_name LightningController
+extends Node3D
 
 const LIGHTNING_SHADER: Shader = preload("res://vfx/argon_lightning_strike.gdshader")
 const PARAM_ENERGY: StringName = &"energy_multiplier"
@@ -78,7 +77,7 @@ func _ready() -> void:
 
 	_mesh_instance = MeshInstance3D.new()
 	_mesh_instance.top_level = true
-	_mesh_instance.layers = 1
+	_mesh_instance.layers = CollisionLayers.RENDER_MASK_ENVIRONMENT
 	_mesh_instance.mesh = _imm_mesh
 	_mesh_instance.material_override = _shader_mat
 	_mesh_instance.set_instance_shader_parameter(PARAM_ENERGY, 0.0)
@@ -101,6 +100,12 @@ func _ready() -> void:
 
 	if auto_strike:
 		_schedule_next_strike()
+
+
+## Kills active flash tween when leaving the scene tree.
+func _exit_tree() -> void:
+	Utilities.safe_kill_tween(_active_tween)
+	_active_tween = null
 
 
 ## Triggers a lightning strike between specific marker array indices.
@@ -202,15 +207,13 @@ func _generate_bolt(start_pos: Vector3, end_pos: Vector3) -> void:
 	_mesh_instance.set_instance_shader_parameter(PARAM_SEED, randf() * 100.0)
 	_mesh_instance.set_instance_shader_parameter(PARAM_ENERGY, peak_energy)
 
-	if _active_tween and _active_tween.is_valid():
-		_active_tween.kill()
-
-	_active_tween = create_tween()
-	_active_tween.set_parallel(true)
-	_impact_light.light_energy = 30.0
-	_active_tween.tween_property(_impact_light, "light_energy", 0.0, 0.18)
-	_active_tween.tween_method(_set_bolt_energy, peak_energy, 0.0, 0.22)
-	_active_tween.chain().tween_callback(_clear_bolt_mesh)
+	_active_tween = Utilities.reset_tween(self, _active_tween)
+	if is_instance_valid(_active_tween):
+		_active_tween.set_parallel(true)
+		_impact_light.light_energy = 30.0
+		_active_tween.tween_property(_impact_light, "light_energy", 0.0, 0.18)
+		_active_tween.tween_method(_set_bolt_energy, peak_energy, 0.0, 0.22)
+		_active_tween.chain().tween_callback(_clear_bolt_mesh)
 
 
 ## Generates a list of jittered 3D points between two coordinates.

@@ -5,7 +5,6 @@
 extends Node3D
 
 ## Emitted when a Physics Layer 4 (Debris) or Layer 5 (Enemies) target hits the wall.
-@warning_ignore("unused_signal")
 signal intercepted(target: Node3D)
 
 ## Volumetrics render layer bitmask (Layer 10).

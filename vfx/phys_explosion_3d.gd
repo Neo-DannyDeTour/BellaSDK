@@ -20,6 +20,9 @@ extends RigidBody3D
 ## Remaining fuse duration timer in seconds before detonation.
 var _fuse_timer: float = 0.0
 
+## Frustum visibility notifier gating per-frame fuse ticking when off-screen.
+var _visibility_notifier: VisibleOnScreenNotifier3D = null
+
 ## Pre-cached [Area3D] measuring radial physical overlap.
 @onready var blast_area: Area3D = $BlastArea
 
@@ -37,6 +40,7 @@ var _fuse_timer: float = 0.0
 
 ## Configures collision masks, sizes sphere shape once, and arms fuse.
 func _ready() -> void:
+	set_process(false)
 	print("PhysExplosion3D: Arming explosive entity: ", name)
 	if not Engine.is_editor_hint() and is_instance_valid(_editor_icon):
 		_editor_icon.queue_free()
@@ -54,6 +58,7 @@ func _ready() -> void:
 		s_shape.radius = explosion_radius
 
 	_reset_fuse()
+	_setup_visibility_notifier()
 
 
 ## Ticks fuse countdown timer and initiates detonation on expiry.
@@ -90,12 +95,13 @@ func _detonate() -> void:
 			var target_rb: RigidBody3D = body
 			target_rb.sleeping = false
 
-			var dir: Vector3 = center.direction_to(target_rb.global_position)
-			var dist: float = center.distance_to(target_rb.global_position)
-
-			if dist < 0.01:
-				dir = Vector3.UP
-				dist = 0.1
+			var diff: Vector3 = target_rb.global_position - center
+			var dist_sq: float = center.distance_squared_to(target_rb.global_position)
+			var dir: Vector3 = Vector3.UP
+			var dist: float = 0.1
+			if dist_sq >= 0.0001:
+				dist = sqrt(dist_sq)
+				dir = diff / dist
 
 			var falloff: float = maxf(0.0, 1.0 - (dist / explosion_radius))
 			var impulse: Vector3 = dir * explosion_force * falloff * target_rb.mass
@@ -106,3 +112,26 @@ func _detonate() -> void:
 	)
 	var final_kick: Vector3 = random_kick * explosion_force * self_kick_multiplier * mass
 	apply_central_impulse(final_kick)
+
+
+## Creates a [VisibleOnScreenNotifier3D] to gate physics fuse ticking when off-screen.
+func _setup_visibility_notifier() -> void:
+	_visibility_notifier = VisibleOnScreenNotifier3D.new()
+	_visibility_notifier.name = "VisibilityNotifier"
+	_visibility_notifier.aabb = AABB(
+		Vector3(-explosion_radius, -explosion_radius, -explosion_radius),
+		Vector3.ONE * (explosion_radius * 2.0)
+	)
+	Utilities.safe_connect(_visibility_notifier.screen_entered, _on_screen_entered)
+	Utilities.safe_connect(_visibility_notifier.screen_exited, _on_screen_exited)
+	add_child(_visibility_notifier)
+
+
+## Resumes fuse countdown when entering the camera frustum.
+func _on_screen_entered() -> void:
+	set_physics_process(true)
+
+
+## Pauses fuse countdown when outside the camera frustum.
+func _on_screen_exited() -> void:
+	set_physics_process(false)
