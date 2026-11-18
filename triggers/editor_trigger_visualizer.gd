@@ -98,9 +98,15 @@ func _ready() -> void:
 	_update_visibility()
 
 	if not Engine.is_editor_hint() and is_instance_valid(Events):
-		if Events.has_signal(&"trigger_visibility_toggled"):
-			if not Events.trigger_visibility_toggled.is_connected(set_debug_visibility):
-				Events.trigger_visibility_toggled.connect(set_debug_visibility)
+		if not Events.trigger_visibility_toggled.is_connected(set_debug_visibility):
+			Events.trigger_visibility_toggled.connect(set_debug_visibility)
+
+
+## Disconnects global [Events] signal on tree exit.
+func _exit_tree() -> void:
+	if is_instance_valid(Events):
+		if Events.trigger_visibility_toggled.is_connected(set_debug_visibility):
+			Events.trigger_visibility_toggled.disconnect(set_debug_visibility)
 
 
 ## Refreshes geometry, materials, gizmo arrows, and labels simultaneously.

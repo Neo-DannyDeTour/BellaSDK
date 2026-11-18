@@ -3,7 +3,10 @@ class_name DevTestbedLoader
 extends Node
 
 ## Fallback path to the loading screen scene resource.
-const DEFAULT_LOADING_SCREEN_PATH: String = "res://ui/loading_screen.tscn"
+const DEFAULT_LOADING_SCREEN_PATH: String = "res://ui/loading_screen_anim.tscn"
+
+## Preloaded fallback [LoadingScreen] scene resource.
+const DEFAULT_LOADING_SCREEN_SCENE: PackedScene = preload(DEFAULT_LOADING_SCREEN_PATH)
 
 ## Scene template for the [LoadingScreen] interface.
 @export var loading_screen_scene: PackedScene
@@ -63,8 +66,7 @@ func launch_testbed() -> void:
 
 	var target_scene: PackedScene = loading_screen_scene
 	if not is_instance_valid(target_scene):
-		if ResourceLoader.exists(DEFAULT_LOADING_SCREEN_PATH):
-			target_scene = load(DEFAULT_LOADING_SCREEN_PATH) as PackedScene
+		target_scene = DEFAULT_LOADING_SCREEN_SCENE
 
 	if not is_instance_valid(target_scene):
 		push_error("DevTestbedLoader: No loading_screen_scene assigned or found at default path!")

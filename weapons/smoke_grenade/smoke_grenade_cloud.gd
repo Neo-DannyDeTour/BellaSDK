@@ -255,8 +255,9 @@ func _build_conforming_lobes() -> void:
 			)
 			var clear_dist: float = max_dist
 			if not hit.is_empty():
-				var hit_pos: Vector3 = hit.get("position", target)
-				clear_dist = maxf(0.35, origin.distance_to(hit_pos) - 0.35)
+				var raw_pos: Variant = hit.get("position", target)
+				var hit_pos: Vector3 = raw_pos if raw_pos is Vector3 else target
+				clear_dist = maxf(0.35, sqrt(origin.distance_squared_to(hit_pos)) - 0.35)
 
 			lobe_pos = origin + dir * (clear_dist * 0.6)
 			lobe_rad = clampf(clear_dist * 0.65, 1.05, max_radius * 0.58)

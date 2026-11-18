@@ -121,7 +121,7 @@ func _ready() -> void:
 		var prompt_setting: Variant = settings_node.call(
 			"get_setting", "Gameplay", "show_item_prompts", true
 		)
-		if typeof(prompt_setting) == TYPE_BOOL:
+		if prompt_setting is bool:
 			_show_text_prompts = prompt_setting
 
 	if Events.has_signal("item_prompts_toggled"):
@@ -162,23 +162,14 @@ func equip_to_player(player_body: CharacterBody3D) -> void:
 	if is_instance_valid(highlight_comp):
 		highlight_comp.suppress(true)
 
-	var inv: WeaponInventoryComponent = null
+	var inv: Node = _find_inventory(player_body)
 	if is_instance_valid(player_body):
-		inv = (
-			player_body.find_child("WeaponInventoryComponent", true, false)
-			as WeaponInventoryComponent
-		)
 		_excluded_rids = [player_body.get_rid()]
 
-	if not is_instance_valid(inv):
-		inv = (
-			get_tree().root.find_child("WeaponInventoryComponent", true, false)
-			as WeaponInventoryComponent
-		)
-
 	var weapon_holder: Node3D = null
-	if is_instance_valid(inv) and is_instance_valid(inv.weapon_holder):
-		weapon_holder = inv.weapon_holder
+	var raw_holder: Variant = inv.get(&"weapon_holder") if is_instance_valid(inv) else null
+	if raw_holder is Node3D:
+		weapon_holder = raw_holder as Node3D
 	elif is_instance_valid(player_body):
 		weapon_holder = (player_body.find_child("WeaponHolder", true, false) as Node3D)
 
@@ -191,9 +182,9 @@ func equip_to_player(player_body: CharacterBody3D) -> void:
 	set_process(false)
 	set_physics_process(false)
 
-	if is_instance_valid(inv):
+	if is_instance_valid(inv) and inv.has_method(&"register_weapon"):
 		print(weapon_tag, ": Found inventory -> registering in slot ", default_slot)
-		inv.register_weapon(self)
+		inv.call(&"register_weapon", self)
 	else:
 		push_error("ThrowableWeapon: Missing WeaponInventoryComponent in scene!")
 
@@ -290,8 +281,10 @@ func _spawn_projectile(player_camera: Camera3D) -> void:
 			space_state, cam_pos, desired_pos, Types.MASK_SOLID_WORLD, _excluded_rids
 		)
 		if not hit.is_empty():
-			var hit_pos: Vector3 = hit.get("position", cam_pos)
-			var hit_normal: Vector3 = hit.get("normal", Vector3.UP)
+			var raw_pos: Variant = hit.get("position", cam_pos)
+			var hit_pos: Vector3 = raw_pos if raw_pos is Vector3 else cam_pos
+			var raw_normal: Variant = hit.get("normal", Vector3.UP)
+			var hit_normal: Vector3 = raw_normal if raw_normal is Vector3 else Vector3.UP
 			spawn_pos = hit_pos + hit_normal * 0.12
 
 	var scene_root: Node = get_tree().current_scene
@@ -322,30 +315,34 @@ func _play_throw_audio() -> void:
 ## Swaps player to previous weapon and removes depleted throwable from inventory.
 func _handle_depleted() -> void:
 	print(weapon_tag, ": Ammunition depleted -> auto-swapping to previous weapon.")
-	var inv: WeaponInventoryComponent = _find_inventory(null)
+	var inv: Node = _find_inventory(null)
 	if is_instance_valid(inv):
-		var prev_idx: int = inv.previous_slot_index
+		var raw_prev: Variant = inv.get(&"previous_slot_index")
+		var prev_idx: int = raw_prev if raw_prev is int else -1
+		var raw_slots: Variant = inv.get(&"slots")
+		var slots_arr: Array = raw_slots if raw_slots is Array else []
 		var switched: bool = false
 		var prev_is_valid: bool = (
-			prev_idx != -1
-			and prev_idx < inv.slots.size()
-			and inv.slots[prev_idx] != null
-			and inv.slots[prev_idx] != self
+			prev_idx >= 0
+			and prev_idx < slots_arr.size()
+			and slots_arr[prev_idx] != null
+			and slots_arr[prev_idx] != self
 		)
-		if prev_is_valid:
-			inv.select_slot(prev_idx)
+		if prev_is_valid and inv.has_method(&"select_slot"):
+			inv.call(&"select_slot", prev_idx)
 			switched = true
-		else:
-			for i: int in range(inv.slots.size()):
-				var candidate: Node3D = inv.slots[i]
-				if is_instance_valid(candidate) and candidate != self:
-					inv.select_slot(i)
+		elif inv.has_method(&"select_slot"):
+			for i: int in range(slots_arr.size()):
+				var candidate: Variant = slots_arr[i]
+				if candidate is Node3D and is_instance_valid(candidate) and candidate != self:
+					inv.call(&"select_slot", i)
 					switched = true
 					break
 
 		if not switched:
-			inv.current_slot_index = -1
-		inv.remove_weapon(self)
+			inv.set(&"current_slot_index", -1)
+		if inv.has_method(&"remove_weapon"):
+			inv.call(&"remove_weapon", self)
 
 	queue_free()
 
@@ -363,7 +360,7 @@ func _on_interact_component_interacted(player_body: CharacterBody3D = null) -> v
 	if not is_instance_valid(target_player):
 		return
 
-	var inv: WeaponInventoryComponent = _find_inventory(target_player)
+	var inv: Node = _find_inventory(target_player)
 	if not is_instance_valid(inv):
 		equip_to_player(target_player)
 		return
@@ -429,7 +426,7 @@ func _update_label_text() -> void:
 		prompt_icon.texture = icon_tex
 		prompt_icon.visible = (icon_tex != null)
 
-	var inv: WeaponInventoryComponent = _find_inventory(null)
+	var inv: Node = _find_inventory(null)
 	var existing: ThrowableWeapon = (
 		_find_matching_throwable(inv) if is_instance_valid(inv) else null
 	)
@@ -457,25 +454,29 @@ func _on_item_prompts_toggled(enabled: bool) -> void:
 
 
 ## Locates the player's [WeaponInventoryComponent] from scene tree.
-func _find_inventory(player_node: CharacterBody3D) -> WeaponInventoryComponent:
+func _find_inventory(player_node: CharacterBody3D) -> Node:
 	if is_instance_valid(player_node):
 		var player_inv: Node = player_node.find_child("WeaponInventoryComponent", true, false)
-		if player_inv is WeaponInventoryComponent:
-			return player_inv as WeaponInventoryComponent
+		if is_instance_valid(player_inv):
+			return player_inv
 
 	var root_inv: Node = get_tree().root.find_child("WeaponInventoryComponent", true, false)
-	if root_inv is WeaponInventoryComponent:
-		return root_inv as WeaponInventoryComponent
+	if is_instance_valid(root_inv):
+		return root_inv
 	return null
 
 
 ## Finds registered [ThrowableWeapon] in inventory matching this weapon's [member ammo_type].
-func _find_matching_throwable(inv: WeaponInventoryComponent) -> ThrowableWeapon:
+func _find_matching_throwable(inv: Node) -> ThrowableWeapon:
 	if not is_instance_valid(inv):
 		return null
 
-	for w: Node3D in inv.slots:
-		if is_instance_valid(w) and w is ThrowableWeapon:
+	var raw_slots: Variant = inv.get(&"slots")
+	if not (raw_slots is Array):
+		return null
+	var slots_arr: Array = raw_slots
+	for w: Variant in slots_arr:
+		if w is ThrowableWeapon and is_instance_valid(w):
 			var candidate: ThrowableWeapon = w as ThrowableWeapon
 			if candidate.ammo_type == ammo_type or candidate.weapon_tag == weapon_tag:
 				return candidate

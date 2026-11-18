@@ -105,7 +105,7 @@ enum RoomShape {
 @export var vault_obstacle_height: float = 1.0
 
 ## Internal map of [Vector3i] grid coordinates to [constant CellType] values.
-var _grid: Dictionary = {}
+var _grid: Dictionary[Vector3i, int] = {}
 
 ## Tracks placed room cell arrays grouped by their vertical floor index.
 var _rooms_by_floor: Array[Array] = []
@@ -340,8 +340,8 @@ func _spawn_nested_inner_box(min_x: int, max_x: int, min_z: int, max_z: int, gri
 	outer_box.size = box_size
 	outer_box.position = box_center
 	outer_box.use_collision = true
-	outer_box.collision_layer = 1
-	outer_box.collision_mask = 0
+	outer_box.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	outer_box.collision_mask = CollisionLayers.MASK_NONE
 
 	var inner_box: CSGBox3D = CSGBox3D.new()
 	inner_box.size = box_size - Vector3(0.4, 0.0, 0.4)
@@ -402,8 +402,10 @@ func _connect_floor_rooms(floor_rooms: Array[Array], _floor_index: int) -> void:
 		var room_b: Array = floor_rooms[(i + 1) % floor_rooms.size()]
 		var center_a_idx: int = floori(float(room_a.size()) * 0.5)
 		var center_b_idx: int = floori(float(room_b.size()) * 0.5)
-		var center_a: Vector3i = room_a[center_a_idx]
-		var center_b: Vector3i = room_b[center_b_idx]
+		var raw_a: Variant = room_a[center_a_idx]
+		var raw_b: Variant = room_b[center_b_idx]
+		var center_a: Vector3i = raw_a if raw_a is Vector3i else Vector3i.ZERO
+		var center_b: Vector3i = raw_b if raw_b is Vector3i else Vector3i.ZERO
 		_carve_corridor(center_a, center_b)
 
 
@@ -421,8 +423,10 @@ func _connect_floors(
 	var lower_y: int = floor_index * floor_height_cells
 	var lower_center_idx: int = floori(float(lower_room.size()) * 0.5)
 	var upper_center_idx: int = floori(float(upper_room.size()) * 0.5)
-	var lower_room_center: Vector3i = lower_room[lower_center_idx]
-	var upper_room_center: Vector3i = upper_room[upper_center_idx]
+	var raw_lower: Variant = lower_room[lower_center_idx]
+	var raw_upper: Variant = upper_room[upper_center_idx]
+	var lower_room_center: Vector3i = raw_lower if raw_lower is Vector3i else Vector3i.ZERO
+	var upper_room_center: Vector3i = raw_upper if raw_upper is Vector3i else Vector3i.ZERO
 
 	var stair_run_start: Vector3i = Vector3i(lower_room_center.x + 2, lower_y, lower_room_center.z)
 
@@ -503,8 +507,8 @@ func _spawn_window_fenestration_sill(coord: Vector3i) -> void:
 	var pos: Vector3 = grid_to_world(coord) + Vector3(0.0, cell_size * 0.5, 0.0)
 	wall_box.position = pos
 	wall_box.use_collision = true
-	wall_box.collision_layer = 1
-	wall_box.collision_mask = 0
+	wall_box.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	wall_box.collision_mask = CollisionLayers.MASK_NONE
 	wall_box.add_to_group("vaultable")
 
 	var window_cut: CSGBox3D = CSGBox3D.new()
@@ -521,7 +525,7 @@ func _generate_ceilings_and_roofs() -> void:
 	# print("ProceduralBlockout: Building room roof and ceiling enclosure geometry.")
 	_ensure_containers()
 
-	var ceiling_cells: Dictionary = {}
+	var ceiling_cells: Dictionary[Vector3i, bool] = {}
 	for cell: Vector3i in _grid:
 		var type: int = _grid[cell]
 		if type == CellType.ROOM or type == CellType.CORRIDOR:
@@ -544,8 +548,8 @@ func _spawn_ceiling_tile(coord: Vector3i) -> void:
 	pos.y -= 0.1
 	tile.position = pos
 	tile.use_collision = true
-	tile.collision_layer = 1
-	tile.collision_mask = 0
+	tile.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	tile.collision_mask = CollisionLayers.MASK_NONE
 	_ceiling_container.add_child(tile)
 
 
@@ -557,8 +561,8 @@ func _spawn_skylight_opening(coord: Vector3i) -> void:
 	var pos: Vector3 = grid_to_world(coord)
 	skylight_frame.position = pos
 	skylight_frame.use_collision = true
-	skylight_frame.collision_layer = 1
-	skylight_frame.collision_mask = 0
+	skylight_frame.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	skylight_frame.collision_mask = CollisionLayers.MASK_NONE
 
 	var cutout: CSGBox3D = CSGBox3D.new()
 	cutout.size = Vector3(cell_size * 0.7, 0.6, cell_size * 0.7)
@@ -578,7 +582,9 @@ func _generate_parkour_elements() -> void:
 		for room: Array in room_cells:
 			if not room.is_empty():
 				var center_idx: int = floori(float(room.size()) * 0.5)
-				room_centers.append(room[center_idx])
+				var raw_center: Variant = room[center_idx]
+				if raw_center is Vector3i:
+					room_centers.append(raw_center)
 
 	for i: int in range(room_centers.size()):
 		var center: Vector3i = room_centers[i]
@@ -606,8 +612,8 @@ func _spawn_crouch_crawlspace(origin: Vector3i) -> void:
 	var world_pos: Vector3 = grid_to_world(origin) + Vector3(0.0, duct.size.y * 0.5, 0.0)
 	duct.position = world_pos
 	duct.use_collision = true
-	duct.collision_layer = 1
-	duct.collision_mask = 0
+	duct.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	duct.collision_mask = CollisionLayers.MASK_NONE
 
 	var tunnel_cut: CSGBox3D = CSGBox3D.new()
 	tunnel_cut.size = Vector3(cell_size * 2.2, crouch_clearance_height, cell_size * 1.1)
@@ -629,8 +635,8 @@ func _spawn_vault_obstacle_and_sills(origin: Vector3i) -> void:
 	)
 	wall.position = world_pos
 	wall.use_collision = true
-	wall.collision_layer = 1
-	wall.collision_mask = 0
+	wall.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	wall.collision_mask = CollisionLayers.MASK_NONE
 	wall.add_to_group("vaultable")
 	wall.add_to_group("climbable")
 
@@ -678,8 +684,8 @@ func _spawn_sprint_jump_chasm(start_coord: Vector3i, target_coord: Vector3i) -> 
 
 	landing_pad.position = (start_world + gap_dir * jump_dist + Vector3(0.0, 0.15, 0.0))
 	landing_pad.use_collision = true
-	landing_pad.collision_layer = 1
-	landing_pad.collision_mask = 0
+	landing_pad.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	landing_pad.collision_mask = CollisionLayers.MASK_NONE
 	landing_pad.add_to_group("landing_pad")
 
 	var mat: StandardMaterial3D = StandardMaterial3D.new()
@@ -778,7 +784,8 @@ func _clear_generated_containers() -> void:
 ## Retrieves the [constant CellType] at specified [param coord].
 func get_cell(coord: Vector3i) -> int:
 	# print("ProceduralBlockout: Fetching cell data at %s." % coord)
-	return _grid.get(coord, CellType.EMPTY)
+	var raw_cell: Variant = _grid.get(coord, CellType.EMPTY)
+	return raw_cell if raw_cell is int else CellType.EMPTY
 
 
 ## Converts [param grid_pos] cell coordinates to world space [Vector3].

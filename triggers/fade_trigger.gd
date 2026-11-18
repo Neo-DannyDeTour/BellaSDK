@@ -46,14 +46,13 @@ func _on_player_entered(player_node: Node3D) -> void:
 ## Dispatches screen transition parameters to centralized [ScreenEffectsCore].
 func _dispatch_fade_sequence() -> void:
 	print("FadeTrigger: Dispatching transition payload to ScreenEffectsCore.")
-	if Events.has_signal(&"screen_fade_requested"):
-		Events.screen_fade_requested.emit(
-			fade_color,
-			fade_in_duration,
-			hold_duration,
-			fade_out_duration,
-			use_blur,
-			max_blur,
-			use_blink,
-			blink_count
-		)
+	Events.screen_fade_requested.emit(
+		fade_color,
+		fade_in_duration,
+		hold_duration,
+		fade_out_duration,
+		use_blur,
+		max_blur,
+		use_blink,
+		blink_count
+	)

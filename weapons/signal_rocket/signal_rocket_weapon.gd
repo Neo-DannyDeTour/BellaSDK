@@ -26,6 +26,11 @@ const DROP_UPWARD_BOOST: float = 0.5
 ## Fallback projectile scene path used when [member projectile_scene] is unassigned in tests.
 const PROJECTILE_SCENE_PATH: String = "res://weapons/signal_rocket/signal_rocket_projectile.tscn"
 
+## Preloaded fallback projectile scene used when [member projectile_scene] is unassigned.
+const DEFAULT_PROJECTILE_SCENE: PackedScene = preload(
+	"res://weapons/signal_rocket/signal_rocket_projectile.tscn"
+)
+
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
@@ -65,8 +70,7 @@ func _ready() -> void:
 	current_ammo = 1
 
 	if not is_instance_valid(projectile_scene):
-		# Avoid compile-time preload() cycle with signal_rocket_projectile.gd on worker threads.
-		projectile_scene = ResourceLoader.load(PROJECTILE_SCENE_PATH) as PackedScene
+		projectile_scene = DEFAULT_PROJECTILE_SCENE
 
 	if not is_instance_valid(flare_light):
 		flare_light = get_node_or_null("MuzzlePoint/OmniLight3D") as OmniLight3D
@@ -181,10 +185,12 @@ func _on_held_burn_timeout() -> void:
 ## Swaps to previous weapon, removes empty rocket slot from inventory, and frees node.
 func _handle_depleted() -> void:
 	print(weapon_tag, ": Depleted -> removing from inventory and swapping to previous.")
-	var inv: WeaponInventoryComponent = _find_inventory(null)
+	var inv: Node = _find_inventory(null)
 	if is_instance_valid(inv):
-		inv.swap_to_previous()
-		inv.remove_weapon(self)
+		if inv.has_method(&"swap_to_previous"):
+			inv.call(&"swap_to_previous")
+		if inv.has_method(&"remove_weapon"):
+			inv.call(&"remove_weapon", self)
 	queue_free()
 
 
@@ -192,17 +198,19 @@ func _handle_depleted() -> void:
 func _cleanup_after_unequip() -> void:
 	if not is_inside_tree():
 		return
-	var inv: WeaponInventoryComponent = _find_inventory(null)
-	if is_instance_valid(inv):
-		inv.remove_weapon(self)
+	var inv: Node = _find_inventory(null)
+	if is_instance_valid(inv) and inv.has_method(&"remove_weapon"):
+		inv.call(&"remove_weapon", self)
 	queue_free()
 
 
-## Resolves player [Camera3D] from [WeaponInventoryComponent] or active viewport.
+## Resolves player [Camera3D] from inventory component or active viewport.
 func _resolve_drop_camera() -> Camera3D:
-	var inv: WeaponInventoryComponent = _find_inventory(null)
-	if is_instance_valid(inv) and is_instance_valid(inv.camera):
-		return inv.camera
+	var inv: Node = _find_inventory(null)
+	if is_instance_valid(inv):
+		var raw_cam: Variant = inv.get(&"camera")
+		if raw_cam is Camera3D and is_instance_valid(raw_cam):
+			return raw_cam as Camera3D
 	var vp: Viewport = get_viewport()
 	if is_instance_valid(vp):
 		return vp.get_camera_3d()
@@ -238,8 +246,10 @@ func _spawn_rocket_projectile(
 			space_state, cam_pos, desired_pos, CollisionLayers.MASK_SOLID_WORLD, _excluded_rids
 		)
 		if not hit.is_empty():
-			var hit_pos: Vector3 = hit.get("position", cam_pos)
-			var hit_normal: Vector3 = hit.get("normal", Vector3.UP)
+			var raw_pos: Variant = hit.get("position", cam_pos)
+			var hit_pos: Vector3 = raw_pos if raw_pos is Vector3 else cam_pos
+			var raw_normal: Variant = hit.get("normal", Vector3.UP)
+			var hit_normal: Vector3 = raw_normal if raw_normal is Vector3 else Vector3.UP
 			spawn_pos = hit_pos + hit_normal * 0.12
 
 	var scene_root: Node = get_tree().current_scene

@@ -27,12 +27,11 @@ func _ready() -> void:
 ## Dispatches drunk intensity transition on player entry.
 func _on_player_entered(player_node: Node3D) -> void:
 	print("DrunkTrigger: Player entered -> ", player_node.name, " (target: ", target_intensity, ")")
-	if Events.has_signal(&"drunk_intensity_changed"):
-		Events.drunk_intensity_changed.emit(target_intensity, transition_duration)
+	Events.drunk_intensity_changed.emit(target_intensity, transition_duration)
 
 
 ## Reverts drunk intensity on player exit if [member revert_on_exit] is true.
 func _on_player_exited(player_node: Node3D) -> void:
 	print("DrunkTrigger: Player exited -> ", player_node.name)
-	if revert_on_exit and Events.has_signal(&"drunk_intensity_changed"):
+	if revert_on_exit:
 		Events.drunk_intensity_changed.emit(0.0, exit_duration)

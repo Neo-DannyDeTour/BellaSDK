@@ -30,4 +30,4 @@ func _on_body_entered(body: Node3D) -> void:
 		if is_instance_valid(linked_shell):
 			if linked_shell.has_method(&"trigger_drop"):
 				linked_shell.call(&"trigger_drop")
-		queue_free()
+		call_deferred(&"queue_free")

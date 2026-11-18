@@ -45,10 +45,8 @@ func _on_player_entered(player_node: Node3D) -> void:
 		show_on_screen
 	)
 
-	if show_on_screen and has_node("/root/Events"):
-		var events_node: Node = get_node("/root/Events")
-		if events_node.has_signal(&"hint_requested"):
-			events_node.emit_signal(&"hint_requested", formatted_message, duration)
+	if show_on_screen and is_instance_valid(Events):
+		Events.hint_requested.emit(formatted_message, duration)
 
 	_dispatch_tts(formatted_message)
 
