@@ -40,7 +40,6 @@ func exit() -> void:
 
 ## Locks horizontal velocity while applying downward gravity acceleration.
 func physics_update(delta: float) -> void:
-	print("StateTerminal: physics_update() maintaining terminal immobility.")
 	if not is_instance_valid(player):
 		return
 

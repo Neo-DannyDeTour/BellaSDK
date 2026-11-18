@@ -45,7 +45,6 @@ func exit() -> void:
 
 ## Updates downhill acceleration, lateral steering, gravity, and bounds.
 func physics_update(delta: float) -> void:
-	print("StateSlide: physics_update() processing slide frame.")
 	var typed_player: Player = player if player is Player else null
 	var loco: PlayerLocomotionComponent = (
 		typed_player.locomotion_component as PlayerLocomotionComponent
@@ -120,7 +119,6 @@ func physics_update(delta: float) -> void:
 
 ## Updates camera shake, footstep managers, and snow deformation tracks.
 func _update_components(delta: float, input_dir: Vector2) -> void:
-	print("StateSlide: _update_components() polling camera and footsteps.")
 	var typed_player: Player = player if player is Player else null
 	var loco: PlayerLocomotionComponent = (
 		typed_player.locomotion_component as PlayerLocomotionComponent

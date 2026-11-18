@@ -4,6 +4,18 @@ class_name ScreenVFXManager
 extends Node
 
 # --------------------------------------
+# CONSTANTS
+# --------------------------------------
+## Pre-allocated shader uniform name for rain droplet opacity.
+const PARAM_DROP_INTENSITY: StringName = &"drop_intensity"
+
+## Pre-allocated shader uniform name for upward rain wash opacity.
+const PARAM_WASH_INTENSITY: StringName = &"wash_intensity"
+
+## Pre-allocated shader uniform name for water wipe clear progress.
+const PARAM_CLEAR_PROGRESS: StringName = &"clear_progress"
+
+# --------------------------------------
 # EXPORTS
 # --------------------------------------
 @export_category("VFX Overlays")
@@ -52,6 +64,8 @@ var waterfall_mat: ShaderMaterial = null
 ## Initializes cached shader materials via [MaterialCache] preventing VRAM stalls.
 func _ready() -> void:
 	print("ScreenVFXManager: _ready() - Initializing isolated overlay materials.")
+	set_process(false)
+	set_physics_process(false)
 	if is_instance_valid(waterfall_overlay) and waterfall_overlay.material:
 		waterfall_mat = (MaterialCache.get_instance(waterfall_overlay.material) as ShaderMaterial)
 		waterfall_overlay.material = waterfall_mat
@@ -125,8 +139,8 @@ func _handle_rain_drops(delta: float, camera_pitch: float) -> void:
 			print("ScreenVFXManager: Rain intensity active, showing overlay.")
 			rain_drops_overlay.show()
 
-		rain_mat.set_shader_parameter("drop_intensity", current_drop_intensity)
-		rain_mat.set_shader_parameter("wash_intensity", current_wash_intensity)
+		rain_mat.set_shader_parameter(PARAM_DROP_INTENSITY, current_drop_intensity)
+		rain_mat.set_shader_parameter(PARAM_WASH_INTENSITY, current_wash_intensity)
 
 
 # --------------------------------------
@@ -145,7 +159,7 @@ func set_underwater_state(is_underwater: bool) -> void:
 		Utilities.safe_kill_tween(water_clear_tween)
 		water_clear_tween = null
 		screen_water_ui.show()
-		water_mat.set_shader_parameter("clear_progress", 0.0)
+		water_mat.set_shader_parameter(PARAM_CLEAR_PROGRESS, 0.0)
 
 
 ## Initiates multi-phase surface wipe tween when surfacing from water volume.
@@ -155,9 +169,9 @@ func trigger_surface_wipe() -> void:
 		return
 
 	screen_water_ui.show()
-	water_mat.set_shader_parameter("clear_progress", 0.0)
-	water_mat.set_shader_parameter("drop_intensity", 0.8)
-	water_mat.set_shader_parameter("wash_intensity", 0.5)
+	water_mat.set_shader_parameter(PARAM_CLEAR_PROGRESS, 0.0)
+	water_mat.set_shader_parameter(PARAM_DROP_INTENSITY, 0.8)
+	water_mat.set_shader_parameter(PARAM_WASH_INTENSITY, 0.5)
 
 	water_clear_tween = Utilities.reset_tween(self, water_clear_tween)
 	if not is_instance_valid(water_clear_tween):
@@ -214,9 +228,9 @@ func enter_waterfall() -> void:
 	waterfall_clear_tween = null
 
 	waterfall_overlay.show()
-	waterfall_mat.set_shader_parameter("clear_progress", 0.0)
-	waterfall_mat.set_shader_parameter("wash_intensity", 1.0)
-	waterfall_mat.set_shader_parameter("drop_intensity", 0.0)
+	waterfall_mat.set_shader_parameter(PARAM_CLEAR_PROGRESS, 0.0)
+	waterfall_mat.set_shader_parameter(PARAM_WASH_INTENSITY, 1.0)
+	waterfall_mat.set_shader_parameter(PARAM_DROP_INTENSITY, 0.0)
 
 
 ## Initiates managed exit tween fading out waterfall wash and droplet overlays.
@@ -227,7 +241,7 @@ func exit_waterfall() -> void:
 	if not is_instance_valid(waterfall_overlay) or not is_instance_valid(waterfall_mat):
 		return
 
-	waterfall_mat.set_shader_parameter("drop_intensity", 1.0)
+	waterfall_mat.set_shader_parameter(PARAM_DROP_INTENSITY, 1.0)
 
 	waterfall_clear_tween = Utilities.reset_tween(self, waterfall_clear_tween)
 	if not is_instance_valid(waterfall_clear_tween):

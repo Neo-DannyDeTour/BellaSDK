@@ -47,6 +47,9 @@ var _initial_progress: float = 0.0
 ## Indicates whether player has departed sufficiently far from the attachment point.
 var _has_departed_start: bool = false
 
+## Active tween used for zipline attachment and camera roll reset.
+var _tween: Tween = null
+
 
 ## Attaches player to zipline and initializes cable progression metrics.
 func enter(msg: Dictionary = {}) -> void:
@@ -65,7 +68,7 @@ func enter(msg: Dictionary = {}) -> void:
 	zipline_end = raw_end if raw_end is Vector3 else Vector3.ZERO
 
 	zipline_dir = (zipline_end - zipline_start).normalized()
-	zipline_length = zipline_start.distance_to(zipline_end)
+	zipline_length = maxf(sqrt(zipline_start.distance_squared_to(zipline_end)), 0.001)
 	zipline_grace_timer = 0.0
 	is_zipline_transitioning = true
 	_has_departed_start = false
@@ -84,23 +87,24 @@ func exit() -> void:
 	player.scale = Vector3.ONE
 
 	var p: Player = player if player is Player else null
-	var detach_tween: Tween = create_tween().set_parallel(true)
+	_tween = Utilities.reset_tween(self, _tween)
+	if is_instance_valid(_tween):
+		_tween.set_parallel(true)
 
-	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
-		var cam_ctrl: CameraController = p.camera_controller
-		if is_instance_valid(cam_ctrl.head):
-			detach_tween.tween_property(cam_ctrl.head, "rotation:x", 0.0, 0.15).set_trans(
-				Tween.TRANS_SINE
-			)
-		if is_instance_valid(cam_ctrl.eyes):
-			detach_tween.tween_property(cam_ctrl.eyes, "rotation:z", 0.0, 0.15).set_trans(
-				Tween.TRANS_SINE
-			)
+		if is_instance_valid(p) and is_instance_valid(p.camera_controller):
+			var cam_ctrl: CameraController = p.camera_controller
+			if is_instance_valid(cam_ctrl.head):
+				_tween.tween_property(cam_ctrl.head, "rotation:x", 0.0, 0.15).set_trans(
+					Tween.TRANS_SINE
+				)
+			if is_instance_valid(cam_ctrl.eyes):
+				_tween.tween_property(cam_ctrl.eyes, "rotation:z", 0.0, 0.15).set_trans(
+					Tween.TRANS_SINE
+				)
 
 
 ## Updates traversal progress, camera orientation, and dismount conditions.
 func physics_update(delta: float) -> void:
-	print("StateZipline: physics_update() processing zipline traversal.")
 	if is_zipline_transitioning:
 		return
 
@@ -147,8 +151,13 @@ func _perform_attach_tween() -> void:
 	var real_target_pos: Vector3 = zipline_start.lerp(zipline_end, zipline_progress)
 	real_target_pos.y -= ZIPLINE_HANG_OFFSET
 
-	var attach_tween: Tween = create_tween().set_parallel(true)
-	attach_tween.tween_property(player, "global_position", real_target_pos, 0.25).set_trans(
+	_tween = Utilities.reset_tween(self, _tween)
+	if not is_instance_valid(_tween):
+		_on_attach_tween_finished()
+		return
+
+	_tween.set_parallel(true)
+	_tween.tween_property(player, "global_position", real_target_pos, 0.25).set_trans(
 		Tween.TRANS_SINE
 	)
 
@@ -163,7 +172,7 @@ func _perform_attach_tween() -> void:
 		var target_yaw_quat: Quaternion = (
 			Basis.looking_at(flat_dir, Vector3.UP).get_rotation_quaternion()
 		)
-		attach_tween.tween_property(player, "quaternion", target_yaw_quat, 0.25).set_trans(
+		_tween.tween_property(player, "quaternion", target_yaw_quat, 0.25).set_trans(
 			Tween.TRANS_SINE
 		)
 
@@ -172,14 +181,12 @@ func _perform_attach_tween() -> void:
 		if is_instance_valid(p) and is_instance_valid(p.camera_controller):
 			var cam_ctrl: CameraController = p.camera_controller
 			if is_instance_valid(cam_ctrl.head):
-				(
-					attach_tween
-					. tween_property(cam_ctrl.head, "rotation:x", pitch_angle, 0.25)
-					. set_trans(Tween.TRANS_SINE)
+				_tween.tween_property(cam_ctrl.head, "rotation:x", pitch_angle, 0.25).set_trans(
+					Tween.TRANS_SINE
 				)
 
-	attach_tween.set_parallel(false)
-	attach_tween.tween_callback(_on_attach_tween_finished)
+	_tween.set_parallel(false)
+	_tween.tween_callback(_on_attach_tween_finished)
 
 
 ## Callback triggered when attachment tween finishes to enable physics updates.
@@ -190,7 +197,6 @@ func _on_attach_tween_finished() -> void:
 
 ## Computes frame traversal progression based on look angle and inputs.
 func _calculate_movement(delta: float, input_dir: Vector2) -> void:
-	print("StateZipline: _calculate_movement() computing travel step.")
 	var downhill_sign: float = 1.0 if zipline_dir.y < 0.0 else -1.0
 	var downhill_vector: Vector3 = zipline_dir * downhill_sign
 
@@ -231,7 +237,6 @@ func _calculate_movement(delta: float, input_dir: Vector2) -> void:
 
 ## Applies interpolated position along zipline cable to player transform.
 func _apply_position() -> void:
-	print("StateZipline: _apply_position() snapping player to cable coordinate.")
 	var target_pos: Vector3 = zipline_start.lerp(zipline_end, zipline_progress)
 	target_pos.y -= ZIPLINE_HANG_OFFSET
 	player.global_position = target_pos
@@ -240,7 +245,6 @@ func _apply_position() -> void:
 
 ## Evaluates cable termination and player input triggers for dismount.
 func _check_dismount_conditions() -> void:
-	print("StateZipline: _check_dismount_conditions() polling exit inputs.")
 	var at_end_terminus: bool = (
 		zipline_progress >= 0.999 and (_initial_progress < 0.95 or _has_departed_start)
 	)

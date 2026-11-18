@@ -128,12 +128,9 @@ func _ready() -> void:
 	_wolf_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	_wolf_noise.frequency = 0.5
 
-	if Events.has_signal(&"wolf_mode_toggled"):
-		Events.wolf_mode_toggled.connect(_on_wolf_mode_toggled)
-	if Events.has_signal(&"aim_assist_mode_changed"):
-		Events.aim_assist_mode_changed.connect(_on_aim_assist_mode_changed)
-	if Events.has_signal(&"aim_assist_amount_changed"):
-		Events.aim_assist_amount_changed.connect(_on_aim_assist_amount_changed)
+	Utilities.safe_connect(Events.wolf_mode_toggled, _on_wolf_mode_toggled)
+	Utilities.safe_connect(Events.aim_assist_mode_changed, _on_aim_assist_mode_changed)
+	Utilities.safe_connect(Events.aim_assist_amount_changed, _on_aim_assist_amount_changed)
 
 	if is_instance_valid(player_body) and player_body.get(&"is_wolf_mode") == true:
 		_is_wolf_mode = true
@@ -141,20 +138,13 @@ func _ready() -> void:
 
 ## Cleans up event listeners when removed from the scene tree.
 func _exit_tree() -> void:
-	if (
-		Events.has_signal(&"wolf_mode_toggled")
-		and Events.wolf_mode_toggled.is_connected(_on_wolf_mode_toggled)
-	):
+	if not is_instance_valid(Events):
+		return
+	if Events.wolf_mode_toggled.is_connected(_on_wolf_mode_toggled):
 		Events.wolf_mode_toggled.disconnect(_on_wolf_mode_toggled)
-	if (
-		Events.has_signal(&"aim_assist_mode_changed")
-		and Events.aim_assist_mode_changed.is_connected(_on_aim_assist_mode_changed)
-	):
+	if Events.aim_assist_mode_changed.is_connected(_on_aim_assist_mode_changed):
 		Events.aim_assist_mode_changed.disconnect(_on_aim_assist_mode_changed)
-	if (
-		Events.has_signal(&"aim_assist_amount_changed")
-		and Events.aim_assist_amount_changed.is_connected(_on_aim_assist_amount_changed)
-	):
+	if Events.aim_assist_amount_changed.is_connected(_on_aim_assist_amount_changed):
 		Events.aim_assist_amount_changed.disconnect(_on_aim_assist_amount_changed)
 
 
@@ -380,8 +370,7 @@ func _update_target_tracking() -> void:
 		if _has_acquired_target:
 			_has_acquired_target = false
 			_cached_target_data.clear()
-			if Events.has_signal(&"aim_assist_target_acquired"):
-				Events.aim_assist_target_acquired.emit(false, Vector2.ZERO)
+			Events.aim_assist_target_acquired.emit(false, Vector2.ZERO)
 		return
 
 	_cached_target_data = find_best_aim_assist_target(deg_to_rad(8.0))
@@ -400,8 +389,7 @@ func _update_target_tracking() -> void:
 
 	if acquired != _has_acquired_target or (acquired and _has_acquired_target):
 		_has_acquired_target = acquired
-		if Events.has_signal(&"aim_assist_target_acquired"):
-			Events.aim_assist_target_acquired.emit(_has_acquired_target, screen_pos)
+		Events.aim_assist_target_acquired.emit(_has_acquired_target, screen_pos)
 
 
 ## Injects step displacement offset when navigating step height changes.
@@ -619,8 +607,7 @@ func _on_aim_assist_mode_changed(mode: int) -> void:
 	if aim_assist_mode == 0 and _has_acquired_target:
 		_has_acquired_target = false
 		_cached_target_data.clear()
-		if Events.has_signal(&"aim_assist_target_acquired"):
-			Events.aim_assist_target_acquired.emit(false, Vector2.ZERO)
+		Events.aim_assist_target_acquired.emit(false, Vector2.ZERO)
 
 
 ## Handles external aim assist strength changes from UI slider adjustments.

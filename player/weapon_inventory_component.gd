@@ -112,7 +112,7 @@ func select_slot(index: int) -> void:
 		var current_tag: String = (
 			str(current_tag_val) if current_tag_val != null else String(current_gun.name)
 		)
-		if is_instance_valid(Events) and Events.has_signal("active_weapon_changed"):
+		if is_instance_valid(Events):
 			Events.active_weapon_changed.emit(current_tag)
 		if current_gun.has_method("sync_ammo_ui"):
 			current_gun.call("sync_ammo_ui")
@@ -143,7 +143,7 @@ func select_slot(index: int) -> void:
 	var active_tag: String = (
 		str(active_tag_val) if active_tag_val != null else String(active_gun.name)
 	)
-	if is_instance_valid(Events) and Events.has_signal("active_weapon_changed"):
+	if is_instance_valid(Events):
 		Events.active_weapon_changed.emit(active_tag)
 	if active_gun.has_method("sync_ammo_ui"):
 		active_gun.call("sync_ammo_ui")
@@ -216,7 +216,7 @@ func add_ammo(target_ammo_type: StringName, amount: int) -> bool:
 				weapon.call("sync_ammo_ui")
 			applied = true
 
-	if is_instance_valid(Events) and Events.has_signal("ammo_collected"):
+	if is_instance_valid(Events):
 		Events.ammo_collected.emit(target_ammo_type, amount)
 	return applied
 

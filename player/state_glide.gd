@@ -82,7 +82,6 @@ func exit() -> void:
 
 ## Executes glide physics, banking, input steering, and transitions.
 func physics_update(delta: float) -> void:
-	print("StateGlide: physics_update() processing glide aerodynamics.")
 	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
@@ -103,7 +102,6 @@ func physics_update(delta: float) -> void:
 
 ## Applies glide gravity, yaw steering, and damped momentum via [MathUtils].
 func _apply_glide_physics(delta: float) -> void:
-	print("StateGlide: _apply_glide_physics() calculating descent vectors.")
 	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
@@ -148,7 +146,6 @@ func _apply_glide_physics(delta: float) -> void:
 
 ## Updates visual roll angle of weapon holder via [MathUtils].
 func _bank_glider(input_x: float, delta: float) -> void:
-	print("StateGlide: _bank_glider() setting roll rotation degrees.")
 	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
@@ -169,7 +166,6 @@ func _bank_glider(input_x: float, delta: float) -> void:
 
 ## Applies vertical updraft impulse upon jump input in debug environments.
 func _handle_debug_updraft() -> void:
-	print("StateGlide: _handle_debug_updraft() checking debug input.")
 	if not is_debug_allowed:
 		return
 
@@ -184,7 +180,6 @@ func _handle_debug_updraft() -> void:
 
 ## Evaluates landing and cancel inputs to transition to ground or air.
 func _check_transitions() -> void:
-	print("StateGlide: _check_transitions() evaluating state exits.")
 	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
@@ -201,7 +196,6 @@ func _check_transitions() -> void:
 
 ## Updates camera head motion and interaction scanner while gliding.
 func _update_components(delta: float) -> void:
-	print("StateGlide: _update_components() polling camera and scanner.")
 	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return

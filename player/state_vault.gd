@@ -39,7 +39,6 @@ func exit() -> void:
 
 ## Maintains suspended physics state while vault tweens translate player.
 func physics_update(_delta: float) -> void:
-	print("StateVault: physics_update() holding player velocity during vault tween.")
 	player.velocity = Vector3.ZERO
 
 

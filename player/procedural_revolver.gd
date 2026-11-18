@@ -4,12 +4,11 @@
 extends Node3D
 
 ## Emitted when a shot is fired and the recoil sequence begins.
-@warning_ignore("unused_signal")
 signal shot_fired(ammo_remaining: int)
 ## Emitted when the reload sequence finishes and capacity is restored.
-@warning_ignore("unused_signal")
 signal reload_completed
 
+## Internal animation state machine for revolver sequences.
 enum WeaponState {
 	IDLE,
 	SHOOTING,
@@ -27,7 +26,7 @@ enum WeaponState {
 @export var reserve_ammo: int = 30
 
 ## Render layer 2 (Player viewmodel).
-const LAYER_PLAYER: int = 1 << 1
+const LAYER_PLAYER: int = CollisionLayers.RENDER_MASK_PLAYER
 ## Maximum cartridge capacity of the cylinder.
 const MAX_AMMO: int = 6
 
@@ -67,7 +66,7 @@ func _ready() -> void:
 
 ## Broadcasts current ammunition metrics to the global [Events] bus.
 func sync_ammo_ui() -> void:
-	if is_instance_valid(Events) and Events.has_signal(&"weapon_ammo_changed"):
+	if is_instance_valid(Events):
 		Events.weapon_ammo_changed.emit(_ammo, reserve_ammo, MAX_AMMO)
 
 
@@ -248,9 +247,7 @@ func _play_dry_fire() -> void:
 
 ## Kills existing active tween before constructing a new sequence.
 func _reset_tween() -> void:
-	if is_instance_valid(_tween):
-		_tween.kill()
-	_tween = create_tween()
+	_tween = Utilities.reset_tween(self, _tween)
 
 
 ## Restores [member WeaponState.IDLE] after shooting or inspection.
@@ -275,8 +272,7 @@ func _on_reload_finished() -> void:
 
 	reload_completed.emit()
 	if is_instance_valid(Events):
-		if Events.has_signal(&"weapon_reloaded"):
-			Events.weapon_reloaded.emit(weapon_tag)
+		Events.weapon_reloaded.emit(weapon_tag)
 		sync_ammo_ui()
 
 

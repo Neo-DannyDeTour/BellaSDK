@@ -71,7 +71,6 @@ func exit() -> void:
 
 ## Processes horizontal locomotion, vertical magnetism, audio, and dismounts.
 func physics_update(delta: float) -> void:
-	print("StateMonkeyBars: physics_update() processing monkey bar traversal.")
 	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
@@ -126,7 +125,6 @@ func physics_update(delta: float) -> void:
 
 ## Calculates horizontal velocity relative to camera orientation.
 func _apply_horizontal_movement(input_dir: Vector2, p: Player) -> void:
-	print("StateMonkeyBars: _apply_horizontal_movement() steering character.")
 	var cam: CameraController = p.camera_controller
 	if not is_instance_valid(cam):
 		return
@@ -159,7 +157,6 @@ func _apply_horizontal_movement(input_dir: Vector2, p: Player) -> void:
 
 ## Snaps player vertical position to underside of monkey bar volume.
 func _apply_vertical_magnetism(p: Player) -> void:
-	print("StateMonkeyBars: _apply_vertical_magnetism() applying height clamp.")
 	var volume: MonkeyBarVolume = (
 		current_monkey_bar_volume if current_monkey_bar_volume is MonkeyBarVolume else null
 	)
@@ -184,12 +181,11 @@ func _apply_vertical_magnetism(p: Player) -> void:
 
 ## Updates procedural character animations based on movement vector.
 func _handle_animations(_input_dir: Vector2) -> void:
-	print("StateMonkeyBars: _handle_animations() checking camera anim clips.")
+	pass
 
 
 ## Evaluates jump or crouch inputs to trigger monkey bar dismount.
 func _check_dismount_conditions(p: Player) -> void:
-	print("StateMonkeyBars: _check_dismount_conditions() polling release buttons.")
 	if (
 		GestureInputManager.is_action_just_pressed(&"jump")
 		or GestureInputManager.is_action_just_pressed(&"crouch")

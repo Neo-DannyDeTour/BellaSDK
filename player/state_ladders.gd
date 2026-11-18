@@ -219,35 +219,30 @@ func _handle_jump_input(
 	if absf(strafe_input) > 0.1:
 		print("StateLadder: Intentional Side Jump. Pushing strictly laterally.")
 		var jump_dir: Vector3 = (flat_ladder_right * signf(strafe_input)).normalized()
-		p.velocity = (jump_dir * 7.5) + Vector3(0.0, 4.5, 0.0)
-
-		if is_instance_valid(env):
-			env.last_ladder = current_ladder
-			env.ladder_cooldown = JUMP_EJECT_COOLDOWN
-
-		p.move_and_slide()
-		_transition_msg.clear()
-		_transition_msg[&"jump"] = true
-		_transition_msg[&"release_dir"] = jump_dir
-		state_machine.transition_to(STATE_AIR, _transition_msg)
+		_eject_to_air(p, env, (jump_dir * 7.5) + Vector3(0.0, 4.5, 0.0), jump_dir)
 		return
 
 	if dot_outward > -0.2:
 		print("StateLadder: Intentional Eject. Pushing in look direction.")
-		p.velocity = (flat_look * 7.0) + Vector3(0.0, 4.5, 0.0)
-
-		if is_instance_valid(env):
-			env.last_ladder = current_ladder
-			env.ladder_cooldown = JUMP_EJECT_COOLDOWN
-
-		p.move_and_slide()
-		_transition_msg.clear()
-		_transition_msg[&"jump"] = true
-		_transition_msg[&"release_dir"] = flat_look
-		state_machine.transition_to(STATE_AIR, _transition_msg)
+		_eject_to_air(p, env, (flat_look * 7.0) + Vector3(0.0, 4.5, 0.0), flat_look)
 		return
 
 	print("StateLadder: Jump blocked. Player is facing the ladder.")
+
+
+## Applies eject velocity, sets ladder cooldown, and transitions to [StateAir].
+func _eject_to_air(
+	p: Player, env: PlayerEnvironmentComponent, launch_vel: Vector3, release_dir: Vector3
+) -> void:
+	p.velocity = launch_vel
+	if is_instance_valid(env):
+		env.last_ladder = current_ladder
+		env.ladder_cooldown = JUMP_EJECT_COOLDOWN
+	p.move_and_slide()
+	_transition_msg.clear()
+	_transition_msg[&"jump"] = true
+	_transition_msg[&"release_dir"] = release_dir
+	state_machine.transition_to(STATE_AIR, _transition_msg)
 
 
 ## Checks ground contact conditions to dismount into [StateGround].

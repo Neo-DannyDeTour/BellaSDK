@@ -50,6 +50,7 @@ var drown_tick_timer: float = 0.0
 ## Accessibility toggle bypassing oxygen depletion.
 var is_infinite_swim: bool = false
 
+## Cached point query parameters for fallback water depth checks.
 var _point_query: PhysicsPointQueryParameters3D = null
 
 
@@ -63,6 +64,12 @@ func _ready() -> void:
 	is_infinite_swim = GlobalSettings.get_setting_bool("Accessibility", "infinite_swim", false)
 	if not Events.infinite_swim_toggled.is_connected(_on_infinite_swim_toggled):
 		Events.infinite_swim_toggled.connect(_on_infinite_swim_toggled)
+
+
+## Disconnects global event signals on exit from the scene tree.
+func _exit_tree() -> void:
+	if Events.infinite_swim_toggled.is_connected(_on_infinite_swim_toggled):
+		Events.infinite_swim_toggled.disconnect(_on_infinite_swim_toggled)
 
 
 ## Enforces standing collision shape, resets submersion flags, and zeroes oxygen timer.

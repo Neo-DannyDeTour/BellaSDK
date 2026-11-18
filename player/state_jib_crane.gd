@@ -235,7 +235,7 @@ func physics_update(delta: float) -> void:
 
 	# 2. Project 3D flat camera wish vector onto parallel (bar) and perpendicular (swing) axes
 	var input_dir: Vector2 = GestureInputManager.get_vector(
-		String(ACTION_LEFT), String(ACTION_RIGHT), String(ACTION_FORWARD), String(ACTION_BACKWARD)
+		ACTION_LEFT, ACTION_RIGHT, ACTION_FORWARD, ACTION_BACKWARD
 	)
 	var rail_dir: Vector3 = _crane.get_rail_world_direction()
 	var rail_perp: Vector3 = Vector3(-rail_dir.z, 0.0, rail_dir.x)

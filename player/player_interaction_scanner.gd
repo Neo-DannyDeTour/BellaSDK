@@ -26,6 +26,21 @@ const PROP_DISPLAY_NAME: StringName = &"display_name"
 ## Property identifier for checking if an interactable is active.
 const PROP_IS_ENABLED: StringName = &"is_enabled"
 
+## Property identifier for checking if a terminal captures WASD input.
+const PROP_CAPTURES_WASD: StringName = &"captures_wasd"
+
+## Property identifier for custom terminal mesh anchor node.
+const PROP_MESH_INSTANCE: StringName = &"mesh_instance_3d"
+
+## Property identifier for held item reference on master interaction component.
+const PROP_HELD_ITEM: StringName = &"held_item"
+
+## Property identifier for weapon holder reference on master interaction component.
+const PROP_WEAPON_HOLDER: StringName = &"weapon_holder"
+
+## Property identifier for visibility checks on legacy weapon nodes.
+const PROP_VISIBLE: StringName = &"visible"
+
 ## Action identifier for triggering primary interaction.
 const ACTION_INTERACT: StringName = &"interact"
 
@@ -82,8 +97,8 @@ var _terminal_raycast_timer: float = 0.0
 ## Active interactable component currently in crosshair focus.
 var current_interactable: Node = null
 
-## Reference to the master [PlayerInteractionComponent].
-var master_component: PlayerInteractionComponent = null
+## Reference to the master interaction component node.
+var master_component: Node = null
 
 ## Indicates whether the player is currently carrying a heavy object.
 var is_heavy_lifting: bool = false
@@ -104,8 +119,14 @@ var terminal_start_pos: Vector3 = Vector3.ZERO
 var current_hit_point: Vector3 = Vector3.ZERO
 
 
-## Establishes link to master [PlayerInteractionComponent] and caches RIDs.
-func setup_master_link(master: PlayerInteractionComponent) -> void:
+## Disables unused per-frame callbacks since scanner is ticked by master component.
+func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
+
+
+## Establishes link to master interaction component and caches RIDs.
+func setup_master_link(master: Node) -> void:
 	print("InteractionScanner: Link to Master Component established.")
 	master_component = master
 	if is_instance_valid(player_body):
@@ -142,7 +163,7 @@ func process_interaction(delta: float) -> void:
 
 		if GestureInputManager.is_action_pressed(ACTION_INTERACT):
 			var is_hands_empty: bool = true
-			if is_instance_valid(master_component) and master_component.held_item != null:
+			if is_instance_valid(master_component) and master_component.get(PROP_HELD_ITEM) != null:
 				is_hands_empty = false
 
 			if is_hands_empty and current_interactable.has_method(&"interact_held"):
@@ -163,8 +184,7 @@ func _update_focus_announcements() -> void:
 
 		print("InteractionScanner: Focused interactable -> ", speakable_name)
 		object_hover_focused.emit(speakable_name, target_node)
-		if Events.has_signal("object_focused"):
-			Events.object_focused.emit(speakable_name, target_node)
+		Events.object_focused.emit(speakable_name, target_node)
 
 
 ## Triggers object interaction, item pickup, or empty sound cue.
@@ -181,8 +201,11 @@ func handle_interact_input() -> void:
 		var parent_node: Node = current_interactable.get_parent()
 		if is_instance_valid(parent_node) and parent_node.has_method(&"pick_up"):
 			print("InteractionScanner: Found pickable object. Instructing Master to grab.")
-			if is_instance_valid(master_component):
-				master_component.force_grab_item(parent_node as RigidBody3D)
+			if (
+				is_instance_valid(master_component)
+				and master_component.has_method(&"force_grab_item")
+			):
+				master_component.call(&"force_grab_item", parent_node as RigidBody3D)
 
 			if parent_node.has_method(&"on_grabbed"):
 				parent_node.call(&"on_grabbed")
@@ -211,9 +234,7 @@ func handle_shoot_input() -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	var weapon_holder: Node3D = (
-		master_component.weapon_holder if is_instance_valid(master_component) else null
-	)
+	var weapon_holder: Node3D = _get_master_weapon_holder()
 	if is_instance_valid(weapon_holder):
 		var inv: WeaponInventoryComponent = (
 			weapon_holder.get_node_or_null("WeaponInventoryComponent") as WeaponInventoryComponent
@@ -222,7 +243,7 @@ func handle_shoot_input() -> void:
 			inv.shoot_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child.has_method(&"shoot") and child.get("visible") == true:
+				if child.has_method(&"shoot") and child.get(PROP_VISIBLE) == true:
 					child.call(&"shoot", camera)
 					break
 
@@ -230,9 +251,7 @@ func handle_shoot_input() -> void:
 ## Routes reload inputs to the equipped inventory weapon.
 func handle_reload_input() -> void:
 	print("InteractionScanner: handle_reload_input() called.")
-	var weapon_holder: Node3D = (
-		master_component.weapon_holder if is_instance_valid(master_component) else null
-	)
+	var weapon_holder: Node3D = _get_master_weapon_holder()
 	if is_instance_valid(weapon_holder):
 		var inv: WeaponInventoryComponent = (
 			weapon_holder.get_node_or_null("WeaponInventoryComponent") as WeaponInventoryComponent
@@ -241,9 +260,19 @@ func handle_reload_input() -> void:
 			inv.reload_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child.has_method(&"reload") and child.get("visible") == true:
+				if child.has_method(&"reload") and child.get(PROP_VISIBLE) == true:
 					child.call(&"reload")
 					break
+
+
+## Resolves the weapon holder node from the master interaction component if valid.
+func _get_master_weapon_holder() -> Node3D:
+	if not is_instance_valid(master_component):
+		return null
+	var raw_holder: Variant = master_component.get(PROP_WEAPON_HOLDER)
+	if raw_holder is Node3D:
+		return raw_holder
+	return null
 
 
 ## Sets heavy lifting state and captures initial yaw heading.
@@ -258,7 +287,8 @@ func set_heavy_lifting(value: bool) -> void:
 func drop_heavy_object_safely() -> void:
 	if is_heavy_lifting and is_instance_valid(master_component):
 		print("InteractionScanner: Routing heavy drop request to Master.")
-		master_component.drop_held_item()
+		if master_component.has_method(&"drop_held_item"):
+			master_component.call(&"drop_held_item")
 		set_heavy_lifting(false)
 
 
@@ -332,8 +362,8 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 
 	var is_circle_keypad: bool = (
 		is_instance_valid(terminal)
-		and ("captures_wasd" in terminal)
-		and terminal.get("captures_wasd") == true
+		and (PROP_CAPTURES_WASD in terminal)
+		and terminal.get(PROP_CAPTURES_WASD) == true
 	)
 
 	if is_circle_keypad:
@@ -343,8 +373,8 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 
 		if is_instance_valid(camera) and is_instance_valid(terminal):
 			var target_pos: Vector3 = terminal.global_position
-			if "mesh_instance_3d" in terminal:
-				var mesh_candidate: Variant = terminal.get("mesh_instance_3d")
+			if PROP_MESH_INSTANCE in terminal:
+				var mesh_candidate: Variant = terminal.get(PROP_MESH_INSTANCE)
 				if mesh_candidate is Node3D:
 					var mesh_node: Node3D = mesh_candidate
 					target_pos = mesh_node.global_position
@@ -354,8 +384,7 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 		if is_instance_valid(player_body):
 			player_body.is_terminal_locked = false
 
-	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
-		Events.terminal_mode_toggled.emit(true)
+	Events.terminal_mode_toggled.emit(true)
 	terminal_mode_toggled.emit(true)
 
 
@@ -379,8 +408,7 @@ func exit_terminal_mode() -> void:
 		player_body.set_terminal_mouse_sensitivity_scale(1.0)
 		player_body.exit_terminal_mode()
 
-	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
-		Events.terminal_mode_toggled.emit(false)
+	Events.terminal_mode_toggled.emit(false)
 	terminal_mode_toggled.emit(false)
 
 
@@ -388,8 +416,8 @@ func exit_terminal_mode() -> void:
 func _should_exit_terminal_mode() -> bool:
 	var is_circle_keypad: bool = (
 		is_instance_valid(active_terminal)
-		and ("captures_wasd" in active_terminal)
-		and active_terminal.get("captures_wasd") == true
+		and (PROP_CAPTURES_WASD in active_terminal)
+		and active_terminal.get(PROP_CAPTURES_WASD) == true
 	)
 
 	if is_circle_keypad:
@@ -432,10 +460,10 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 		return
 
 	var result: Dictionary = Utilities.raycast_3d(
-		space_state, ray_origin, ray_end, Types.MASK_SOLID_WORLD, _excluded_rids
+		space_state, ray_origin, ray_end, CollisionLayers.MASK_SOLID_WORLD, _excluded_rids
 	)
 
-	if not result.is_empty() and result.get("collider") == active_terminal:
+	if not result.is_empty() and result.get(&"collider") == active_terminal:
 		var hit_pos: Vector3 = Vector3.ZERO
 		if result.has(&"position") and result[&"position"] is Vector3:
 			hit_pos = result[&"position"]

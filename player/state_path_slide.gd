@@ -36,7 +36,6 @@ func exit() -> void:
 
 ## Evaluates jump or crouch inputs to manually drop off sliding stick.
 func handle_input(event: InputEvent) -> void:
-	print("StatePathSlide: handle_input() polling manual drop gestures.")
 	if event.is_action_pressed(&"jump") or event.is_action_pressed(&"crouch"):
 		print("StatePathSlide: Player requested manual stick release.")
 		var typed_player: Player = player if player is Player else null
@@ -46,7 +45,6 @@ func handle_input(event: InputEvent) -> void:
 
 ## Keeps player anchored to moving [PathStick] position each frame.
 func physics_update(_delta: float) -> void:
-	print("StatePathSlide: physics_update() updating stick anchor transform.")
 	if not is_instance_valid(active_stick) or not is_instance_valid(player):
 		return
 

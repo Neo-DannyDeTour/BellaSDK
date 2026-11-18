@@ -83,6 +83,9 @@ var _transition_msg: Dictionary = {}
 ## Cached player RID exclusion array for forward wall raycasts.
 var _exclude_rids: Array[RID] = []
 
+## Reusable raycast query parameters for forward wall detection.
+var _wall_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.new()
+
 
 ## Initializes airborne state, processes launches, and sets timers.
 func enter(msg: Dictionary = {}) -> void:
@@ -361,9 +364,10 @@ func _query_wall_in_front(p: Player, distance: float) -> Dictionary:
 	var forward_dir: Vector3 = -p.global_transform.basis.z.normalized()
 	var end_pos: Vector3 = start_pos + forward_dir * distance
 
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(start_pos, end_pos)
-	query.exclude = _exclude_rids
-	return space.intersect_ray(query)
+	_wall_query.from = start_pos
+	_wall_query.to = end_pos
+	_wall_query.exclude = _exclude_rids
+	return space.intersect_ray(_wall_query)
 
 
 ## Evaluates whether collision node belongs to wolf climbables.

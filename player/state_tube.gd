@@ -66,16 +66,15 @@ func exit() -> void:
 
 ## Consumes input events during tube transit without affecting movement.
 func handle_input(_event: InputEvent) -> void:
-	print("StateTube: handle_input() consuming input event during tube transit.")
+	pass
 
 
 ## Per-frame logic update executing during tube transport.
 func update(_delta: float) -> void:
-	print("StateTube: update() running visual update tick.")
+	pass
 
 
 ## Locks player velocity to zero while traveling along pneumatic spline.
 func physics_update(_delta: float) -> void:
-	print("StateTube: physics_update() locking character velocity.")
 	if is_instance_valid(player):
 		player.velocity = Vector3.ZERO

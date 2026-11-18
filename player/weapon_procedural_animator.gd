@@ -3,11 +3,9 @@ class_name WeaponProceduralAnimator
 extends Node3D
 
 ## Emitted when an inspection animation sequence completes.
-@warning_ignore("unused_signal")
 signal inspect_completed
 
 ## Emitted when an inspection animation is cancelled early by player action.
-@warning_ignore("unused_signal")
 signal inspect_cancelled
 
 enum AnimationState {
@@ -370,11 +368,12 @@ func cancel_inspect() -> void:
 	_inspect_tween = null
 	state = AnimationState.IDLE
 	if is_inside_tree():
-		var snap_tween: Tween = create_tween()
-		snap_tween.tween_property(self, ^"_inspect_rot", Vector3.ZERO, 0.15).set_trans(
-			Tween.TRANS_SINE
-		)
-		snap_tween.parallel().tween_property(self, ^"_inspect_pos", Vector3.ZERO, 0.15)
+		_inspect_tween = Utilities.reset_tween_ext(self, _inspect_tween)
+		if is_instance_valid(_inspect_tween):
+			_inspect_tween.tween_property(self, ^"_inspect_rot", Vector3.ZERO, 0.15).set_trans(
+				Tween.TRANS_SINE
+			)
+			_inspect_tween.parallel().tween_property(self, ^"_inspect_pos", Vector3.ZERO, 0.15)
 	else:
 		_inspect_pos = Vector3.ZERO
 		_inspect_rot = Vector3.ZERO
@@ -429,11 +428,12 @@ func cancel_reload() -> void:
 	_reload_tween = null
 	state = AnimationState.IDLE
 	if is_inside_tree():
-		var snap_tween: Tween = create_tween()
-		snap_tween.tween_property(self, ^"_reload_pos", Vector3.ZERO, 0.15).set_trans(
-			Tween.TRANS_SINE
-		)
-		snap_tween.parallel().tween_property(self, ^"_reload_rot", Vector3.ZERO, 0.15)
+		_reload_tween = Utilities.reset_tween_ext(self, _reload_tween)
+		if is_instance_valid(_reload_tween):
+			_reload_tween.tween_property(self, ^"_reload_pos", Vector3.ZERO, 0.15).set_trans(
+				Tween.TRANS_SINE
+			)
+			_reload_tween.parallel().tween_property(self, ^"_reload_rot", Vector3.ZERO, 0.15)
 	else:
 		_reload_pos = Vector3.ZERO
 		_reload_rot = Vector3.ZERO

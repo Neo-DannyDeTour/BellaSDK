@@ -7,7 +7,10 @@ extends StaticBody3D
 signal rope_broken
 
 ## Bitmask value selecting physics layer 3 (Interactive).
-const INTERACTIVE_LAYER_MASK: int = 1 << 2
+const INTERACTIVE_LAYER_MASK: int = CollisionLayers.MASK_INTERACTIVE
+
+## Pre-allocated property name for deferred collision disabling.
+const PROP_DISABLED: StringName = &"disabled"
 
 @export_category("Anchors")
 ## Starting anchor point [Node3D] where the rope originates.
@@ -15,6 +18,7 @@ const INTERACTIVE_LAYER_MASK: int = 1 << 2
 	set(value):
 		start_anchor = value
 		if is_instance_valid(self) and is_inside_tree():
+			_sync_process_gate()
 			_update_rope_geometry()
 
 ## Ending anchor point [Node3D] where the rope terminates.
@@ -22,6 +26,7 @@ const INTERACTIVE_LAYER_MASK: int = 1 << 2
 	set(value):
 		end_anchor = value
 		if is_instance_valid(self) and is_inside_tree():
+			_sync_process_gate()
 			_update_rope_geometry()
 
 ## Local coordinate fallback for the start point if [member start_anchor] is unset.
@@ -92,24 +97,28 @@ var _has_pending_hit: bool = false
 func _ready() -> void:
 	print("BreakableRope3D: _ready() - Initializing rope instance.")
 	collision_layer = INTERACTIVE_LAYER_MASK
-	collision_mask = 0
+	collision_mask = CollisionLayers.MASK_NONE
+	set_physics_process(false)
 
 	_setup_internal_nodes()
 	if not Engine.is_editor_hint():
 		_bind_health_component()
 	_update_rope_geometry()
+	_sync_process_gate()
 
 
 ## Updates orientation in editor and follows moving anchors during gameplay.
 func _process(_delta: float) -> void:
-	if is_broken:
+	if is_broken or (not is_instance_valid(start_anchor) and not is_instance_valid(end_anchor)):
+		set_process(false)
 		return
+	_update_rope_geometry()
 
-	if Engine.is_editor_hint():
-		if is_instance_valid(start_anchor) or is_instance_valid(end_anchor):
-			_update_rope_geometry()
-	elif is_instance_valid(start_anchor) or is_instance_valid(end_anchor):
-		_update_rope_geometry()
+
+## Enables [_process] only when unbroken and attached to at least one dynamic anchor.
+func _sync_process_gate() -> void:
+	var has_anchor: bool = is_instance_valid(start_anchor) or is_instance_valid(end_anchor)
+	set_process(not is_broken and has_anchor)
 
 
 ## Instantiates dedicated instance nodes and resources to prevent shared mutations.
@@ -144,12 +153,9 @@ func _setup_internal_nodes() -> void:
 ## Discovers child [HealthComponent] and connects to [signal HealthComponent.died].
 func _bind_health_component() -> void:
 	print("BreakableRope3D: _bind_health_component() - Binding health component.")
-	_health_component = get_node_or_null("HealthComponent") as HealthComponent
-	if not is_instance_valid(_health_component):
-		for child: Node in get_children():
-			if child is HealthComponent:
-				_health_component = child as HealthComponent
-				break
+	var found_health: Node = NodeQuery.find_first_child_of_type(self, HealthComponent)
+	if found_health is HealthComponent:
+		_health_component = found_health
 
 	if is_instance_valid(_health_component):
 		_health_component.use_pooling = false
@@ -168,9 +174,10 @@ func _update_rope_geometry() -> void:
 	var local_start: Vector3 = to_local(p_start_global)
 	var local_end: Vector3 = to_local(p_end_global)
 
-	var length: float = local_start.distance_to(local_end)
-	if length < 0.05:
+	var dist_sq: float = local_start.distance_squared_to(local_end)
+	if dist_sq < 0.0025:
 		return
+	var length: float = sqrt(dist_sq)
 
 	var midpoint: Vector3 = (local_start + local_end) * 0.5
 	var direction: Vector3 = (local_end - local_start).normalized()
@@ -248,10 +255,11 @@ func cut_rope_at(hit_pos: Vector3, shot_dir: Vector3) -> void:
 		return
 
 	is_broken = true
+	set_process(false)
 	rope_broken.emit()
 
-	collision_layer = 0
-	_collision_shape.set_deferred("disabled", true)
+	collision_layer = CollisionLayers.MASK_NONE
+	_collision_shape.set_deferred(PROP_DISABLED, true)
 	_mesh_instance.visible = false
 
 	if spawn_dynamic_halves and not Engine.is_editor_hint():
@@ -264,14 +272,14 @@ func _spawn_severed_cables(hit_pos: Vector3, shot_dir: Vector3) -> void:
 	var start_pos: Vector3 = get_start_global_position()
 	var end_pos: Vector3 = get_end_global_position()
 
-	var top_length: float = start_pos.distance_to(hit_pos)
-	var bottom_length: float = end_pos.distance_to(hit_pos)
+	var top_dist_sq: float = start_pos.distance_squared_to(hit_pos)
+	var bottom_dist_sq: float = end_pos.distance_squared_to(hit_pos)
 
-	if top_length > 0.15:
-		_create_severed_strand(start_anchor, start_pos, hit_pos, top_length, shot_dir * 1.5)
+	if top_dist_sq > 0.0225:
+		_create_severed_strand(start_anchor, start_pos, hit_pos, sqrt(top_dist_sq), shot_dir * 1.5)
 
-	if bottom_length > 0.15:
-		_create_severed_strand(end_anchor, end_pos, hit_pos, bottom_length, shot_dir * 0.5)
+	if bottom_dist_sq > 0.0225:
+		_create_severed_strand(end_anchor, end_pos, hit_pos, sqrt(bottom_dist_sq), shot_dir * 0.5)
 
 
 ## Configures and instances a single severed dynamic catenary strand.
@@ -284,8 +292,8 @@ func _create_severed_strand(
 ) -> void:
 	print("BreakableRope3D: _create_severed_strand() - Length: ", strand_length)
 	var tip_body: RigidBody3D = RigidBody3D.new()
-	tip_body.collision_layer = 0
-	tip_body.collision_mask = 1
+	tip_body.collision_layer = CollisionLayers.MASK_NONE
+	tip_body.collision_mask = CollisionLayers.MASK_ENVIRONMENT
 	tip_body.mass = 0.5
 
 	var tip_col: CollisionShape3D = CollisionShape3D.new()

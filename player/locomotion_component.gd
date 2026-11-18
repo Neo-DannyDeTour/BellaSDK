@@ -183,37 +183,21 @@ func _ready() -> void:
 	print("LocomotionComponent: _ready() initialized.")
 	if is_instance_valid(crouch_cast_check):
 		crouch_cast_check.collision_mask = CollisionLayers.MASK_SOLID_WORLD
-	if Events.has_signal(SIG_HEAVY_CARRY):
-		Utilities.safe_connect(Events.heavy_carry_toggled, _on_heavy_carry_toggled)
-	if Events.has_signal(SIG_SAND_SURFACE):
-		Utilities.safe_connect(Events.sand_surface_toggled, _on_sand_surface_toggled)
-	if Events.has_signal(SIG_ICE_SURFACE):
-		Utilities.safe_connect(Events.ice_surface_toggled, _on_ice_surface_toggled)
-	if Events.has_signal(SIG_SPRINT_DEBUFF):
-		Utilities.safe_connect(Events.sprint_debuff_applied, _on_sprint_debuff_applied)
+	Utilities.safe_connect(Events.heavy_carry_toggled, _on_heavy_carry_toggled)
+	Utilities.safe_connect(Events.sand_surface_toggled, _on_sand_surface_toggled)
+	Utilities.safe_connect(Events.ice_surface_toggled, _on_ice_surface_toggled)
+	Utilities.safe_connect(Events.sprint_debuff_applied, _on_sprint_debuff_applied)
 
 
 ## Disconnects global signals when exiting the scene tree.
 func _exit_tree() -> void:
-	if (
-		Events.has_signal(SIG_HEAVY_CARRY)
-		and Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled)
-	):
+	if Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled):
 		Events.heavy_carry_toggled.disconnect(_on_heavy_carry_toggled)
-	if (
-		Events.has_signal(SIG_SAND_SURFACE)
-		and Events.sand_surface_toggled.is_connected(_on_sand_surface_toggled)
-	):
+	if Events.sand_surface_toggled.is_connected(_on_sand_surface_toggled):
 		Events.sand_surface_toggled.disconnect(_on_sand_surface_toggled)
-	if (
-		Events.has_signal(SIG_ICE_SURFACE)
-		and Events.ice_surface_toggled.is_connected(_on_ice_surface_toggled)
-	):
+	if Events.ice_surface_toggled.is_connected(_on_ice_surface_toggled):
 		Events.ice_surface_toggled.disconnect(_on_ice_surface_toggled)
-	if (
-		Events.has_signal(SIG_SPRINT_DEBUFF)
-		and Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied)
-	):
+	if Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied):
 		Events.sprint_debuff_applied.disconnect(_on_sprint_debuff_applied)
 
 

@@ -35,6 +35,12 @@ var _transition_msg: Dictionary = {}
 ## Reusable RID array for forward surface transfer raycasts.
 var _transfer_exclude_rids: Array[RID] = []
 
+## Reusable raycast query parameters for wall-snapping checks.
+var _snap_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.new()
+
+## Reusable RID exclusion array for wall-snapping raycasts.
+var _snap_exclude_rids: Array[RID] = []
+
 
 ## Clings to wall, zeroes momentum, and caches wall normal.
 func enter(msg: Dictionary = {}) -> void:
@@ -59,7 +65,6 @@ func enter(msg: Dictionary = {}) -> void:
 
 ## Solves vertical climb, crouch slide, and dismount inputs.
 func physics_update(delta: float) -> void:
-	print("StateWolfClimb: physics_update() processing wall traversal.")
 	var p: Player = _get_player()
 	if not is_instance_valid(p):
 		return
@@ -137,9 +142,12 @@ func _snap_to_wall(p: Player, norm: Vector3) -> void:
 	var space: PhysicsDirectSpaceState3D = p.get_world_3d().direct_space_state
 	var start_pos: Vector3 = p.global_position + Vector3.UP * 0.5
 	var end_pos: Vector3 = start_pos - norm * 1.5
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(start_pos, end_pos)
-	query.exclude = [p.get_rid()]
-	var hit: Dictionary = space.intersect_ray(query)
+	_snap_exclude_rids.clear()
+	_snap_exclude_rids.append(p.get_rid())
+	_snap_query.from = start_pos
+	_snap_query.to = end_pos
+	_snap_query.exclude = _snap_exclude_rids
+	var hit: Dictionary = space.intersect_ray(_snap_query)
 	if not hit.is_empty():
 		var hit_pos: Vector3 = hit.get("position", Vector3.ZERO)
 		p.global_position.x = hit_pos.x + norm.x * 0.45

@@ -66,6 +66,8 @@ var _ray_end: Vector3 = Vector3.ZERO
 ## Initializes noise, registers controller, and caches exclusion RIDs.
 func _ready() -> void:
 	print("FlashlightController: Initializing flashlight controller.")
+	set_process(false)
+	set_physics_process(false)
 	default_pos = position
 	flashlight.visible = false
 	flashlight.light_volumetric_fog_energy = volumetric_energy
@@ -91,12 +93,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		flashlight.visible = new_state
 		if omni_light != null:
 			omni_light.visible = new_state
+		set_process(new_state)
 		print("FlashlightController: Toggled flashlight visibility -> ", new_state)
 
 
 ## Executes per-frame sway, pushback raycasts, and energy flicker updates.
 func _process(delta: float) -> void:
 	if not flashlight.visible:
+		set_process(false)
 		return
 
 	_apply_sway(delta)
@@ -133,12 +137,13 @@ func _apply_pushback(delta: float) -> void:
 	_ray_start = cam_transform.origin
 	_ray_end = _ray_start - cam_transform.basis.z * flashlight_maintain_distance
 
-	var mask: int = CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_INTERACTIVE
+	var mask: int = CollisionLayers.MASK_SOLID_WORLD
 	var hit: Dictionary = NodeQuery.cast_ray(space_state, _ray_start, _ray_end, mask, _exclude_rids)
 
 	if not hit.is_empty():
-		var hit_pos: Vector3 = hit.get(&"position", _ray_end)
-		var dist: float = _ray_start.distance_to(hit_pos)
+		var raw_pos: Variant = hit.get(&"position", _ray_end)
+		var hit_pos: Vector3 = raw_pos if raw_pos is Vector3 else _ray_end
+		var dist: float = sqrt(_ray_start.distance_squared_to(hit_pos))
 		var base_push: float = flashlight_maintain_distance - dist
 		var prox: float = clampf(1.0 - (dist / flashlight_maintain_distance), 0.0, 1.0)
 		var extra_push: float = (flashlight_maintain_distance * 0.25) * prox

@@ -164,9 +164,8 @@ func enter(msg: Dictionary = {}) -> void:
 	_bottom_slide_timer = 0.0
 	_current_roll_rad = 0.0
 
-	if is_instance_valid(_roll_reset_tween):
-		_roll_reset_tween.kill()
-		_roll_reset_tween = null
+	Utilities.safe_kill_tween(_roll_reset_tween)
+	_roll_reset_tween = null
 
 	_drop_heavy_items_if_needed(p)
 
@@ -238,7 +237,7 @@ func physics_update(delta: float) -> void:
 	_elapsed_time += delta
 
 	var input_dir: Vector2 = GestureInputManager.get_vector(
-		String(ACTION_LEFT), String(ACTION_RIGHT), String(ACTION_FORWARD), String(ACTION_BACKWARD)
+		ACTION_LEFT, ACTION_RIGHT, ACTION_FORWARD, ACTION_BACKWARD
 	)
 	var is_crouch_held: bool = GestureInputManager.is_action_pressed(String(ACTION_CROUCH))
 	var is_sprint_held: bool = GestureInputManager.is_action_pressed(String(ACTION_SPRINT))
@@ -617,15 +616,14 @@ func _ease_camera_roll_to_zero(p: Player) -> void:
 	var cam_ctrl: CameraController = p.camera_controller
 	if not is_instance_valid(cam_ctrl) or not is_instance_valid(cam_ctrl.eyes):
 		return
+	_roll_reset_tween = Utilities.reset_tween_ext(p, _roll_reset_tween)
 	if is_instance_valid(_roll_reset_tween):
-		_roll_reset_tween.kill()
-	_roll_reset_tween = create_tween()
-	(
-		_roll_reset_tween
-		. tween_property(cam_ctrl.eyes, "rotation:z", 0.0, 0.25)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_OUT)
-	)
+		(
+			_roll_reset_tween
+			. tween_property(cam_ctrl.eyes, "rotation:z", 0.0, 0.25)
+			. set_trans(Tween.TRANS_SINE)
+			. set_ease(Tween.EASE_OUT)
+		)
 
 
 ## Safely resolves the owning [Player] instance.

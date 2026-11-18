@@ -104,6 +104,8 @@ var _instruction_label: Label = null
 
 ## Pre-allocates inspection quads, materials, and HUD elements on load.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	#print("NoteReader: Initializing zero-allocation inspection hierarchy.")
 	_setup_proxy_hierarchy()
 	_setup_dimmer()
@@ -181,6 +183,7 @@ func _input(event: InputEvent) -> void:
 ## Damps sway, applies rotation input, and updates active shader uniforms.
 func _process(delta: float) -> void:
 	if not _is_reading or not is_instance_valid(_proxy_mesh_instance):
+		set_process(false)
 		return
 
 	var input_dir: Vector2 = GestureInputManager.get_vector(
@@ -258,6 +261,7 @@ func open_note(note_node: Node3D, note_text: String, player_character: Character
 	if is_instance_valid(_instruction_ui):
 		_instruction_ui.visible = true
 	_update_instruction_text()
+	set_process(true)
 
 	Events.note_opened.emit(note_text)
 
@@ -267,6 +271,7 @@ func close_note() -> void:
 	print("NoteReader: Closing note inspection view.")
 	_is_reading = false
 	_is_inspecting = false
+	set_process(false)
 
 	if is_instance_valid(_instruction_ui):
 		_instruction_ui.visible = false
@@ -310,7 +315,6 @@ func _adjust_3d_glass(direction: float) -> void:
 
 ## Updates shader parameters and computes raycast UV coordinates on quad.
 func _update_magnifier_shader(mouse_pos: Vector2, screen_size: Vector2) -> void:
-	print("NoteReader: Updating magnifier shader focus and projection.")
 	_zoomed_mesh_instance.rotation = _proxy_mesh_instance.rotation
 	var aspect: float = screen_size.x / screen_size.y
 	var mouse_uv: Vector2 = mouse_pos / screen_size

@@ -108,6 +108,18 @@ var _reload_hold_time: float = 0.0
 var _reload_hold_inspect_triggered: bool = false
 
 
+## Disables unused per-frame callbacks; component is ticked by [Player].
+func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
+
+
+## Disconnects global event bus listeners when leaving the scene tree.
+func _exit_tree() -> void:
+	if is_instance_valid(Events) and Events.item_dropped.is_connected(_on_global_item_dropped):
+		Events.item_dropped.disconnect(_on_global_item_dropped)
+
+
 ## Initializes component, caches player, and binds scanner and event listeners.
 func initialize(p_player: CharacterBody3D) -> void:
 	print("InteractionComponent: initialize() called. Caching player reference.")
@@ -219,12 +231,8 @@ func process_interaction(delta: float) -> void:
 
 		var is_reload_triggered: bool = GestureInputManager.consume_buffered_action("reload")
 		if is_reload_triggered and not _reload_hold_inspect_triggered:
-			var is_sprinting: bool = false
-			if is_instance_valid(player):
-				var loc: Variant = player.get(&"locomotion_component")
-				if loc is PlayerLocomotionComponent:
-					var loco: PlayerLocomotionComponent = loc
-					is_sprinting = loco.sprint_active
+			var loco: PlayerLocomotionComponent = _get_player_locomotion(player)
+			var is_sprinting: bool = is_instance_valid(loco) and loco.sprint_active
 			if is_sprinting:
 				print("InteractionComponent: Reload blocked while sprinting.")
 			else:
@@ -351,12 +359,10 @@ func _check_glider_restore(item: Node) -> void:
 				elif is_instance_valid(cam_ctrl.head):
 					cam_ctrl.head.rotation.y = 0.0
 
-			if "locomotion_component" in player:
-				var raw_loco: Variant = player.get(&"locomotion_component")
-				if raw_loco is PlayerLocomotionComponent:
-					var locomotion: PlayerLocomotionComponent = raw_loco
-					locomotion.can_sprint = true
-					locomotion.set_direction(Vector3.ZERO)
+			var locomotion: PlayerLocomotionComponent = _get_player_locomotion(player)
+			if is_instance_valid(locomotion):
+				locomotion.can_sprint = true
+				locomotion.set_direction(Vector3.ZERO)
 		is_heavy_lifting = false
 
 
@@ -378,12 +384,10 @@ func update_heavy_carry_state() -> void:
 	if is_heavy_carrying != is_heavy:
 		is_heavy_carrying = is_heavy
 		print("InteractionComponent: Heavy carry toggled -> ", is_heavy_carrying)
-		if is_instance_valid(player) and "locomotion_component" in player:
-			var raw_loco: Variant = player.get("locomotion_component")
-			if raw_loco is PlayerLocomotionComponent:
-				var locomotion: PlayerLocomotionComponent = raw_loco
-				locomotion.can_sprint = not is_heavy_carrying
-				locomotion.can_jump = not is_heavy_carrying
+		var locomotion: PlayerLocomotionComponent = _get_player_locomotion(player)
+		if is_instance_valid(locomotion):
+			locomotion.can_sprint = not is_heavy_carrying
+			locomotion.can_jump = not is_heavy_carrying
 		Events.heavy_carry_toggled.emit(is_heavy_carrying)
 
 
@@ -415,11 +419,9 @@ func attach_item_to_weapon_holder(
 	item.transform.basis = Basis.IDENTITY
 
 	var target_player: CharacterBody3D = p_player if p_player != null else player
-	if is_instance_valid(target_player) and "locomotion_component" in target_player:
-		var raw_loco: Variant = target_player.get("locomotion_component")
-		if raw_loco is PlayerLocomotionComponent:
-			var locomotion: PlayerLocomotionComponent = raw_loco
-			locomotion.can_sprint = false
+	var locomotion: PlayerLocomotionComponent = _get_player_locomotion(target_player)
+	if is_instance_valid(locomotion):
+		locomotion.can_sprint = false
 
 
 ## Sets heavy lifting state, restricts player sprint, and emits global event.
@@ -430,13 +432,21 @@ func _set_heavy_lifting(active: bool) -> void:
 	print("InteractionComponent: Setting heavy lifting state to: ", active)
 	is_heavy_lifting = active
 
-	if is_instance_valid(player) and "locomotion_component" in player:
-		var raw_loco: Variant = player.get("locomotion_component")
-		if raw_loco is PlayerLocomotionComponent:
-			var locomotion: PlayerLocomotionComponent = raw_loco
-			locomotion.can_sprint = not active
+	var locomotion: PlayerLocomotionComponent = _get_player_locomotion(player)
+	if is_instance_valid(locomotion):
+		locomotion.can_sprint = not active
 
 	Events.heavy_carry_toggled.emit(active)
+
+
+## Resolves the [PlayerLocomotionComponent] from [param target_player] if present.
+func _get_player_locomotion(target_player: CharacterBody3D) -> PlayerLocomotionComponent:
+	if not is_instance_valid(target_player) or not (&"locomotion_component" in target_player):
+		return null
+	var raw_loco: Variant = target_player.get(&"locomotion_component")
+	if raw_loco is PlayerLocomotionComponent:
+		return raw_loco
+	return null
 
 
 ## Scans nearby hostile entities in wolf mode and updates claw mark UI.
@@ -553,11 +563,11 @@ func _has_claw_line_of_sight(from_pos: Vector3, to_pos: Vector3, target: Node3D)
 	if hit.is_empty():
 		return true
 
-	var collider: Object = hit.get("collider")
-	if collider == target:
+	var raw_collider: Variant = hit.get(&"collider")
+	if raw_collider == target:
 		return true
-	if collider is Node:
-		var hit_node: Node = collider as Node
+	if raw_collider is Node:
+		var hit_node: Node = raw_collider
 		return target.is_ancestor_of(hit_node) or hit_node.is_ancestor_of(target)
 	return false
 

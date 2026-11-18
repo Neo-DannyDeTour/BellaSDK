@@ -173,10 +173,9 @@ func exit_ladder(ladder_node: Node3D) -> void:
 			state_machine.transition_to(STATE_AIR)
 			return
 		var current_state: State = state_machine.get_current_state()
-		if current_state is StateLadder:
-			var ladder_state: StateLadder = current_state
-			if ladder_state.current_ladder == ladder_node:
-				ladder_state.current_ladder = _overlapping_ladders.back()
+		if is_instance_valid(current_state) and (&"current_ladder" in current_state):
+			if current_state.get(&"current_ladder") == ladder_node:
+				current_state.set(&"current_ladder", _overlapping_ladders.back())
 
 
 ## Processes entry into a swimmable water volume, initiating swim state.

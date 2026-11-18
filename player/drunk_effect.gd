@@ -4,7 +4,6 @@
 extends CanvasLayer
 
 ## Emitted when the drunk transition finishes reaching target weight.
-@warning_ignore("unused_signal")
 signal transition_completed(current_intensity: float)
 
 ## Shader uniform parameter for normalized effect weight.
@@ -125,9 +124,10 @@ func transition_intensity(target: float, duration: float = 0.6) -> void:
 	post_rect.visible = true
 	set_process(true)
 
-	_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_tween.tween_method(_apply_intensity, _current_intensity, clamped_target, duration)
-	_tween.finished.connect(_on_tween_finished)
+	_tween = Utilities.reset_tween_ext(self, _tween, Tween.TRANS_SINE, Tween.EASE_IN_OUT)
+	if is_instance_valid(_tween):
+		_tween.tween_method(_apply_intensity, _current_intensity, clamped_target, duration)
+		_tween.finished.connect(_on_tween_finished)
 
 
 ## Updates shader uniform and toggles canvas/process states at zero weight.

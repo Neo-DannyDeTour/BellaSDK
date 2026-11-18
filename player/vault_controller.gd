@@ -90,6 +90,12 @@ func _ready() -> void:
 	Utilities.safe_connect(Events.held_item_changed, _on_held_item_changed)
 
 
+## Disconnects global [Events] listeners when leaving the scene tree.
+func _exit_tree() -> void:
+	if is_instance_valid(Events) and Events.held_item_changed.is_connected(_on_held_item_changed):
+		Events.held_item_changed.disconnect(_on_held_item_changed)
+
+
 ## Physics frame update managing continuous obstacle and ledge scanning.
 ## [param _delta] Elapsed physics frame delta in seconds.
 func _physics_process(_delta: float) -> void:

@@ -102,10 +102,24 @@ func _ready() -> void:
 	_setup_fullbright_environment()
 	_find_console_reference()
 
-	Events.debug_menu_toggled.connect(_on_debug_menu_toggled)
-	Events.console_toggled.connect(_on_console_toggled)
-	Events.noclip_ui_button_pressed.connect(toggle_noclip)
-	Events.fullbright_toggled.connect(_on_fullbright_toggled)
+	Utilities.safe_connect(Events.debug_menu_toggled, _on_debug_menu_toggled)
+	Utilities.safe_connect(Events.console_toggled, _on_console_toggled)
+	Utilities.safe_connect(Events.noclip_ui_button_pressed, toggle_noclip)
+	Utilities.safe_connect(Events.fullbright_toggled, _on_fullbright_toggled)
+
+
+## Disconnects global [Events] listeners when leaving the scene tree.
+func _exit_tree() -> void:
+	if not is_instance_valid(Events):
+		return
+	if Events.debug_menu_toggled.is_connected(_on_debug_menu_toggled):
+		Events.debug_menu_toggled.disconnect(_on_debug_menu_toggled)
+	if Events.console_toggled.is_connected(_on_console_toggled):
+		Events.console_toggled.disconnect(_on_console_toggled)
+	if Events.noclip_ui_button_pressed.is_connected(toggle_noclip):
+		Events.noclip_ui_button_pressed.disconnect(toggle_noclip)
+	if Events.fullbright_toggled.is_connected(_on_fullbright_toggled):
+		Events.fullbright_toggled.disconnect(_on_fullbright_toggled)
 
 
 ## Locates and caches the developer console reference in the root tree.

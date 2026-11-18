@@ -8,12 +8,12 @@ extends Node
 ## Injected [HealthComponent] managing player life points and death events.
 @export var health_component: HealthComponent
 
-## Cached reference to the controlling [Player] entity.
-var player: Player
+## Cached reference to the controlling [CharacterBody3D] player entity.
+var player: CharacterBody3D
 
 
 ## Binds the controlling player and connects lifecycle signals.
-func initialize(p_player: Player) -> void:
+func initialize(p_player: CharacterBody3D) -> void:
 	print("StatsComponent: initialize() called. Caching player reference.")
 	player = p_player
 

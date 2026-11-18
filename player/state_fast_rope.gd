@@ -50,7 +50,6 @@ func exit() -> void:
 
 ## Simulates sprinting forward camera motion during fast-rope descent.
 func physics_update(delta: float) -> void:
-	print("StateFastRope: physics_update() - Simulating headbob camera descent.")
 	var p: Player = player if player is Player else null
 	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
 		p.camera_controller.update_camera(delta, _fake_input, true, false, false, 20.0)

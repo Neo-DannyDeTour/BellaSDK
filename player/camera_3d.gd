@@ -5,6 +5,24 @@ extends Camera3D
 ## Pre-allocated uniform StringName for lens dirt intensity instance shader parameter.
 const PARAM_INTENSITY: StringName = &"intensity"
 
+## Pre-allocated uniform StringName for motion blur angular velocity shader parameter.
+const PARAM_CAMERA_ANGULAR_VELOCITY: StringName = &"camera_angular_velocity"
+
+## Pre-allocated uniform StringName for vision assist mode shader parameter.
+const PARAM_MODE: StringName = &"mode"
+
+## Pre-allocated uniform StringName for vision assist blue base color.
+const PARAM_BLUE_BASE: StringName = &"blue_base"
+
+## Pre-allocated uniform StringName for vision assist blue outline color.
+const PARAM_BLUE_OUTLINE: StringName = &"blue_outline"
+
+## Pre-allocated uniform StringName for vision assist grey base color.
+const PARAM_GREY_BASE: StringName = &"grey_base"
+
+## Pre-allocated uniform StringName for vision assist grey outline color.
+const PARAM_GREY_OUTLINE: StringName = &"grey_outline"
+
 @export_category("Camera Role")
 ## Activates the child [AudioListener3D] and enables camera process ticks when true.
 @export var is_player_camera: bool = true
@@ -81,24 +99,26 @@ func _ready() -> void:
 	_noise.seed = randi()
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("player_camera_registered"):
-			events.emit_signal("player_camera_registered", self)
-		if events.has_signal("screenshake_requested"):
-			Utilities.safe_connect(
-				Signal(events, &"screenshake_requested"), _on_screenshake_requested
-			)
-		if events.has_signal("vision_assist_toggled"):
-			Utilities.safe_connect(
-				Signal(events, &"vision_assist_toggled"), _on_vision_assist_toggled
-			)
-		if events.has_signal("vision_assist_mode_changed"):
-			Utilities.safe_connect(
-				Signal(events, &"vision_assist_mode_changed"), set_vision_assist_mode
-			)
-		if events.has_signal("lens_dirt_changed"):
-			Utilities.safe_connect(Signal(events, &"lens_dirt_changed"), set_lens_dirt)
+	if is_instance_valid(Events):
+		Events.player_camera_registered.emit(self)
+		Utilities.safe_connect(Events.screenshake_requested, _on_screenshake_requested)
+		Utilities.safe_connect(Events.vision_assist_toggled, _on_vision_assist_toggled)
+		Utilities.safe_connect(Events.vision_assist_mode_changed, set_vision_assist_mode)
+		Utilities.safe_connect(Events.lens_dirt_changed, set_lens_dirt)
+
+
+## Disconnects global [Events] listeners when leaving the scene tree.
+func _exit_tree() -> void:
+	if not is_instance_valid(Events):
+		return
+	if Events.screenshake_requested.is_connected(_on_screenshake_requested):
+		Events.screenshake_requested.disconnect(_on_screenshake_requested)
+	if Events.vision_assist_toggled.is_connected(_on_vision_assist_toggled):
+		Events.vision_assist_toggled.disconnect(_on_vision_assist_toggled)
+	if Events.vision_assist_mode_changed.is_connected(set_vision_assist_mode):
+		Events.vision_assist_mode_changed.disconnect(set_vision_assist_mode)
+	if Events.lens_dirt_changed.is_connected(set_lens_dirt):
+		Events.lens_dirt_changed.disconnect(set_lens_dirt)
 
 
 ## Configures [CameraAttributesPractical] and ensures DoF is disabled on boot.
@@ -293,7 +313,7 @@ func _update_motion_blur_matrices(delta: float) -> void:
 
 	var fps_factor: float = (1.0 / 60.0) / maxf(delta, 0.0001)
 	var screen_vel: Vector2 = Vector2(-euler_diff.y, euler_diff.x) * fps_factor
-	_motion_blur_material.set_shader_parameter("camera_angular_velocity", screen_vel)
+	_motion_blur_material.set_shader_parameter(PARAM_CAMERA_ANGULAR_VELOCITY, screen_vel)
 
 	_prev_camera_quat = cur_quat
 
@@ -341,18 +361,24 @@ func set_vision_assist_mode(mode_name: String) -> void:
 
 	match mode_name:
 		"black_and_white":
-			_vision_shader_material.set_shader_parameter("mode", 0)
+			_vision_shader_material.set_shader_parameter(PARAM_MODE, 0)
 		"blue":
-			_vision_shader_material.set_shader_parameter("mode", 1)
-			_vision_shader_material.set_shader_parameter("blue_base", Color(0.05, 0.1, 0.45, 1.0))
-			_vision_shader_material.set_shader_parameter("blue_outline", Color(0.3, 0.5, 0.9, 1.0))
-		"pure_black":
-			_vision_shader_material.set_shader_parameter("mode", 2)
-		"grey":
-			_vision_shader_material.set_shader_parameter("mode", 3)
-			_vision_shader_material.set_shader_parameter("grey_base", Color(0.25, 0.25, 0.25, 1.0))
+			_vision_shader_material.set_shader_parameter(PARAM_MODE, 1)
 			_vision_shader_material.set_shader_parameter(
-				"grey_outline", Color(0.85, 0.85, 0.85, 1.0)
+				PARAM_BLUE_BASE, Color(0.05, 0.1, 0.45, 1.0)
+			)
+			_vision_shader_material.set_shader_parameter(
+				PARAM_BLUE_OUTLINE, Color(0.3, 0.5, 0.9, 1.0)
+			)
+		"pure_black":
+			_vision_shader_material.set_shader_parameter(PARAM_MODE, 2)
+		"grey":
+			_vision_shader_material.set_shader_parameter(PARAM_MODE, 3)
+			_vision_shader_material.set_shader_parameter(
+				PARAM_GREY_BASE, Color(0.25, 0.25, 0.25, 1.0)
+			)
+			_vision_shader_material.set_shader_parameter(
+				PARAM_GREY_OUTLINE, Color(0.85, 0.85, 0.85, 1.0)
 			)
 		"desaturated":
-			_vision_shader_material.set_shader_parameter("mode", 4)
+			_vision_shader_material.set_shader_parameter(PARAM_MODE, 4)
