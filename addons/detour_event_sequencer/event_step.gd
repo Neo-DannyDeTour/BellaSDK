@@ -18,6 +18,7 @@ enum StepType {
 	SCREEN_FADE,
 	PLAY_AUDIO,
 	TELEPORT_PLAYER,
+	NPC_FOLLOW,
 }
 
 ## Flow control mode determining whether the sequence waits or continues immediately.
@@ -93,6 +94,16 @@ enum ExecMode {
 
 ## Runtime flag tracking if this step has already fired.
 var has_fired: bool = false
+
+
+## Returns true when [constant StepType.NPC_FOLLOW] enables player following.
+func is_follow_enabled() -> bool:
+	return parameter.strip_edges().to_lower() != "false"
+
+
+## Returns concise action summary text for [constant StepType.NPC_FOLLOW].
+func get_npc_follow_summary() -> String:
+	return "Follow Player" if is_follow_enabled() else "Stop Following"
 
 
 ## Resolves target [Node] using either [param activator] or [member target_path].

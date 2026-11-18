@@ -130,9 +130,7 @@ func _on_body_exited(body: Node3D) -> void:
 
 
 ## Waits for step delay and executes step action or cinematic coroutine.
-func _run_step_action(
-	step: EventStep, activator: Node3D, await_completion: bool = true
-) -> void:
+func _run_step_action(step: EventStep, activator: Node3D, await_completion: bool = true) -> void:
 	if step.delay > 0.0 and is_inside_tree():
 		await get_tree().create_timer(step.delay).timeout
 	if not is_instance_valid(self) or not is_inside_tree():
@@ -164,6 +162,8 @@ func _run_step_action(
 			await _exec_play_audio(step, activator, await_completion)
 		EventStep.StepType.TELEPORT_PLAYER:
 			_exec_teleport_player(step, activator)
+		EventStep.StepType.NPC_FOLLOW:
+			_exec_npc_follow(step, activator)
 
 
 ## Spawns detached coroutine for parallel step execution without blocking sequence.
@@ -390,13 +390,7 @@ func _exec_play_audio(step: EventStep, activator: Node3D, await_completion: bool
 	var start_sec: float = maxf(0.0, step.audio_start_offset)
 	if target is Node3D and not step.target_path.is_empty():
 		var target_3d: Node3D = target as Node3D
-		print(
-			"EventSequenceTrigger: PLAY_AUDIO 3D at ",
-			target_3d.name,
-			" offset=",
-			start_sec,
-			"s"
-		)
+		print("EventSequenceTrigger: PLAY_AUDIO 3D at ", target_3d.name, " offset=", start_sec, "s")
 		var player_3d: AudioStreamPlayer3D = AudioPool.play_sfx_3d(
 			step.audio_stream, target_3d.global_position
 		)
@@ -436,6 +430,34 @@ func _exec_teleport_player(step: EventStep, activator: Node3D) -> void:
 		player_node.call(&"teleport_to", dest_pos, 0.0)
 	else:
 		player_node.global_position = dest_pos
+
+
+## Enables or disables player following on the resolved target NPC node.
+func _exec_npc_follow(step: EventStep, activator: Node3D) -> void:
+	var target: Node = step.resolve_target(self, activator)
+	if not is_instance_valid(target):
+		print("EventSequenceTrigger: NPC_FOLLOW target invalid -> ", step.target_path)
+		return
+	var enable_follow: bool = step.is_follow_enabled()
+	var method_sym: StringName = &"start_following" if enable_follow else &"stop_following"
+	if not target.has_method(method_sym):
+		print("EventSequenceTrigger: NPC_FOLLOW target ", target.name, " missing ", method_sym)
+		return
+	print("EventSequenceTrigger: NPC_FOLLOW -> ", target.name, " ", method_sym)
+	var arg_count: int = 0
+	for m: Dictionary in target.get_method_list():
+		var raw_name: Variant = m.get("name")
+		var m_name: String = raw_name if raw_name is String else ""
+		if StringName(m_name) == method_sym:
+			var raw_args: Variant = m.get("args")
+			if raw_args is Array:
+				var args_arr: Array = raw_args
+				arg_count = args_arr.size()
+			break
+	if arg_count > 0:
+		target.call(method_sym, "")
+	else:
+		target.call(method_sym)
 
 
 ## Resolves the active player [Node3D] from [param activator] or scene group.

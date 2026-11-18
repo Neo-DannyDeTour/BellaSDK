@@ -36,6 +36,7 @@ const STEP_TYPE_LABELS: Dictionary[int, String] = {
 	EventStep.StepType.SCREEN_FADE: "FADE",
 	EventStep.StepType.PLAY_AUDIO: "AUDIO",
 	EventStep.StepType.TELEPORT_PLAYER: "TELEPORT",
+	EventStep.StepType.NPC_FOLLOW: "NPC FOLLOW",
 }
 
 ## Currently inspected trigger instance.
@@ -480,6 +481,7 @@ func _build_step_detail_editor(parent: VBoxContainer) -> void:
 	_type_opt.add_item("Screen Fade", int(EventStep.StepType.SCREEN_FADE))
 	_type_opt.add_item("Play Audio", int(EventStep.StepType.PLAY_AUDIO))
 	_type_opt.add_item("Teleport Player", int(EventStep.StepType.TELEPORT_PLAYER))
+	_type_opt.add_item("NPC Follow", int(EventStep.StepType.NPC_FOLLOW))
 	_type_opt.item_selected.connect(_on_type_opt_selected)
 	row1.add_child(_type_opt)
 
@@ -712,9 +714,7 @@ func _build_audio_file_dialog() -> void:
 	_audio_file_dialog = FileDialog.new()
 	_audio_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 	_audio_file_dialog.access = FileDialog.ACCESS_RESOURCES
-	_audio_file_dialog.filters = PackedStringArray(
-		["*.mp3, *.wav, *.ogg ; Audio Files"]
-	)
+	_audio_file_dialog.filters = PackedStringArray(["*.mp3, *.wav, *.ogg ; Audio Files"])
 	_audio_file_dialog.file_selected.connect(_on_audio_file_selected)
 	add_child(_audio_file_dialog)
 
@@ -739,8 +739,12 @@ func _refresh_conditions_tree() -> void:
 				item.set_text(2, str(cond.target_path))
 			EventCondition.CondType.PROPERTY_COMPARE:
 				item.set_text(1, "Property")
-				var tgt: String = "[Activator]" if cond.target_is_activator else str(cond.target_path)
-				item.set_text(2, tgt + "." + String(cond.property_name) + " ? " + cond.compare_value)
+				var tgt: String = (
+					"[Activator]" if cond.target_is_activator else str(cond.target_path)
+				)
+				item.set_text(
+					2, tgt + "." + String(cond.property_name) + " ? " + cond.compare_value
+				)
 
 	if active_cond_idx >= 0 and active_cond_idx < current_trigger.conditions.size():
 		_load_condition_into_editor(active_cond_idx)
@@ -891,6 +895,8 @@ func _format_step_action_cell(step: EventStep) -> String:
 			return stream_name + " @" + str(step.audio_start_offset) + "s"
 		EventStep.StepType.TELEPORT_PLAYER:
 			return "Teleport"
+		EventStep.StepType.NPC_FOLLOW:
+			return step.get_npc_follow_summary()
 	return ""
 
 
@@ -912,6 +918,7 @@ func _load_step_into_editor(idx: int) -> void:
 		or step.step_type == EventStep.StepType.MOVE_OFFSET
 		or step.step_type == EventStep.StepType.PLAY_AUDIO
 		or step.step_type == EventStep.StepType.TELEPORT_PLAYER
+		or step.step_type == EventStep.StepType.NPC_FOLLOW
 	)
 
 	_step_act_chk.visible = is_call_or_set or step.step_type == EventStep.StepType.MOVE_OFFSET
@@ -1072,6 +1079,13 @@ func _configure_cinematic_widgets(step: EventStep) -> void:
 			_duration_spin.value = step.duration
 		EventStep.StepType.TELEPORT_PLAYER:
 			pass
+		EventStep.StepType.NPC_FOLLOW:
+			_param_label.visible = true
+			_param_bool_chk.visible = true
+			_param_bool_chk.text = "Follow Player"
+			if step.parameter.is_empty():
+				step.parameter = "true"
+			_param_bool_chk.button_pressed = step.is_follow_enabled()
 
 	if (
 		step.step_type != EventStep.StepType.SCREEN_ROAR
@@ -1662,7 +1676,11 @@ func _on_type_opt_selected(idx: int) -> void:
 	var step: EventStep = current_trigger.steps[active_editing_idx]
 	step.step_type = idx as EventStep.StepType
 	step.method_name = &""
-	step.parameter = "true" if step.step_type == EventStep.StepType.PLAYER_LOCK else ""
+	var has_bool_default: bool = (
+		step.step_type == EventStep.StepType.PLAYER_LOCK
+		or step.step_type == EventStep.StepType.NPC_FOLLOW
+	)
+	step.parameter = "true" if has_bool_default else ""
 	if step.step_type == EventStep.StepType.CAMERA_FOV:
 		step.angle_deg = 110.0
 	elif step.step_type == EventStep.StepType.CAMERA_TILT:

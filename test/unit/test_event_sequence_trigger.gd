@@ -15,6 +15,35 @@ class MockSequenceTarget:
 		action_calls += 1
 
 
+## Mock NPC target exposing [method start_following] and [method stop_following].
+class MockFollowerNpc:
+	extends Node3D
+
+	## Number of times [method start_following] was called.
+	var start_calls: int = 0
+
+	## Number of times [method stop_following] was called.
+	var stop_calls: int = 0
+
+	## Current mock follow state.
+	var following: bool = false
+
+	## Last parameter string passed to follow methods.
+	var last_param: String = "unset"
+
+	## Starts following player.
+	func start_following(param: String = "") -> void:
+		start_calls += 1
+		following = true
+		last_param = param
+
+	## Stops following player.
+	func stop_following(param: String = "") -> void:
+		stop_calls += 1
+		following = false
+		last_param = param
+
+
 ## The [EventSequenceTrigger] instance under test.
 var _trigger: EventSequenceTrigger = null
 
@@ -209,3 +238,51 @@ func test_cutscene_steps_execution() -> void:
 		0.1,
 		"Player must teleport back to entry position (10, 0, 0)."
 	)
+
+
+## Verifies StepType.NPC_FOLLOW enum index and start/stop following dispatch.
+func test_npc_follow_step_execution() -> void:
+	print("TestEventSequenceTrigger: test_npc_follow_step_execution() executing.")
+	assert_eq(
+		int(EventStep.StepType.NPC_FOLLOW),
+		13,
+		"NPC_FOLLOW must be appended at end of EventStep.StepType (index 13)."
+	)
+
+	var npc: MockFollowerNpc = MockFollowerNpc.new()
+	npc.name = "FollowerNpc"
+	_trigger.add_child(npc)
+
+	var start_step: EventStep = EventStep.new()
+	start_step.step_type = EventStep.StepType.NPC_FOLLOW
+	start_step.exec_mode = EventStep.ExecMode.SEQUENTIAL
+	start_step.target_path = NodePath("FollowerNpc")
+	start_step.parameter = "true"
+	assert_true(start_step.is_follow_enabled(), "parameter='true' must enable follow.")
+	assert_eq(start_step.get_npc_follow_summary(), "Follow Player")
+
+	_trigger.steps = [start_step]
+	_trigger.trigger_sequence(_player)
+	await wait_process_frames(2)
+
+	assert_eq(npc.start_calls, 1, "NPC_FOLLOW(true) must call start_following once.")
+	assert_eq(npc.stop_calls, 0, "NPC_FOLLOW(true) must not call stop_following.")
+	assert_true(npc.following, "Mock NPC must be following after start_step.")
+	assert_eq(npc.last_param, "", "start_following must receive empty string argument.")
+
+	var stop_step: EventStep = EventStep.new()
+	stop_step.step_type = EventStep.StepType.NPC_FOLLOW
+	stop_step.exec_mode = EventStep.ExecMode.SEQUENTIAL
+	stop_step.target_path = NodePath("FollowerNpc")
+	stop_step.parameter = "false"
+	assert_false(stop_step.is_follow_enabled(), "parameter='false' must disable follow.")
+	assert_eq(stop_step.get_npc_follow_summary(), "Stop Following")
+
+	_trigger.steps = [stop_step]
+	_trigger.trigger_sequence(_player)
+	await wait_process_frames(2)
+
+	assert_eq(npc.start_calls, 1, "NPC_FOLLOW(false) must not call start_following again.")
+	assert_eq(npc.stop_calls, 1, "NPC_FOLLOW(false) must call stop_following once.")
+	assert_false(npc.following, "Mock NPC must stop following after stop_step.")
+	assert_eq(npc.last_param, "", "stop_following must receive empty string argument.")

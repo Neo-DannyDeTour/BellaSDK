@@ -86,7 +86,7 @@ extends Area3D
 var _tick_timer: Timer
 
 ## Maps overlapping physics bodies to their resolved [HealthComponent].
-var _health_cache: Dictionary = {}
+var _health_cache: Dictionary[Node3D, HealthComponent] = {}
 
 ## Cached collision shape child defining the trigger bounds.
 var _collision_shape: CollisionShape3D = null
@@ -109,7 +109,7 @@ func _ready() -> void:
 	_tick_timer = Timer.new()
 	_tick_timer.name = "TickTimer"
 	_tick_timer.wait_time = tick_interval
-	_tick_timer.autostart = true
+	_tick_timer.autostart = false
 	add_child(_tick_timer)
 	_tick_timer.timeout.connect(_on_tick_timer_timeout)
 
@@ -178,12 +178,16 @@ func _on_body_entered(body: Node3D) -> void:
 	var comp: HealthComponent = _resolve_health_node(body)
 	if is_instance_valid(comp):
 		_health_cache[body] = comp
+	if is_instance_valid(_tick_timer) and _tick_timer.is_stopped():
+		_tick_timer.start()
 
 
 ## Clears the body from the health component cache upon exit.
 func _on_body_exited(body: Node3D) -> void:
 	print("HealthModifier: Body exited volume -> ", body.name)
 	_health_cache.erase(body)
+	if is_instance_valid(_tick_timer) and get_overlapping_bodies().is_empty():
+		_tick_timer.stop()
 
 
 ## Resolves [HealthComponent] on target via direct property or typed search.
@@ -220,23 +224,23 @@ func _resolve_health_node(body: Node3D) -> HealthComponent:
 
 ## Retrieves overlapping bodies within the area. Can be overridden for tests.
 func _get_target_bodies() -> Array[Node3D]:
-	print("HealthModifier: Fetching overlapping bodies.")
 	return get_overlapping_bodies()
 
 
 ## Periodically modifies health on cached and newly resolved overlapping bodies.
 func _on_tick_timer_timeout() -> void:
-	# print("HealthModifier: Processing tick damage/heal.")
 	var bodies: Array[Node3D] = _get_target_bodies()
+	if bodies.is_empty():
+		if is_instance_valid(_tick_timer):
+			_tick_timer.stop()
+		return
 
 	for body: Node3D in bodies:
 		if not is_instance_valid(body):
 			_health_cache.erase(body)
 			continue
 
-		var comp: HealthComponent = (
-			_health_cache.get(body) if _health_cache.get(body) is HealthComponent else null
-		)
+		var comp: HealthComponent = _health_cache.get(body, null)
 		if not is_instance_valid(comp):
 			comp = _resolve_health_node(body)
 			if is_instance_valid(comp):
