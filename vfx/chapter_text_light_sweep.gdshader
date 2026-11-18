@@ -10,7 +10,7 @@ void fragment() {
     float sweep_pos = progress * 2.5 - 0.25;
     float dist = abs((UV.x + UV.y) - sweep_pos);
 
-    // 2. The Fix: standard smoothstep, then inverted. 
+    // 2. The Fix: standard smoothstep, then inverted.
     // This creates a sharp, bright line that safely falls off to 0.0
     float sweep_intensity = 1.0 - smoothstep(0.0, 0.15, dist);
 

@@ -2,7 +2,7 @@ shader_type canvas_item;
 
 uniform float progress : hint_range(0.0, 1.0) = 0.0;
 // Tweak this to make the red/blue spread wider or tighter
-uniform vec2 max_offset = vec2(0.015, 0.0); 
+uniform vec2 max_offset = vec2(0.015, 0.0);
 uniform float phase_edge : hint_range(0.0, 0.5) = 0.25;
 
 void fragment() {

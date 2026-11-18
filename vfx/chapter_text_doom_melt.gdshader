@@ -8,10 +8,10 @@ uniform float intro_ratio : hint_range(0.0, 1.0) = 0.25;
 uniform float outro_ratio : hint_range(0.0, 1.0) = 0.75;
 
 // Increased columns because this applies to the whole SubViewport width, not just a label.
-uniform float columns = 80.0; 
+uniform float columns = 80.0;
 
 // Controls how far the melt travels. 1.5 means it drops 1.5x the height of the Viewport.
-uniform float melt_distance = 1.5; 
+uniform float melt_distance = 1.5;
 
 // Cheap pseudo-random generation to stagger the columns
 float rand(float x) {

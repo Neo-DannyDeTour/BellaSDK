@@ -27,10 +27,10 @@ void fragment() {
     // 1. Calculate when to trigger the color glitch
     // Floor the time to create distinct "ticks" rather than a smooth gradient
     float tick = floor(TIME * color_glitch_speed);
-    
+
     // Returns 1.0 if the random roll hits the chance threshold, otherwise 0.0
     float is_glitching = step(1.0 - color_glitch_chance, rand(tick));
-    
+
     // Pick the active color for this exact frame
     vec4 active_base_color = mix(base_color, glitch_color, is_glitching);
 
@@ -38,7 +38,7 @@ void fragment() {
     float current_wobble = spatial_glitch_intensity + (is_glitching * 0.015);
     float wobble = sin(UV.y * 50.0 + (TIME * 15.0)) * current_wobble;
     vec2 distorted_uv = vec2(UV.x + wobble, UV.y);
-    
+
     vec4 text_texture = texture(TEXTURE, distorted_uv);
 
     // 3. Scanline math

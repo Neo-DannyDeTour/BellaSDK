@@ -35,7 +35,7 @@ void fragment() {
     // to make the pixels drift around in a non-uniform way.
     float wave_x = sin(uv.y * wave_frequency + TIME * wave_speed) * wave_amplitude;
     float wave_y = cos(uv.x * wave_frequency + TIME * wave_speed) * wave_amplitude;
-    
+
     // Apply a secondary, slower wave to make the distortion feel more organic and unpredictable
     wave_x += sin(uv.y * (wave_frequency * 0.5) - TIME * (wave_speed * 0.8)) * (wave_amplitude * 0.5);
     vec2 distorted_uv = uv + vec2(wave_x, wave_y);
@@ -51,7 +51,7 @@ void fragment() {
     // The fract() function ensures the value loops perfectly between 0.0 and 1.0
     hsv.x = fract(hsv.x + TIME * hue_speed);
 
-    // Crank up the saturation to make the colors pop aggressively 
+    // Crank up the saturation to make the colors pop aggressively
     hsv.y = clamp(hsv.y * saturation_boost, 0.0, 1.0);
 
     // Convert back to RGB and output

@@ -5,12 +5,12 @@ const int RADIUS = 3;
 
 void fragment() {
     vec2 tex_size = SCREEN_PIXEL_SIZE;
-    
+
     vec3 means[4] = vec3[](vec3(0.0), vec3(0.0), vec3(0.0), vec3(0.0));
     vec3 variances[4] = vec3[](vec3(0.0), vec3(0.0), vec3(0.0), vec3(0.0));
-    
+
     float samples = float((RADIUS + 1) * (RADIUS + 1));
-    
+
     // Quadrant 1 (Top Right)
     for (int i = 0; i <= RADIUS; i++) {
         for (int j = 0; j <= RADIUS; j++) {
@@ -43,20 +43,20 @@ void fragment() {
             variances[3] += color * color;
         }
     }
-    
+
     float min_variance = 100.0;
     vec3 final_color = vec3(0.0);
-    
+
     for (int k = 0; k < 4; k++) {
         means[k] /= samples;
         variances[k] = abs(variances[k] / samples - means[k] * means[k]);
         float total_variance = variances[k].r + variances[k].g + variances[k].b;
-        
+
         if (total_variance < min_variance) {
             min_variance = total_variance;
             final_color = means[k];
         }
     }
-    
+
     COLOR = vec4(final_color, 1.0);
 }

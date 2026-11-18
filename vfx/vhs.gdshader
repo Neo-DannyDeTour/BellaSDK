@@ -8,7 +8,7 @@ uniform float wave_speed : hint_range(0.1, 5.0, 0.1) = 1.2;
 uniform float wave_frequency : hint_range(0.1, 10.0, 0.1) = 1.5;
 uniform float wave_width : hint_range(0.01, 0.5, 0.01) = 0.15;
 // The amount the wave distorts the background (refraction)
-uniform float refraction_strength : hint_range(0.0, 0.05, 0.001) = 0.015; 
+uniform float refraction_strength : hint_range(0.0, 0.05, 0.001) = 0.015;
 
 // --- VHS & Noise Settings ---
 uniform float aberration_amount : hint_range(0.0, 0.02, 0.001) = 0.004;
@@ -26,8 +26,8 @@ void fragment() {
     // --- 1. Rolling Wave Calculation ---
     // Calculate a phase that moves downwards over time
     float wave_phase = fract(uv.y * wave_frequency - TIME * wave_speed);
-    
-    // Create a smooth band for the wave using smoothstep. 
+
+    // Create a smooth band for the wave using smoothstep.
     // This creates a hump that peaks in the middle of the width.
     float wave_band = smoothstep(0.0, wave_width * 0.5, wave_phase) * smoothstep(wave_width, wave_width * 0.5, wave_phase);
 
@@ -35,7 +35,7 @@ void fragment() {
     // Generate a noise value based on the pixel coordinate and a stepped time value (for 24fps jitter)
     float time_step = floor(TIME * 24.0);
     float noise_val = rand(FRAGCOORD.xy + vec2(time_step));
-    
+
     // --- 3. Refraction / UV Distortion ---
     // Distort the UV horizontally where the wave is active.
     // We add a tiny bit of the noise to the distortion to give the refraction a "rippling" VHS tear effect.
@@ -57,7 +57,7 @@ void fragment() {
     // --- 6. Applying Dither & Wave Highlights ---
     // Apply baseline global dither to add texture to the whole screen
     color += (noise_val - 0.5) * dither_intensity;
-    
+
     // Add bright, intense static specifically inside the wave band to simulate tracking errors
     color += wave_band * noise_val * 0.35;
 

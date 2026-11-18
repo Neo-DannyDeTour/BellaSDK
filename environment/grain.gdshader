@@ -9,15 +9,15 @@ float rand(vec2 co) {
 
 void fragment() {
     vec3 color = texture(screen_texture, SCREEN_UV).rgb;
-    
+
     // Animated noise
     float noise = rand(SCREEN_UV + vec2(TIME, -TIME));
     color -= (noise - 0.5) * grain_amount;
-    
+
     // Vignette math
     vec2 uv_dist = SCREEN_UV * (1.0 - SCREEN_UV.yx);
     float vignette = uv_dist.x * uv_dist.y * 15.0;
     color *= pow(vignette, 0.2);
-    
+
     COLOR = vec4(color, 1.0);
 }

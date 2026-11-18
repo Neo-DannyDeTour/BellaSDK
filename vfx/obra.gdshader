@@ -18,23 +18,23 @@ const float bayer_matrix_4x4[16] = float[16](
 
 void fragment() {
     vec3 color = texture(screen_texture, SCREEN_UV).rgb;
-    
-    // Calculate grayscale luma and push the contrast 
+
+    // Calculate grayscale luma and push the contrast
     float luma = dot(color, vec3(0.299, 0.587, 0.114));
     luma = clamp((luma - 0.5) * contrast + 0.5, 0.0, 1.0);
-    
+
     // Determine the current pixel's coordinate within the 4x4 matrix grid
     int x = int(mod(FRAGCOORD.x, 4.0));
     int y = int(mod(FRAGCOORD.y, 4.0));
     int index = x + y * 4;
-    
+
     // Retrieve the exact brightness threshold for this specific pixel
     float threshold = bayer_matrix_4x4[index];
-    
-    // Branchless binary color selection: 
+
+    // Branchless binary color selection:
     // If the luma is brighter than the matrix threshold, it becomes the light color.
     float is_light = step(threshold, luma);
     vec3 final_color = mix(dark_color, light_color, is_light);
-    
+
     COLOR = vec4(final_color, 1.0);
 }

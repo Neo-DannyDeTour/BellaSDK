@@ -4,8 +4,8 @@ render_mode blend_add, depth_draw_opaque, cull_disabled, unshaded;
 // Instance Uniforms so your Tool Script still works perfectly
 instance uniform vec4 base_color : source_color = vec4(0.0, 0.2, 0.8, 0.1);
 instance uniform vec4 line_color : source_color = vec4(0.0, 1.0, 1.0, 1.0);
-instance uniform float speed = 1.0;                 
-instance uniform float line_count = 2.0;            
+instance uniform float speed = 1.0;
+instance uniform float line_count = 2.0;
 instance uniform float line_thickness : hint_range(0.01, 1.0) = 0.1;
 instance uniform float glow_multiplier = 2.0;
 

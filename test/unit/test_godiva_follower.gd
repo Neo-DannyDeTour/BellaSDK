@@ -164,14 +164,15 @@ func test_elevated_player_within_stop_distance_does_not_stop_below_ledge() -> vo
 	player_stub.global_position = Vector3(0.0, 1.2, -1.5)
 
 	var nav_map: RID = nav_region.get_navigation_map()
+	var start_iter: int = NavigationServer3D.map_get_iteration_id(nav_map)
+	var region_rid: RID = nav_region.get_rid()
 	for sync_idx: int in range(15):
 		await get_tree().physics_frame
 		if (
-			NavigationServer3D.map_get_iteration_id(nav_map) > 0
+			NavigationServer3D.map_get_iteration_id(nav_map) > start_iter
 			and (
-				NavigationServer3D
-				. map_get_closest_point_owner(nav_map, player_stub.global_position)
-				. is_valid()
+				NavigationServer3D.map_get_closest_point_owner(nav_map, player_stub.global_position)
+				== region_rid
 			)
 		):
 			break
@@ -232,14 +233,15 @@ func test_unreachable_flying_player_projects_and_tracks_gaze() -> void:
 	player_stub.global_position = Vector3(0.0, 6.0, -4.0)
 
 	var nav_map: RID = nav_region.get_navigation_map()
+	var start_iter: int = NavigationServer3D.map_get_iteration_id(nav_map)
+	var region_rid: RID = nav_region.get_rid()
 	for sync_idx: int in range(15):
 		await get_tree().physics_frame
 		if (
-			NavigationServer3D.map_get_iteration_id(nav_map) > 0
+			NavigationServer3D.map_get_iteration_id(nav_map) > start_iter
 			and (
-				NavigationServer3D
-				. map_get_closest_point_owner(nav_map, player_stub.global_position)
-				. is_valid()
+				NavigationServer3D.map_get_closest_point_owner(nav_map, player_stub.global_position)
+				== region_rid
 			)
 		):
 			break

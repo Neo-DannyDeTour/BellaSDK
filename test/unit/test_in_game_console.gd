@@ -216,7 +216,9 @@ func test_map_command_autocomplete() -> void:
 
 	var matches: Array[String] = reg.get_autocomplete_matches("map ")
 	assert_true(matches.has("map testbed"), "Suggestions should include 'map testbed'.")
-	assert_true(matches.has("map testbed2"), "Suggestions should include 'map testbed2'.")
+	assert_true(
+		matches.has("map testbed_loader"), "Suggestions should include 'map testbed_loader'."
+	)
 
 
 ## Tests that checkpoint command validates unset vs set checkpoint positions.

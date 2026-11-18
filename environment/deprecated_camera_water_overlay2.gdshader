@@ -28,37 +28,37 @@ vec2 voronoi(vec2 uv) {
 void fragment() {
     vec2 uv = SCREEN_UV;
     float mask = smoothstep(clear_progress - 0.4, clear_progress, uv.y);
-    
+
     // 1. Generate Dynamic Ripples (Layered Voronoi)
     // We animate three different scales at different speeds
     float v1 = voronoi(uv * 4.0 + TIME * (ripple_speed * 0.5)).x;
     float v2 = voronoi(uv * 8.0 - TIME * ripple_speed).x;
     float v3 = voronoi(uv * 12.0 + cos(TIME)).x;
-    
+
     // Combine for a complex, non-repeating pattern
     float combined_noise = (v1 * 0.5) + (v2 * 0.3) + (v3 * 0.2);
-    
+
     // 2. Dynamic Distortion (Refraction)
     // We treat the noise as a heightmap and calculate a fake "Normal"
     vec2 distortion = vec2(dFdx(combined_noise), dFdy(combined_noise));
     vec2 final_uv = uv + (distortion * ripple_magnitude * mask);
-    
+
     // 3. Chromatic Aberration
     float r = texture(screen_texture, final_uv + (vec2(chromatic_aberration) * mask)).r;
     float g = texture(screen_texture, final_uv).g;
     float b = texture(screen_texture, final_uv - (vec2(chromatic_aberration) * mask)).b;
     vec4 color = vec4(r, g, b, 1.0);
-    
+
     // 4. Punchy Specular Highlights
     // This creates the "pretty" glints on the edges of the water ripples
     float highlights = smoothstep(0.4, 0.5, combined_noise) * highlight_punch * mask;
     color.rgb += highlights;
-    
+
     // 5. Vibrant Tint & Vignette
     color.rgb = mix(color.rgb, water_tint.rgb, water_tint.a * mask);
     float dist = distance(uv, vec2(0.5));
     color.rgb *= smoothstep(0.8, 0.4, dist * 0.5 * mask);
-    
+
     // 6. Contrast Boost
     color.rgb = pow(color.rgb, vec3(1.1));
 

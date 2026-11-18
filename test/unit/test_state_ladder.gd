@@ -185,7 +185,7 @@ func test_lateral_look_threshold_blocks_slight_side_look() -> void:
 	mock_player.global_position = Vector3(0.0, 2.0, 0.1)
 	state_ladder.enter({&"ladder_node": ladder_node})
 
-	cam_3d.rotation = Vector3(0.0, deg_to_rad(-55.0), 0.0)
+	cam_3d.rotation = Vector3(0.0, deg_to_rad(-45.0), 0.0)
 	state_ladder._calculate_ladder_velocity(
 		mock_player,
 		mock_player.locomotion_component,
@@ -196,13 +196,13 @@ func test_lateral_look_threshold_blocks_slight_side_look() -> void:
 		mock_player.velocity.x,
 		0.0,
 		0.001,
-		"55 deg side look should produce zero lateral movement on forward input."
+		"45 deg side look should produce zero lateral movement on forward input."
 	)
 	assert_almost_eq(
 		mock_player.velocity.y,
 		StateLadder.LADDER_SPEED,
 		0.001,
-		"55 deg side look should maintain full vertical climb speed."
+		"45 deg side look should maintain full vertical climb speed."
 	)
 
 	cam_3d.rotation = Vector3(0.0, deg_to_rad(-80.0), 0.0)

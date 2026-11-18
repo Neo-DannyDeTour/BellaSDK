@@ -7,6 +7,6 @@ void fragment() {
     vec2 res = 1.0 / SCREEN_PIXEL_SIZE;
     vec2 grid = vec2(pixel_size) / res;
     vec2 uv = floor(SCREEN_UV / grid) * grid;
-    
+
     COLOR = texture(screen_texture, uv);
 }

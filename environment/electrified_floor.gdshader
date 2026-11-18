@@ -5,7 +5,7 @@ uniform vec4 lightning_color : source_color = vec4(0.4, 0.8, 1.0, 1.0);
 uniform vec4 emission_color : source_color = vec4(0.4, 0.8, 1.0, 1.0);
 uniform float emission_energy = 3.0;
 
-uniform float lightning_scale = 1.0; 
+uniform float lightning_scale = 1.0;
 uniform float lightning_thickness = 0.02;
 uniform float speed = 3.0;
 uniform float jaggedness = 0.2;
@@ -42,32 +42,32 @@ float fbm(vec2 p) {
 void fragment() {
 	// Apply scaling to dictate how many arcs populate the surface
 	vec2 uv = UV * lightning_scale;
-	
+
 	// Distort the UV coordinates to create a jagged path
 	float distortion = fbm(uv + TIME * speed) * jaggedness;
-	uv.y += distortion - (jaggedness * 0.5); 
-	
+	uv.y += distortion - (jaggedness * 0.5);
+
 	// Create a line passing through the center of the modified UVs
 	float dist = abs(fract(uv.y) - 0.5);
-	
+
 	// Inverse distance creates a nice fading neon glow falloff
-	float intensity = lightning_thickness / (dist + 0.001); 
+	float intensity = lightning_thickness / (dist + 0.001);
 	intensity = clamp(intensity, 0.0, 1.0);
-	
+
 	// Tile-based random blinking
-	float tile_id = floor(uv.y); 
+	float tile_id = floor(uv.y);
 	float time_step = floor(TIME * speed * 2.0);
-	
+
 	// Determine if this specific arc is actively striking
 	float strike = hash21(vec2(tile_id, time_step));
 	float is_striking = step(1.0 - strike_frequency, strike);
-	
+
 	intensity *= is_striking;
-	
+
 	// Softly fade out the hard edges on the left and right bounds
 	float edge_fade = smoothstep(0.0, 0.2, UV.x) * smoothstep(1.0, 0.8, UV.x);
 	intensity *= edge_fade;
-	
+
 	ALBEDO = lightning_color.rgb * intensity;
 	EMISSION = emission_color.rgb * intensity * emission_energy;
 	ALPHA = intensity * lightning_color.a;

@@ -32,7 +32,7 @@ float random(vec2 uv) {
 
 void fragment() {
     vec3 color;
-    
+
     // 1. Chromatic Aberration (Sample separation)
     if (aberration_amount > 0.0) {
         float r = texture(screen_texture, SCREEN_UV + vec2(aberration_amount, 0.0)).r;
@@ -53,7 +53,7 @@ void fragment() {
     // 3. Base Adjustments
     color *= brightness;
     color = (color - 0.5) * contrast + 0.5;
-    
+
     float luminance = dot(color, vec3(0.299, 0.587, 0.114));
     vec3 grayscale = vec3(luminance);
     color = mix(grayscale, color, saturation);
@@ -76,11 +76,11 @@ void fragment() {
         float vignette = smoothstep(0.8, vignette_intensity * 0.79, dist);
         color *= (1.0 - vignette);
     }
-    
+
     // 7. Film Grain
     if (grain_amount > 0.0) {
         float noise = (random(UV + TIME) - 0.5) * 2.0; // Noise from -1.0 to 1.0
-        color += noise * grain_amount * 0.1; 
+        color += noise * grain_amount * 0.1;
     }
 
     COLOR = vec4(color, COLOR.a);

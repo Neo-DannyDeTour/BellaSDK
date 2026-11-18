@@ -11,16 +11,16 @@ void fragment() {
     vec2 uv = UV;
     vec4 tex_color = texture(TEXTURE, uv);
     float noise_val = hash(floor(uv * 20.0));
-    
+
     // Threshold smoothly scales: 0.0 (start) -> 1.0 (hold) -> 0.0 (end)
     float threshold = smoothstep(0.0, 0.2, progress) - smoothstep(0.8, 1.0, progress);
-    
+
     // Pixel is visible if noise is below the threshold
     float alpha_mask = step(noise_val, threshold);
     float burn_mask = step(noise_val, threshold + 0.1) - alpha_mask;
-    
+
     vec4 final_color = mix(tex_color, burn_color, burn_mask);
     final_color.a *= alpha_mask * tex_color.a;
-    
+
     COLOR = final_color;
 }

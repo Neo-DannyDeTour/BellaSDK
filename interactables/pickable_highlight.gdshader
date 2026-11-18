@@ -1,5 +1,5 @@
 shader_type spatial;
-// Forcing blend_mix and depth_draw_never pushes this to the transparent pipeline, 
+// Forcing blend_mix and depth_draw_never pushes this to the transparent pipeline,
 // ensuring it renders AFTER the opaque full-screen accessibility quad.
 render_mode blend_mix, depth_draw_never, unshaded, depth_test_disabled, cull_disabled;
 

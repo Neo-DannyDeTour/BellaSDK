@@ -25,15 +25,15 @@ void vertex() {
 void fragment() {
     // Determine the local elapsed time since the effect was triggered
     float local_time = TIME - start_time;
-    
-    // Total sequence loop is 6.0 seconds: 
+
+    // Total sequence loop is 6.0 seconds:
     // 1s invis -> 2s orange -> 1s invis -> 2s blue
     float t = mod(local_time, 6.0);
 
     // 2, 4, 5. Timing and Color States (Branchless 60 FPS Optimization)
     float is_orange_phase = step(1.0, t) * step(t, 3.0);
     float is_blue_phase = step(4.0, t);
-    
+
     // Visibility multiplier (0.0 when in the 1-second invisible phases)
     float visibility = is_orange_phase + is_blue_phase;
 
@@ -49,7 +49,7 @@ void fragment() {
     // 3 & 5. Fires up transparent waves at random speeds
     // UV.y is 0 at the top, 1 at the bottom. Adding time pushes the waves upwards.
     float t_speed = TIME * wave_speed_multiplier;
-    
+
     // Combining offset sine waves creates pseudo-random wave velocities and patterns
     float wave1 = sin(UV.y * 15.0 + t_speed * 8.0);
     float wave2 = sin(UV.y * 28.0 + t_speed * 15.0 + UV.x * 6.0);
@@ -58,7 +58,7 @@ void fragment() {
     // Normalize combined waves into a 0.0 to 1.0 alpha map
     float combined_waves = (wave1 + wave2 + wave3) / 3.0;
     combined_waves = combined_waves * 0.5 + 0.5;
-    
+
     // Sharpen the wave contrast so it looks more like energy pulses
     combined_waves = smoothstep(0.3, 0.8, combined_waves);
 

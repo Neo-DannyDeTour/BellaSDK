@@ -18,17 +18,17 @@ const int ascii_chars[8] = int[8](
 
 void fragment() {
     vec2 res = 1.0 / SCREEN_PIXEL_SIZE;
-    
+
     // Snap UVs to the character grid
     vec2 grid_uv = floor(SCREEN_UV * res / char_size) * char_size / res;
     vec2 local_uv = fract(SCREEN_UV * res / char_size);
 
     // Sample screen color at the center of this specific character block
     vec3 color = texture(screen_texture, grid_uv + (char_size * 0.5 * SCREEN_PIXEL_SIZE)).rgb;
-    
+
     // Calculate true grayscale luminance
     float luma = dot(color, vec3(0.299, 0.587, 0.114));
-    
+
     // Map luminance (0.0 to 1.0) to our character array (0 to 7)
     int char_index = int(clamp(luma * 8.0, 0.0, 7.0));
     int char_int = ascii_chars[char_index];
@@ -45,9 +45,9 @@ void fragment() {
 
     // Bitwise extraction: Shift the integer down by the index and check if the bit is 1 or 0
     int is_lit = (char_int >> bit_index) & 1;
-    
+
     // Output pure black or white based on the bit and the margin mask
     float final_pixel = float(is_lit) * margin_mask;
-    
+
     COLOR = vec4(vec3(final_pixel), 1.0);
 }

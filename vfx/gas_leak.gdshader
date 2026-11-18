@@ -25,22 +25,22 @@ void fragment() {
 	// Pan the noise texture over time to simulate gas flowing
 	vec2 noise_uv = UV + vec2(0.0, TIME * scroll_speed);
 	vec2 noise = texture(noise_texture, noise_uv).rg;
-	
+
 	// Convert noise from [0, 1] range to [-1, 1] range
 	vec2 offset = (noise - 0.5) * 2.0;
-	
+
 	// Get mask value for soft circular edges
 	float mask = texture(mask_texture, UV).r;
-	
-	// Apply particle alpha (COLOR.a) and mask to the distortion 
+
+	// Apply particle alpha (COLOR.a) and mask to the distortion
 	// so the refraction smoothly fades out at the edges and over the particle's lifetime
 	float final_alpha = COLOR.a * mask;
 	offset *= final_alpha * distortion_strength;
-	
-	// Sample the screen texture with the offset. 
+
+	// Sample the screen texture with the offset.
 	// textureLod uses mipmaps to blur the background cheaply!
 	vec4 refraction = textureLod(screen_texture, SCREEN_UV + offset, blur_lod);
-	
+
 	ALBEDO = refraction.rgb;
 	ALPHA = final_alpha;
 }

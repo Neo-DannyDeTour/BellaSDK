@@ -1,5 +1,5 @@
 shader_type spatial;
-// Unshaded disables PBR overhead for maximum 60fps performance. 
+// Unshaded disables PBR overhead for maximum 60fps performance.
 render_mode unshaded, cull_back;
 
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear_mipmap;
@@ -21,7 +21,7 @@ void fragment() {
     // 2. Dual-Phase Panning (creates seamless, infinitely looping fluid motion)
     float phase0 = fract(TIME * flow_speed);
     float phase1 = fract(TIME * flow_speed + 0.5);
-    
+
     // Calculates a triangle wave to fade smoothly between the two phases
     float flow_lerp = abs((0.5 - phase0) * 2.0);
 
@@ -32,7 +32,7 @@ void fragment() {
     vec3 normal0 = texture(normal_map, uv0).rgb;
     vec3 normal1 = texture(normal_map, uv1).rgb;
     vec3 blended_normal = mix(normal0, normal1, flow_lerp);
-    
+
     // Unpack normal from 0..1 to -1..1 range
     vec3 unpacked_normal = blended_normal * 2.0 - 1.0;
 
@@ -53,6 +53,6 @@ void fragment() {
     // Combine refracted background with our mapped color ramp, boosted by energy levels
     vec3 final_color = refracted_bg * mapped_color * core_color.rgb;
     vec3 edge_glow = core_color.rgb * fresnel * (emission_energy * 1.5);
-    
+
     ALBEDO = final_color + edge_glow;
 }
