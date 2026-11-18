@@ -141,7 +141,7 @@ signal frozen_changed(is_frozen: bool)
 static var _cached_dust_texture: Texture2D = null
 
 ## Cached dictionary of quad meshes indexed by material variant keys.
-static var _cached_quads: Dictionary = {}
+static var _cached_quads: Dictionary[String, QuadMesh] = {}
 
 ## Shared archetype material used to request variants from [MaterialCache].
 static var _base_archetype_material: StandardMaterial3D = null
@@ -252,9 +252,7 @@ func _get_or_create_material(variant_key: String) -> StandardMaterial3D:
 func _get_or_create_quad(variant_key: String, mat: StandardMaterial3D) -> QuadMesh:
 	print("DustVolume: Resolving quad mesh for variant: ", variant_key)
 	if _cached_quads.has(variant_key):
-		var existing_quad: QuadMesh = (
-			_cached_quads[variant_key] if _cached_quads[variant_key] is QuadMesh else null
-		)
+		var existing_quad: QuadMesh = _cached_quads[variant_key]
 		if is_instance_valid(existing_quad):
 			return existing_quad
 

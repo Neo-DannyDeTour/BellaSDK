@@ -140,12 +140,16 @@ func _ready() -> void:
 	add_to_group(&"trigger_visualizers")
 	_update_visuals()
 
-	if not Engine.is_editor_hint() and has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal(&"trigger_visibility_toggled"):
-			var err: Error = events.connect(&"trigger_visibility_toggled", set_debug_visibility)
-			if err != OK:
-				push_warning("Failed to connect trigger_visibility_toggled")
+	if not Engine.is_editor_hint() and is_instance_valid(Events):
+		if not Events.trigger_visibility_toggled.is_connected(set_debug_visibility):
+			Events.trigger_visibility_toggled.connect(set_debug_visibility)
+
+
+## Disconnects global trigger visibility signals when leaving the tree.
+func _exit_tree() -> void:
+	if not Engine.is_editor_hint() and is_instance_valid(Events):
+		if Events.trigger_visibility_toggled.is_connected(set_debug_visibility):
+			Events.trigger_visibility_toggled.disconnect(set_debug_visibility)
 
 
 ## Listens for engine notifications to redraw gizmos on transform shifts.
@@ -202,9 +206,10 @@ func _update_chain_arrow() -> void:
 	imm_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 	_draw_line(imm_mesh, trigger_offset, local_dest)
 
-	var dir: Vector3 = (local_dest - trigger_offset).normalized()
-	var dist: float = trigger_offset.distance_to(local_dest)
-	if dist > 0.8:
+	var delta_vec: Vector3 = local_dest - trigger_offset
+	var dist_sq: float = trigger_offset.distance_squared_to(local_dest)
+	if dist_sq > 0.64:
+		var dir: Vector3 = delta_vec.normalized()
 		var side: Vector3 = dir.cross(Vector3.UP).normalized() * 0.3
 		var back: Vector3 = local_dest - (dir * 0.5)
 		_draw_line(imm_mesh, local_dest, back + side)

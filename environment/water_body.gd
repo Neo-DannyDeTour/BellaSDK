@@ -722,6 +722,11 @@ func _exit_tree() -> void:
 			and Events.player_camera_registered.is_connected(_on_camera_registered)
 		):
 			Events.player_camera_registered.disconnect(_on_camera_registered)
+		if is_instance_valid(_swimmable_area):
+			if _swimmable_area.body_entered.is_connected(_on_swimmable_area_body_entered):
+				_swimmable_area.body_entered.disconnect(_on_swimmable_area_body_entered)
+			if _swimmable_area.body_exited.is_connected(_on_swimmable_area_body_exited):
+				_swimmable_area.body_exited.disconnect(_on_swimmable_area_body_exited)
 
 
 ## Advances wave simulation clock and evaluates distance-gated camera submersion.
@@ -908,13 +913,14 @@ func change_water_level(to_lowered: bool) -> void:
 
 	var target_size: Vector3 = Vector3(water_size.x, target_size_y, water_size.z)
 
-	_level_tween = create_tween()
-	_level_tween.set_ignore_time_scale(true)
-	_level_tween.set_trans(level_transition_type)
-	_level_tween.set_ease(level_ease_type)
-	_level_tween.tween_property(self, "position:y", target_pos_y, active_duration)
-	_level_tween.parallel().tween_property(self, "water_size", target_size, active_duration)
-	_level_tween.finished.connect(_on_level_tween_finished.bind(_is_water_lowered))
+	_level_tween = Utilities.reset_tween(self, _level_tween)
+	if is_instance_valid(_level_tween):
+		_level_tween.set_ignore_time_scale(true)
+		_level_tween.set_trans(level_transition_type)
+		_level_tween.set_ease(level_ease_type)
+		_level_tween.tween_property(self, "position:y", target_pos_y, active_duration)
+		_level_tween.parallel().tween_property(self, "water_size", target_size, active_duration)
+		_level_tween.finished.connect(_on_level_tween_finished.bind(_is_water_lowered))
 
 
 ## Returns true if no water level transition tween is currently active.

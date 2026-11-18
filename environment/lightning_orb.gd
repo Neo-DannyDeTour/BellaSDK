@@ -78,6 +78,15 @@ func _ready() -> void:
 
 ## Drives hover oscillation, decays impact light, and triggers arc updates.
 func _process(delta: float) -> void:
+	if not Engine.is_editor_hint():
+		var vp: Viewport = get_viewport()
+		var cam: Camera3D = vp.get_camera_3d() if is_instance_valid(vp) else null
+		if (
+			is_instance_valid(cam)
+			and global_position.distance_squared_to(cam.global_position) > 3600.0
+		):
+			return
+
 	if not is_instance_valid(_arc_instance) or not is_instance_valid(_immediate_mesh):
 		_resolve_or_create_components()
 
@@ -244,11 +253,14 @@ func _build_ground_strike(
 		var hit: Dictionary = space_state.intersect_ray(query)
 
 		if not hit.is_empty():
-			var hit_global: Vector3 = hit["position"]
-			var hit_normal: Vector3 = hit["normal"]
+			var raw_pos: Variant = hit.get(&"position", ray_target_global)
+			var hit_global: Vector3 = raw_pos if raw_pos is Vector3 else ray_target_global
+			var raw_norm: Variant = hit.get(&"normal", Vector3.UP)
+			var hit_normal: Vector3 = raw_norm if raw_norm is Vector3 else Vector3.UP
 			end_local = _arc_instance.to_local(hit_global)
 
-			var hit_collider: Object = hit.get("collider", null)
+			var raw_col: Variant = hit.get(&"collider", null)
+			var hit_collider: Object = raw_col if raw_col is Object else null
 			if hit_collider is RigidBody3D:
 				var push: Vector3 = (hit_global - orb_global).normalized() * 2.0
 				(hit_collider as RigidBody3D).apply_impulse(push, hit_global)

@@ -254,7 +254,8 @@ func _enqueue_chunk_load(coord: Vector2i) -> void:
 ## Fills open [constant MAX_CONCURRENT_IO] slots from [member _pending_io].
 func _pump_io_queue() -> void:
 	while _in_flight_loads.size() < MAX_CONCURRENT_IO and not _pending_io.is_empty():
-		var coord: Vector2i = _pending_io.pop_front() as Vector2i
+		var coord: Vector2i = _pending_io[0]
+		_pending_io.remove_at(0)
 		if not _chunk_states.has(coord) or _chunk_states[coord] != ChunkState.QUEUED:
 			continue
 		var path: String = _get_chunk_path(coord)

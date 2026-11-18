@@ -652,8 +652,9 @@ func _on_camera_submerged(cam: Camera3D) -> void:
 		_underwater_audio.play()
 	_underwater_audio.stream_paused = false
 
-	_emit_events_signal(SIG_WATERFALL_VFX, [false, 0.0, 1.5])
-	_emit_events_signal(SIG_UNDERWATER_VFX, [true, 0.85, 0.0, 0.0])
+	if is_instance_valid(Events):
+		Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
+		Events.underwater_vfx_toggled.emit(true, 0.85, 0.0, 0.0)
 
 	var env: Environment = _resolve_active_environment(cam)
 	var uw_fog: ArgonUnderwaterFogVolume = _fog_volume as ArgonUnderwaterFogVolume
@@ -673,8 +674,9 @@ func _on_camera_surfaced(cam_pos: Vector3, vertical_speed: float) -> void:
 	if not _surface_audio.playing:
 		_surface_audio.play()
 
-	_emit_events_signal(SIG_UNDERWATER_VFX, [false, 0.0, 0.0, 1.5])
-	_emit_events_signal(SIG_WATER_SHEET_WIPE, [1.2])
+	if is_instance_valid(Events):
+		Events.underwater_vfx_toggled.emit(false, 0.0, 0.0, 1.5)
+		Events.water_sheet_wipe_requested.emit(1.2)
 
 	var uw_fog: ArgonUnderwaterFogVolume = _fog_volume as ArgonUnderwaterFogVolume
 	if is_instance_valid(uw_fog):
@@ -732,19 +734,6 @@ func _restore_fallback_environment_fog() -> void:
 		env.fog_depth_begin = _saved_fog_begin
 		env.fog_depth_end = _saved_fog_end
 	_env_backup_valid = false
-
-
-## Emits a signal on the `/root/Events` autoload safely without untyped property access.
-func _emit_events_signal(sig_name: StringName, args: Array[Variant]) -> void:
-	var events_node: Node = get_node_or_null(^"/root/Events")
-	if not is_instance_valid(events_node) or not events_node.has_signal(sig_name):
-		return
-	if args.size() == 1:
-		events_node.emit_signal(sig_name, args[0])
-	elif args.size() == 3:
-		events_node.emit_signal(sig_name, args[0], args[1], args[2])
-	elif args.size() == 4:
-		events_node.emit_signal(sig_name, args[0], args[1], args[2], args[3])
 
 
 ## Returns current engine clock in seconds for deterministic CPU/GPU wave synchronization.

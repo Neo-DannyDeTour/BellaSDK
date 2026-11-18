@@ -30,6 +30,7 @@ var _overlapping_bodies: Array[Node3D] = []
 func _ready() -> void:
 	print("ElectrifiedFloor: _ready() - Initializing electrified floor.")
 	_update_sizes()
+	set_physics_process(false)
 
 	if Engine.is_editor_hint():
 		return
@@ -39,6 +40,16 @@ func _ready() -> void:
 		damage_area.body_exited.connect(_on_body_exited)
 	else:
 		printerr("ElectrifiedFloor: _ready() - damage_area is not assigned!")
+
+
+## Disconnects damage area signals on tree exit.
+func _exit_tree() -> void:
+	if is_instance_valid(damage_area):
+		if damage_area.body_entered.is_connected(_on_body_entered):
+			damage_area.body_entered.disconnect(_on_body_entered)
+		if damage_area.body_exited.is_connected(_on_body_exited):
+			damage_area.body_exited.disconnect(_on_body_exited)
+	_overlapping_bodies.clear()
 
 
 ## Accumulates delta time and triggers ticks against registered bodies.
@@ -89,12 +100,15 @@ func _on_body_entered(body: Node3D) -> void:
 	print("ElectrifiedFloor: _on_body_entered() - Body entered: ", body.name)
 	if not _overlapping_bodies.has(body):
 		_overlapping_bodies.append(body)
+		set_physics_process(true)
 
 
 ## Handles exit detection and removes departing bodies from tracking array.
 func _on_body_exited(body: Node3D) -> void:
 	print("ElectrifiedFloor: _on_body_exited() - Body exited: ", body.name)
 	_overlapping_bodies.erase(body)
+	if _overlapping_bodies.is_empty():
+		set_physics_process(false)
 
 
 ## Iterates through cached bodies and dispatches damage to valid targets.

@@ -25,6 +25,13 @@ const DEFAULT_OUTLINE_DURATION: float = 3.0
 ## Default shared outline shader material applied when none is assigned.
 const DEFAULT_OUTLINE_MATERIAL: ShaderMaterial = preload("res://vfx/unlit_outline_material.tres")
 
+## Pre-allocated shader uniform keys for zero-allocation updates.
+const _PARAM_HIGHLIGHT_COLOR: StringName = &"highlight_color"
+const _PARAM_BLINK_SPEED: StringName = &"blink_speed"
+const _PARAM_MIN_INTENSITY: StringName = &"min_intensity"
+const _PARAM_MAX_INTENSITY: StringName = &"max_intensity"
+const _PARAM_IS_BILLBOARD: StringName = &"is_billboard"
+
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
@@ -129,12 +136,23 @@ func _ready() -> void:
 	_setup_visibility_notifier()
 	_connect_outline_events()
 	_load_initial_settings()
-	set_process(true)
+	set_process(_first_sight_enabled and not _has_been_seen)
 
 
-## Cleans up dynamically instantiated visibility notifier on exit.
+## Cleans up dynamically instantiated visibility notifier and disconnects signals on exit.
 func _exit_tree() -> void:
-	print("HighlightComponent: Exiting tree, cleaning up resources.")
+	_disconnect_outline_events()
+	if is_instance_valid(interact_component):
+		if (
+			interact_component.has_signal(&"focused")
+			and interact_component.is_connected(&"focused", _on_focus)
+		):
+			interact_component.disconnect(&"focused", _on_focus)
+		if (
+			interact_component.has_signal(&"unfocused")
+			and interact_component.is_connected(&"unfocused", _on_unfocus)
+		):
+			interact_component.disconnect(&"unfocused", _on_unfocus)
 	if _owns_screen_notifier and is_instance_valid(visibility_notifier):
 		visibility_notifier.queue_free()
 
@@ -143,13 +161,11 @@ func _exit_tree() -> void:
 func _process(_delta: float) -> void:
 	if _first_sight_enabled and not _has_been_seen:
 		if _is_target_on_screen():
-			print("HighlightComponent: Target seen on first sight.")
 			_has_been_seen = true
 			_is_on_screen = true
 			_trigger_first_sight_pulse()
-			if not _periodic_enabled:
-				set_process(false)
-	elif not _first_sight_enabled and not _periodic_enabled:
+			set_process(false)
+	else:
 		set_process(false)
 
 
@@ -281,6 +297,31 @@ func _connect_outline_events() -> void:
 			Events.outline_duration_changed.connect(_on_outline_duration_changed)
 
 
+## Unsubscribes from all global outline signals on the event bus.
+func _disconnect_outline_events() -> void:
+	if not is_instance_valid(Events):
+		return
+
+	if Events.outline_mode_changed.is_connected(_on_outline_mode_changed):
+		Events.outline_mode_changed.disconnect(_on_outline_mode_changed)
+	if Events.outline_first_sight_toggled.is_connected(_on_outline_first_sight_toggled):
+		Events.outline_first_sight_toggled.disconnect(_on_outline_first_sight_toggled)
+	if Events.outline_periodic_toggled.is_connected(_on_outline_periodic_toggled):
+		Events.outline_periodic_toggled.disconnect(_on_outline_periodic_toggled)
+	if Events.outline_color_changed.is_connected(_on_outline_color_changed):
+		Events.outline_color_changed.disconnect(_on_outline_color_changed)
+	if Events.outline_blink_speed_changed.is_connected(_on_outline_blink_speed_changed):
+		Events.outline_blink_speed_changed.disconnect(_on_outline_blink_speed_changed)
+	if Events.outline_min_intensity_changed.is_connected(_on_outline_min_intensity_changed):
+		Events.outline_min_intensity_changed.disconnect(_on_outline_min_intensity_changed)
+	if Events.outline_max_intensity_changed.is_connected(_on_outline_max_intensity_changed):
+		Events.outline_max_intensity_changed.disconnect(_on_outline_max_intensity_changed)
+	if Events.outline_interval_changed.is_connected(_on_outline_interval_changed):
+		Events.outline_interval_changed.disconnect(_on_outline_interval_changed)
+	if Events.outline_duration_changed.is_connected(_on_outline_duration_changed):
+		Events.outline_duration_changed.disconnect(_on_outline_duration_changed)
+
+
 ## Reads initial outline configuration from [GlobalSettings] silently.
 func _load_initial_settings() -> void:
 	#print("HighlightComponent: Loading initial outline settings.")
@@ -399,10 +440,10 @@ func _apply_shader_parameters() -> void:
 	if not is_instance_valid(outline_material):
 		return
 
-	outline_material.set_shader_parameter("highlight_color", _outline_color)
-	outline_material.set_shader_parameter("blink_speed", _blink_speed)
-	outline_material.set_shader_parameter("min_intensity", _min_intensity)
-	outline_material.set_shader_parameter("max_intensity", _max_intensity)
+	outline_material.set_shader_parameter(_PARAM_HIGHLIGHT_COLOR, _outline_color)
+	outline_material.set_shader_parameter(_PARAM_BLINK_SPEED, _blink_speed)
+	outline_material.set_shader_parameter(_PARAM_MIN_INTENSITY, _min_intensity)
+	outline_material.set_shader_parameter(_PARAM_MAX_INTENSITY, _max_intensity)
 
 
 ## Evaluates current focus and mode rules to apply or clear highlights.
@@ -574,10 +615,7 @@ func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 
 			base_mesh.add_child.call_deferred(hl_mesh)
 
-			if is_flat:
-				hl_mesh.set_instance_shader_parameter("is_billboard", true)
-			else:
-				hl_mesh.set_instance_shader_parameter("is_billboard", false)
+			hl_mesh.set_instance_shader_parameter(_PARAM_IS_BILLBOARD, is_flat)
 
 		base_mesh.custom_aabb = AABB(Vector3(-2.0, -2.0, -2.0), Vector3(4.0, 4.0, 4.0))
 	else:

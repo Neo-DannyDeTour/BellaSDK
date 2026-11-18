@@ -231,14 +231,18 @@ func _on_touchdown() -> void:
 func _deploy_ammo_cargo() -> void:
 	var scene_to_spawn: PackedScene = ammo_box_scene
 	if not is_instance_valid(scene_to_spawn):
-		if not default_ammo_box_path.is_empty() and ResourceLoader.exists(default_ammo_box_path):
-			if default_ammo_box_path == "res://assets/weapons/ammo_box.tscn":
-				scene_to_spawn = DEFAULT_AMMO_BOX_SCENE
-			else:
-				var res: Resource = ResourceLoader.load(default_ammo_box_path)
-				if res is PackedScene:
-					scene_to_spawn = res as PackedScene
+		if (
+			default_ammo_box_path == "res://assets/weapons/ammo_box.tscn"
+			or default_ammo_box_path.is_empty()
+		):
+			scene_to_spawn = DEFAULT_AMMO_BOX_SCENE
 		else:
+			push_warning(
+				(
+					"SupplyShell: Unsupported runtime path '%s'; using preloaded default."
+					% default_ammo_box_path
+				)
+			)
 			scene_to_spawn = DEFAULT_AMMO_BOX_SCENE
 
 	if not is_instance_valid(scene_to_spawn):
@@ -291,10 +295,7 @@ func _trigger_impact_fx() -> void:
 ## Requests camera trauma via [signal Events.screenshake_requested].
 func _trigger_screenshake() -> void:
 	print("SupplyShell: Requesting landing shake trauma -> ", shake_intensity)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal(&"screenshake_requested"):
-			events.emit_signal(&"screenshake_requested", shake_intensity, shake_duration)
-
-		if trigger_shockwave_effect and events.has_signal(&"shockwave_requested"):
-			events.emit_signal(&"shockwave_requested", _target_transform.origin, 5.0, 2.5)
+	if is_instance_valid(Events):
+		Events.screenshake_requested.emit(shake_intensity, shake_duration)
+		if trigger_shockwave_effect:
+			Events.shockwave_requested.emit(_target_transform.origin, 5.0, 2.5)

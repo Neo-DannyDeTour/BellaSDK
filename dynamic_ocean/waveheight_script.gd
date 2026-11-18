@@ -29,14 +29,16 @@ var _x_offset: Vector3 = Vector3.ZERO
 var _target_pos: Vector3 = Vector3.ZERO
 
 
-## Validates water reference and pre-caches probe vectors.
+## Validates water reference, disables unused physics loop, and pre-caches probe vectors.
 func _ready() -> void:
+	set_physics_process(false)
 	print("WaveHeightController: Initializing buoyancy script on: ", name)
 	if is_instance_valid(water) and water.has_method(&"get_height"):
 		_is_water_valid = true
 		print("WaveHeightController: Water node successfully linked for: ", name)
 	else:
 		push_warning("WaveHeightController: Water node missing get_height() on: " + name)
+		set_process(false)
 
 	_z_offset = Vector3(0.0, 0.0, probe_spacing)
 	_x_offset = Vector3(probe_spacing, 0.0, 0.0)
@@ -45,14 +47,15 @@ func _ready() -> void:
 ## Samples wave height probes and damps transform each frame via [MathUtils].
 func _process(delta: float) -> void:
 	if not _is_water_valid or not is_instance_valid(water):
+		set_process(false)
 		return
 
 	var pos: Vector3 = global_position
-	var h_center: float = float(water.call(&"get_height", pos))
-	var h_front: float = float(water.call(&"get_height", pos + _z_offset))
-	var h_back: float = float(water.call(&"get_height", pos - _z_offset))
-	var h_right: float = float(water.call(&"get_height", pos + _x_offset))
-	var h_left: float = float(water.call(&"get_height", pos - _x_offset))
+	var h_center: float = _sample_water_height(pos)
+	var h_front: float = _sample_water_height(pos + _z_offset)
+	var h_back: float = _sample_water_height(pos - _z_offset)
+	var h_right: float = _sample_water_height(pos + _x_offset)
+	var h_left: float = _sample_water_height(pos - _x_offset)
 
 	var target_y: float = h_center + float_offset
 	var slope_x: float = (h_right - h_left) / (probe_spacing * 2.0)
@@ -79,3 +82,15 @@ func _process(delta: float) -> void:
 
 	var damp_weight: float = 1.0 - exp(-responsiveness * delta)
 	global_transform.basis = current_basis.slerp(target_basis, damp_weight).orthonormalized()
+
+
+## Samples water height at [param sample_pos] and narrows the dynamic [Variant] return.
+func _sample_water_height(sample_pos: Vector3) -> float:
+	var raw: Variant = water.call(&"get_height", sample_pos)
+	if raw is float:
+		var h_float: float = raw
+		return h_float
+	if raw is int:
+		var h_int: int = raw
+		return float(h_int)
+	return 0.0

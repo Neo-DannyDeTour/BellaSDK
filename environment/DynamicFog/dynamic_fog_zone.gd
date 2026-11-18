@@ -17,14 +17,17 @@ const MAX_RAYS: int = 8
 const MAX_ACTORS: int = 8
 
 ## Render Layer 10 bitmask reserved for volumetric effects.
-const RENDER_LAYER_VOLUMETRICS: int = 1 << 9
+const RENDER_LAYER_VOLUMETRICS: int = CollisionLayers.RENDER_MASK_VOLUMETRICS
 
 ## Squared minimum actor speed (0.5 m/s) required to inject wake turbulence.
 const MIN_WAKE_SPEED_SQ: float = 0.25
 
 ## Physics bitmask detecting Player (2), Interactive (3), Debris (4), and Enemies (5).
 const ACTOR_COLLISION_MASK: int = (
-	Types.MASK_PLAYER | Types.MASK_INTERACTIVE | Types.MASK_DEBRIS | Types.MASK_ENEMIES
+	CollisionLayers.MASK_PLAYER
+	| CollisionLayers.MASK_INTERACTIVE
+	| CollisionLayers.MASK_DEBRIS
+	| CollisionLayers.MASK_ENEMIES
 )
 
 ## Pre-allocated shader uniform [StringName] constants for zero-allocation updates.
@@ -204,7 +207,9 @@ func _ready() -> void:
 
 	# shortcut: FogVolume is not a GeometryInstance3D, so instance uniforms are unavailable.
 	if material is ShaderMaterial:
-		_shader_mat = (material as ShaderMaterial).duplicate() as ShaderMaterial
+		_shader_mat = (
+			MaterialCache.get_variant(material, str(get_instance_id())) as ShaderMaterial
+		)
 		material = _shader_mat
 
 	_sync_bounds()
@@ -222,7 +227,7 @@ func _ready() -> void:
 	)
 	assert(is_instance_valid(_shader_mat), "DynamicFogZone requires a valid ShaderMaterial.")
 
-	interaction_area.collision_layer = 0
+	interaction_area.collision_layer = CollisionLayers.MASK_NONE
 	interaction_area.collision_mask = ACTOR_COLLISION_MASK
 	interaction_area.monitorable = false
 	interaction_area.monitoring = true
@@ -315,8 +320,8 @@ func get_segment_optical_depth(from: Vector3, to: Vector3) -> float:
 		ground_h = custom_ground_height
 	if mid_y > ground_h + 0.2:
 		return 0.0
-	var dist: float = local_a.distance_to(local_b)
-	return clampf(dist * base_density * 0.18, 0.0, 2.5)
+	var dist_sq: float = local_a.distance_squared_to(local_b)
+	return clampf(sqrt(dist_sq) * base_density * 0.18, 0.0, 2.5)
 
 
 ## Records a new bullet trajectory into the 8-slot ring buffer and wakes decay processing.

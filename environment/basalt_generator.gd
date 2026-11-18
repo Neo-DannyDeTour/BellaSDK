@@ -105,6 +105,12 @@ var _last_edit_time: int = 0
 var _debounce_delay_ms: int = 1000
 
 
+## Disables runtime process loops outside editor preview debouncing.
+func _ready() -> void:
+	set_physics_process(false)
+	set_process(Engine.is_editor_hint())
+
+
 ## Debounces and triggers procedural column generation during editor frames.
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint() and _needs_generation:

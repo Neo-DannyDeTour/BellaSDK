@@ -4,7 +4,6 @@ class_name WolfClimbSurface
 extends StaticBody3D
 
 ## Emitted when player latches to wall, passing player body.
-@warning_ignore("unused_signal")
 signal latched_to_wall(player: CharacterBody3D)
 
 ## Group name tag identifying climbable wolf geometry.
@@ -37,7 +36,7 @@ const GROUP_WOLF_CLIMBABLE: StringName = &"wolf_climbable"
 var _is_updating_geometry: bool = false
 
 ## Reusable transition payload dictionary.
-var _transition_msg: Dictionary = {}
+var _transition_msg: Dictionary[StringName, Variant] = {}
 
 ## Maps player instances to cooldown timestamps.
 var _dismount_cooldowns: Dictionary[CharacterBody3D, int] = {}
@@ -160,6 +159,9 @@ func _ready() -> void:
 		detection_area.body_entered.connect(_on_detection_area_body_entered)
 		detection_area.body_exited.connect(_on_detection_area_body_exited)
 
+	if not Engine.is_editor_hint():
+		set_physics_process(false)
+
 
 ## Polls overlapping bodies and evaluates climb vs wall run.
 func _physics_process(_delta: float) -> void:
@@ -186,7 +188,6 @@ func _physics_process(_delta: float) -> void:
 				or Input.is_physical_key_pressed(KEY_E)
 			)
 			if is_interact_pressed:
-				print("WolfClimbSurface: Ground interact detected. Forcing climb.")
 				_attach_player(player_node, wall_norm, true)
 				return
 		else:
@@ -194,7 +195,6 @@ func _physics_process(_delta: float) -> void:
 			var velocity_inward: float = player_node.velocity.dot(inward_dir)
 			var is_pressing_fwd: bool = GestureInputManager.is_action_active(&"forward")
 			if velocity_inward > 0.25 or (velocity_inward > 0.0 and is_pressing_fwd):
-				print("WolfClimbSurface: Airborne inward contact detected.")
 				_attach_player(player_node, wall_norm, false)
 				return
 
@@ -211,6 +211,8 @@ func interact_with(character: CharacterBody3D) -> void:
 ## Evaluates character entry into proximity detection trigger.
 func _on_detection_area_body_entered(body: Node3D) -> void:
 	print("WolfClimbSurface: Body entered detection area: ", body.name)
+	if not Engine.is_editor_hint() and body.is_in_group(&"player"):
+		set_physics_process(true)
 	var current_time: int = Time.get_ticks_msec()
 	if not _can_character_climb(body, current_time):
 		return
@@ -230,6 +232,15 @@ func _on_detection_area_body_exited(body: Node3D) -> void:
 	print("WolfClimbSurface: Body exited detection area: ", body.name)
 	if not (body is CharacterBody3D and body.is_in_group(&"player")):
 		return
+
+	if not Engine.is_editor_hint() and is_instance_valid(detection_area):
+		var has_other_player: bool = false
+		for remaining: Node3D in detection_area.get_overlapping_bodies():
+			if remaining != body and remaining.is_in_group(&"player"):
+				has_other_player = true
+				break
+		if not has_other_player:
+			set_physics_process(false)
 
 	var player_node: CharacterBody3D = body as CharacterBody3D
 	set_dismount_cooldown(player_node, 500)
@@ -331,10 +342,8 @@ func _attach_player(p: CharacterBody3D, wall_norm: Vector3, force_climb: bool = 
 	var dot_inward: float = cam_fwd.dot(-wall_norm)
 	print("WolfClimbSurface: Approach angle dot product -> ", dot_inward)
 
-	var has_wall_run: bool = sm.has_node("WolfWallRun") or sm.has_node("StateWolfWallRun")
-	var wall_run_state: StringName = (
-		&"WolfWallRun" if sm.has_node("WolfWallRun") else &"StateWolfWallRun"
-	)
+	var has_wall_run: bool = sm.has_node("WolfWallRun")
+	var wall_run_state: StringName = &"WolfWallRun"
 
 	if dot_inward > 0.65:
 		print("WolfClimbSurface: Facing wall directly (>0.65) -> WolfClimb.")

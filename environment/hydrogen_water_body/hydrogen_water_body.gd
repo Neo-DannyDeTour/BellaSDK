@@ -429,6 +429,7 @@ var _base_position_y: float = 0.0
 var _is_lowered: bool = false
 var _one_shot_used: bool = false
 var _level_tween: Tween = null
+var _visibility_notifier: VisibleOnScreenNotifier3D = null
 
 @onready var _swimmable_area: Area3D = %SwimmableArea3D
 @onready var _collision_shape: CollisionShape3D = %CollisionShape3D
@@ -441,8 +442,9 @@ var _level_tween: Tween = null
 ## Initializes per-instance collision bounds, shader uniforms, and area signals.
 func _ready() -> void:
 	process_priority = 999
-	layers = 4
+	layers = CollisionLayers.RENDER_MASK_INTERACTIVE
 	gi_mode = GeometryInstance3D.GI_MODE_DISABLED
+	set_physics_process(false)
 
 	_ripples.resize(MAX_RIPPLES)
 	for i: int in range(MAX_RIPPLES):
@@ -460,7 +462,6 @@ func _ready() -> void:
 	_sync_reflection_probes()
 
 	if Engine.is_editor_hint():
-		set_physics_process(false)
 		return
 
 	assert(is_instance_valid(_swimmable_area), "HydrogenWaterBody requires %SwimmableArea3D")
@@ -468,13 +469,15 @@ func _ready() -> void:
 	assert(is_instance_valid(_camera_cast), "HydrogenWaterBody requires %CameraPosShapeCast3D")
 	assert(is_instance_valid(_fog_volume), "HydrogenWaterBody requires %FogVolume")
 
-	_swimmable_area.body_entered.connect(_on_swimmable_area_body_entered)
-	_swimmable_area.body_exited.connect(_on_swimmable_area_body_exited)
-	_swimmable_area.area_entered.connect(_on_swimmable_area_area_entered)
-	_swimmable_area.area_exited.connect(_on_swimmable_area_area_exited)
+	Utilities.safe_connect(_swimmable_area.body_entered, _on_swimmable_area_body_entered)
+	Utilities.safe_connect(_swimmable_area.body_exited, _on_swimmable_area_body_exited)
+	Utilities.safe_connect(_swimmable_area.area_entered, _on_swimmable_area_area_entered)
+	Utilities.safe_connect(_swimmable_area.area_exited, _on_swimmable_area_area_exited)
 
 	if is_instance_valid(_underwater_audio):
 		_underwater_audio.stop()
+
+	_setup_visibility_notifier()
 
 
 ## Advances wave clock, evaluates camera submersion, and cleans expired ripples.
@@ -505,6 +508,7 @@ func _process(delta: float) -> void:
 ## Applies multi-probe buoyancy and spawns movement wakes for submerged bodies.
 func _physics_process(delta: float) -> void:
 	if _submerged_bodies.is_empty():
+		set_physics_process(false)
 		return
 
 	var idx: int = _submerged_bodies.size() - 1
@@ -520,13 +524,16 @@ func _physics_process(delta: float) -> void:
 			_apply_rigidbody_buoyancy(body as RigidBody3D, delta)
 		idx -= 1
 
+	if _submerged_bodies.is_empty():
+		set_physics_process(false)
+
 
 ## Restores modified environment fog state on exit.
 func _exit_tree() -> void:
 	if _is_camera_submerged:
 		_restore_environment_fog()
-	if is_instance_valid(_level_tween):
-		_level_tween.kill()
+	Utilities.safe_kill_tween(_level_tween)
+	_level_tween = null
 
 
 ## Maps legacy property names size -> water_size and material -> material_override.
@@ -666,9 +673,6 @@ func toggle_water_level() -> void:
 
 ## Tweens position:y and water_size.y simultaneously so the floor remains anchored.
 func change_water_level(to_lowered: bool) -> void:
-	if is_instance_valid(_level_tween):
-		_level_tween.kill()
-
 	_is_lowered = to_lowered
 	var target_size_y: float = maxf(
 		_base_water_size_y + (target_level_delta if to_lowered else 0.0), 0.1
@@ -684,7 +688,9 @@ func change_water_level(to_lowered: bool) -> void:
 	var duration: float = maxf(level_change_duration * remaining_ratio, 0.05)
 
 	water_level_transition_started.emit(to_lowered)
-	_level_tween = create_tween()
+	_level_tween = Utilities.reset_tween(self, _level_tween)
+	if not is_instance_valid(_level_tween):
+		return
 	_level_tween.set_ignore_time_scale(true)
 	_level_tween.set_parallel(true)
 	_level_tween.set_trans(level_transition_type)
@@ -839,17 +845,17 @@ func _update_camera_submersion(cam: Camera3D, delta: float) -> void:
 			_surface_audio.stream_paused = true
 		if is_instance_valid(_underwater_audio):
 			_underwater_audio.play()
-		_emit_events_signal(&"underwater_vfx_toggled", [true])
-		_emit_events_signal(&"waterfall_vfx_toggled", [true])
+		Events.underwater_vfx_toggled.emit(true, 0.85, 0.0, 0.0)
+		Events.waterfall_vfx_toggled.emit(true, 1.0, 0.0)
 	else:
 		_restore_environment_fog()
 		if is_instance_valid(_underwater_audio):
 			_underwater_audio.stop()
 		if is_instance_valid(_surface_audio):
 			_surface_audio.stream_paused = false
-		_emit_events_signal(&"underwater_vfx_toggled", [false])
-		_emit_events_signal(&"waterfall_vfx_toggled", [false])
-		_emit_events_signal(&"water_sheet_wipe_requested", [1.2])
+		Events.underwater_vfx_toggled.emit(false, 0.0, 0.0, 1.5)
+		Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
+		Events.water_sheet_wipe_requested.emit(1.2)
 		if cam_vel_y >= min_splash_velocity:
 			splashed.emit(cam.global_position, cam_vel_y)
 			play_splash_sound(cam.global_position, cam_vel_y)
@@ -975,6 +981,7 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 		return
 	if not _submerged_bodies.has(body):
 		_submerged_bodies.append(body)
+	set_physics_process(true)
 
 	var vel_y: float = 0.0
 	if body is RigidBody3D:
@@ -997,6 +1004,8 @@ func _on_swimmable_area_body_exited(body: Node3D) -> void:
 	if not is_instance_valid(body):
 		return
 	_submerged_bodies.erase(body)
+	if _submerged_bodies.is_empty():
+		set_physics_process(false)
 	var id: int = body.get_instance_id()
 	_wake_timers.erase(id)
 	_wake_positions.erase(id)
@@ -1054,6 +1063,7 @@ func _sync_volume_geometry() -> void:
 
 	var top_world_y: float = to_global(Vector3(0.0, water_size.y * 0.5, 0.0)).y
 	RenderingServer.global_shader_parameter_set(GLOBAL_WETNESS_Y, top_world_y)
+	_update_visibility_notifier_aabb()
 
 
 ## Auto-scales BoxMesh XZ subdivisions by vertex_density (clamped 8-64, height 0).
@@ -1158,8 +1168,33 @@ func _push_all_uniforms() -> void:
 	_push_shader_param(PARAM_CREST_FOAM, crest_foam_threshold)
 
 
-## Emits a signal on the global Events autoload if present.
-func _emit_events_signal(sig_name: StringName, args: Array) -> void:
-	var events: Node = get_node_or_null(^"/root/Events")
-	if events != null and events.has_signal(sig_name):
-		events.callv(&"emit_signal", [sig_name] + args)
+## Creates a [VisibleOnScreenNotifier3D] padded by [member max_simulation_distance].
+func _setup_visibility_notifier() -> void:
+	if is_instance_valid(_visibility_notifier):
+		return
+	_visibility_notifier = VisibleOnScreenNotifier3D.new()
+	_visibility_notifier.name = "VisibilityNotifier"
+	_update_visibility_notifier_aabb()
+	Utilities.safe_connect(_visibility_notifier.screen_entered, _on_screen_entered)
+	Utilities.safe_connect(_visibility_notifier.screen_exited, _on_screen_exited)
+	add_child(_visibility_notifier)
+
+
+## Updates the frustum culling AABB to cover the water volume plus simulation radius.
+func _update_visibility_notifier_aabb() -> void:
+	if not is_instance_valid(_visibility_notifier):
+		return
+	var pad: float = max_simulation_distance
+	var total: Vector3 = water_size + Vector3(pad * 2.0, pad * 2.0, pad * 2.0)
+	_visibility_notifier.aabb = AABB(-total * 0.5, total)
+
+
+## Resumes wave clock and submersion updates when entering the padded frustum.
+func _on_screen_entered() -> void:
+	set_process(true)
+
+
+## Pauses wave clock when outside the padded frustum unless the camera is submerged.
+func _on_screen_exited() -> void:
+	if not _is_camera_submerged:
+		set_process(false)

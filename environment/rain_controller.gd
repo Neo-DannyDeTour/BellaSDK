@@ -22,15 +22,6 @@ const _PARAM_NEAR_BIAS: StringName = &"near_camera_bias"
 ## Minimum squared camera movement (1.5m) before snapping volume and re-testing roof occlusion.
 const _SNAP_DIST_SQ: float = 2.25
 
-## Render Layer 1 bitmask for static environment roof heightfield occlusion.
-const _ENV_RENDER_LAYER: int = 1
-
-## Physics Layer 1 bitmask for static environment roof raycast checks.
-const _ENV_PHYSICS_MASK: int = 1
-
-## Physics Layer 2 bitmask for player body zone detection.
-const _PLAYER_PHYSICS_MASK: int = 2
-
 @export_group("Rain State")
 @export var enabled: bool = true:
 	set(value):
@@ -163,13 +154,16 @@ func set_weather(target_intensity: float, target_swirl: float, duration: float =
 	if clamped_int > 0.0 and not enabled:
 		enabled = true
 
+	_weather_tween = Utilities.reset_tween(self, _weather_tween)
 	if is_instance_valid(_weather_tween):
-		_weather_tween.kill()
-	_weather_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE)
-	_weather_tween.tween_method(
-		_apply_tween_step, Vector2(intensity, swirl), Vector2(clamped_int, clamped_swirl), duration
-	)
-	_weather_tween.chain().tween_callback(_on_weather_tween_finished.bind(clamped_int))
+		_weather_tween.set_parallel(true).set_trans(Tween.TRANS_SINE)
+		_weather_tween.tween_method(
+			_apply_tween_step,
+			Vector2(intensity, swirl),
+			Vector2(clamped_int, clamped_swirl),
+			duration
+		)
+		_weather_tween.chain().tween_callback(_on_weather_tween_finished.bind(clamped_int))
 
 
 ## Creates or retrieves internal particle, heightfield, and player trigger zone nodes.
@@ -190,7 +184,7 @@ func _ensure_nodes() -> void:
 		_heightfield.name = "RoofHeightField"
 		add_child(_heightfield)
 
-	_heightfield.cull_mask = _ENV_RENDER_LAYER
+	_heightfield.cull_mask = CollisionLayers.RENDER_MASK_ENVIRONMENT
 	_heightfield.follow_camera_enabled = false
 	_heightfield.update_mode = GPUParticlesCollisionHeightField3D.UPDATE_MODE_WHEN_MOVED
 
@@ -200,8 +194,8 @@ func _ensure_nodes() -> void:
 		_zone_area.name = "RainZoneArea"
 		add_child(_zone_area)
 
-	_zone_area.collision_layer = 0
-	_zone_area.collision_mask = _PLAYER_PHYSICS_MASK
+	_zone_area.collision_layer = CollisionLayers.MASK_NONE
+	_zone_area.collision_mask = CollisionLayers.MASK_PLAYER
 	_zone_area.monitorable = false
 	_zone_area.monitoring = true
 
@@ -363,7 +357,7 @@ func _is_camera_under_roof() -> bool:
 	var from_pos: Vector3 = check_node.global_position + Vector3(0.0, 0.25, 0.0)
 	var to_pos: Vector3 = from_pos + Vector3(0.0, volume_size.y, 0.0)
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		from_pos, to_pos, _ENV_PHYSICS_MASK
+		from_pos, to_pos, CollisionLayers.MASK_ENVIRONMENT
 	)
 	var hit: Dictionary = space.intersect_ray(query)
 	return not hit.is_empty()

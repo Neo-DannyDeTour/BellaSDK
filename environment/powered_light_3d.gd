@@ -364,7 +364,8 @@ func _setup_emissive_material() -> void:
 			)
 			_bulb_material = MaterialCache.get_variant(active_mat, variant_key) as BaseMaterial3D
 		else:
-			_bulb_material = (active_mat as BaseMaterial3D).duplicate() as BaseMaterial3D
+			var instance_key: String = "%s_%d" % [light_color.to_html(), get_instance_id()]
+			_bulb_material = (MaterialCache.get_variant(active_mat, instance_key) as BaseMaterial3D)
 		emissive_mesh.set_surface_override_material(emissive_surface_idx, _bulb_material)
 	else:
 		_bulb_material = null

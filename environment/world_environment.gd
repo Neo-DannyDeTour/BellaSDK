@@ -1,3 +1,4 @@
+## Manages global [WorldEnvironment] lighting and fullbright debug toggles.
 class_name GameWorldEnvironment
 extends WorldEnvironment
 
@@ -7,10 +8,22 @@ extends WorldEnvironment
 @onready var sun: DirectionalLight3D = $DirectionalLight3D
 
 
+## Connects global fullbright toggle signals.
 func _ready() -> void:
-	Events.fullbright_toggled.connect(_on_fullbright_toggled)
+	if (
+		is_instance_valid(Events)
+		and not Events.fullbright_toggled.is_connected(_on_fullbright_toggled)
+	):
+		Events.fullbright_toggled.connect(_on_fullbright_toggled)
 
 
+## Disconnects global fullbright toggle signals.
+func _exit_tree() -> void:
+	if is_instance_valid(Events) and Events.fullbright_toggled.is_connected(_on_fullbright_toggled):
+		Events.fullbright_toggled.disconnect(_on_fullbright_toggled)
+
+
+## Applies or reverts fullbright debug lighting on the environment and sun.
 func _on_fullbright_toggled(is_fullbright: bool) -> void:
 	if not world_env or not world_env.environment:
 		return

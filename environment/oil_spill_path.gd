@@ -130,6 +130,7 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		is_burning = false
 		_burn_radius_meters = 0.0
+		set_process(false)
 
 	generate_spill()
 
@@ -197,8 +198,9 @@ func _process(delta: float) -> void:
 			mat.set_shader_parameter(&"burn_radius", normalized_radius)
 
 	if normalized_radius >= 1.5:
-		# print("OilSpillPath: Combustion complete across path.")
 		is_burning = false
+		if not Engine.is_editor_hint():
+			set_process(false)
 		combustion_completed.emit()
 
 
@@ -273,7 +275,7 @@ func _build_ribbon_mesh(points: PackedVector3Array) -> ArrayMesh:
 	for i: int in range(count):
 		var curr_pt: Vector3 = points[i]
 		if i > 0:
-			accumulated_dist += curr_pt.distance_to(points[i - 1])
+			accumulated_dist += sqrt(curr_pt.distance_squared_to(points[i - 1]))
 
 		var forward_dir: Vector3 = Vector3.FORWARD
 		if i == 0:
@@ -313,7 +315,7 @@ func _build_ribbon_mesh(points: PackedVector3Array) -> ArrayMesh:
 			indices.append(base_idx + 2)
 			indices.append(base_idx + 3)
 
-	var arrays: Array = []
+	var arrays: Array[Variant] = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
@@ -374,6 +376,8 @@ func ignite(hit_pos: Vector3 = Vector3.ZERO) -> void:
 		return
 
 	is_burning = true
+	if not Engine.is_editor_hint():
+		set_process(true)
 	_burn_radius_meters = 0.0
 	_fire_station_spawned.fill(false)
 
@@ -398,6 +402,8 @@ func extinguish() -> void:
 	print("OilSpillPath: extinguish() called.")
 	is_burning = false
 	_burn_radius_meters = 0.0
+	if not Engine.is_editor_hint():
+		set_process(false)
 
 	for fire: Node3D in _spawned_fires:
 		if is_instance_valid(fire):

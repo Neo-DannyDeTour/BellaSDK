@@ -146,10 +146,11 @@ func _ready() -> void:
 	print("TargetVolume: Initializing target spawner volume: ", name)
 	_update_visuals()
 	if Engine.is_editor_hint():
+		set_process(false)
 		return
 
-	collision_layer = 0
-	collision_mask = 0
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_NONE
 
 	spawn_timer = spawn_interval_seconds
 	_initialize_pool()

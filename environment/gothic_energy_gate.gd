@@ -16,6 +16,9 @@ signal body_entered_field(body: Node3D)
 ## File path to the spatial gate shader inside the vfx directory.
 const SHADER_PATH: String = "res://vfx/gothic_energy_gate.gdshader"
 
+## Preloaded spatial gate shader avoiding runtime load stalls.
+const _GATE_SHADER: Shader = preload("res://vfx/gothic_energy_gate.gdshader")
+
 ## Metadata tag used to identify and clean up generated child nodes.
 const META_PART: StringName = &"generated_gate_part"
 
@@ -158,6 +161,17 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		_setup_power_component()
 		_connect_global_events()
+
+
+## Disconnects global event listeners and cleans up active tweens on tree exit.
+func _exit_tree() -> void:
+	if is_instance_valid(_state_tween):
+		_state_tween.kill()
+	if not Engine.is_editor_hint() and is_instance_valid(Events):
+		if Events.level_event_triggered.is_connected(_on_level_event_triggered):
+			Events.level_event_triggered.disconnect(_on_level_event_triggered)
+	if not Engine.is_editor_hint() and is_instance_valid(_nearby_player):
+		_clear_proximity_shock()
 
 
 ## Computes distance-based electricity vignette intensity when player is near.
@@ -526,8 +540,7 @@ func _build_cage_emitter(parent: Node3D, pos: Vector3, dir_x: float) -> void:
 func _build_energy_field() -> void:
 	var total_h: float = pillar_height + arch_rise
 	_field_mat = ShaderMaterial.new()
-	if ResourceLoader.exists(SHADER_PATH):
-		_field_mat.shader = load(SHADER_PATH) as Shader
+	_field_mat.shader = _GATE_SHADER
 
 	var quad: QuadMesh = QuadMesh.new()
 	quad.size = Vector2(gate_width, total_h)
@@ -611,10 +624,11 @@ func _apply_gate_state(animate: bool) -> void:
 		_field_col.set_deferred(&"disabled", not is_field_powered)
 
 	if animate and is_inside_tree() and not Engine.is_editor_hint():
-		if _state_tween and _state_tween.is_valid():
-			_state_tween.kill()
-		_state_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		_state_tween.tween_method(_set_open_blend, _current_open_blend, target_blend, 0.4)
+		_state_tween = Utilities.reset_tween_ext(
+			self, _state_tween, Tween.TRANS_CUBIC, Tween.EASE_OUT
+		)
+		if is_instance_valid(_state_tween):
+			_state_tween.tween_method(_set_open_blend, _current_open_blend, target_blend, 0.4)
 	else:
 		_set_open_blend(target_blend)
 
