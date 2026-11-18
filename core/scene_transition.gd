@@ -24,7 +24,7 @@ var _fade_tween: Tween = null
 var _loading_target_path: String = ""
 
 ## Array capturing threaded load progress fractions.
-var _progress_array: Array = []
+var _progress_array: Array[float] = []
 
 ## Flag indicating whether active background loading is in progress.
 var _is_loading: bool = false
@@ -92,10 +92,7 @@ func change_scene_to_file(target_path: String, fade_duration: float = 0.4) -> vo
 	_loading_target_path = target_path
 	_rect.mouse_filter = Control.MOUSE_FILTER_STOP
 
-	if is_instance_valid(_fade_tween) and _fade_tween.is_valid():
-		_fade_tween.kill()
-
-	_fade_tween = create_tween()
+	_fade_tween = Utilities.reset_tween(self, _fade_tween)
 	_fade_tween.set_trans(Tween.TRANS_CUBIC)
 	_fade_tween.set_ease(Tween.EASE_IN_OUT)
 	_fade_tween.tween_property(_rect, "color:a", 1.0, fade_duration)
@@ -127,10 +124,7 @@ func _finalize_scene_swap() -> void:
 
 ## Fades overlay back to transparent and restores input control.
 func _fade_in_overlay(duration: float) -> void:
-	if is_instance_valid(_fade_tween) and _fade_tween.is_valid():
-		_fade_tween.kill()
-
-	_fade_tween = create_tween()
+	_fade_tween = Utilities.reset_tween(self, _fade_tween)
 	_fade_tween.set_trans(Tween.TRANS_CUBIC)
 	_fade_tween.set_ease(Tween.EASE_IN_OUT)
 	_fade_tween.tween_property(_rect, "color:a", 0.0, duration)

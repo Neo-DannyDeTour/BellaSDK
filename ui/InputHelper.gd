@@ -5,8 +5,73 @@ extends Node
 ## Base directory path where Kenney input prompt icons are stored.
 const ICON_BASE_PATH: String = "res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/"
 
-## Cached textures mapped to avoid redundant disk I/O at 60 FPS.
-var _icon_cache: Dictionary = {}
+## Preloaded Kenney prompt icons mapped by filename to avoid runtime disk I/O.
+const PRELOADED_ICONS: Dictionary[String, Texture2D] = {
+	"keyboard_space.png": preload(ICON_BASE_PATH + "keyboard_space.png"),
+	"keyboard_space_icon.png": preload(ICON_BASE_PATH + "keyboard_space_icon.png"),
+	"keyboard_return.png": preload(ICON_BASE_PATH + "keyboard_return.png"),
+	"keyboard_enter.png": preload(ICON_BASE_PATH + "keyboard_enter.png"),
+	"keyboard_shift.png": preload(ICON_BASE_PATH + "keyboard_shift.png"),
+	"keyboard_ctrl.png": preload(ICON_BASE_PATH + "keyboard_ctrl.png"),
+	"keyboard_alt.png": preload(ICON_BASE_PATH + "keyboard_alt.png"),
+	"keyboard_tab.png": preload(ICON_BASE_PATH + "keyboard_tab.png"),
+	"keyboard_escape.png": preload(ICON_BASE_PATH + "keyboard_escape.png"),
+	"keyboard_backspace.png": preload(ICON_BASE_PATH + "keyboard_backspace.png"),
+	"keyboard_capslock.png": preload(ICON_BASE_PATH + "keyboard_capslock.png"),
+	"keyboard_slash_forward.png": preload(ICON_BASE_PATH + "keyboard_slash_forward.png"),
+	"keyboard_slash_back.png": preload(ICON_BASE_PATH + "keyboard_slash_back.png"),
+	"keyboard_semicolon.png": preload(ICON_BASE_PATH + "keyboard_semicolon.png"),
+	"keyboard_period.png": preload(ICON_BASE_PATH + "keyboard_period.png"),
+	"keyboard_comma.png": preload(ICON_BASE_PATH + "keyboard_comma.png"),
+	"keyboard_minus.png": preload(ICON_BASE_PATH + "keyboard_minus.png"),
+	"keyboard_equals.png": preload(ICON_BASE_PATH + "keyboard_equals.png"),
+	"mouse_left.png": preload(ICON_BASE_PATH + "mouse_left.png"),
+	"mouse_left_outline.png": preload(ICON_BASE_PATH + "mouse_left_outline.png"),
+	"mouse_right.png": preload(ICON_BASE_PATH + "mouse_right.png"),
+	"mouse_right_outline.png": preload(ICON_BASE_PATH + "mouse_right_outline.png"),
+	"mouse_scroll.png": preload(ICON_BASE_PATH + "mouse_scroll.png"),
+	"mouse_scroll_up.png": preload(ICON_BASE_PATH + "mouse_scroll_up.png"),
+	"mouse_scroll_down.png": preload(ICON_BASE_PATH + "mouse_scroll_down.png"),
+	"keyboard_0.png": preload(ICON_BASE_PATH + "keyboard_0.png"),
+	"keyboard_1.png": preload(ICON_BASE_PATH + "keyboard_1.png"),
+	"keyboard_2.png": preload(ICON_BASE_PATH + "keyboard_2.png"),
+	"keyboard_3.png": preload(ICON_BASE_PATH + "keyboard_3.png"),
+	"keyboard_4.png": preload(ICON_BASE_PATH + "keyboard_4.png"),
+	"keyboard_5.png": preload(ICON_BASE_PATH + "keyboard_5.png"),
+	"keyboard_6.png": preload(ICON_BASE_PATH + "keyboard_6.png"),
+	"keyboard_7.png": preload(ICON_BASE_PATH + "keyboard_7.png"),
+	"keyboard_8.png": preload(ICON_BASE_PATH + "keyboard_8.png"),
+	"keyboard_9.png": preload(ICON_BASE_PATH + "keyboard_9.png"),
+	"keyboard_a.png": preload(ICON_BASE_PATH + "keyboard_a.png"),
+	"keyboard_b.png": preload(ICON_BASE_PATH + "keyboard_b.png"),
+	"keyboard_c.png": preload(ICON_BASE_PATH + "keyboard_c.png"),
+	"keyboard_d.png": preload(ICON_BASE_PATH + "keyboard_d.png"),
+	"keyboard_e.png": preload(ICON_BASE_PATH + "keyboard_e.png"),
+	"keyboard_f.png": preload(ICON_BASE_PATH + "keyboard_f.png"),
+	"keyboard_g.png": preload(ICON_BASE_PATH + "keyboard_g.png"),
+	"keyboard_h.png": preload(ICON_BASE_PATH + "keyboard_h.png"),
+	"keyboard_i.png": preload(ICON_BASE_PATH + "keyboard_i.png"),
+	"keyboard_j.png": preload(ICON_BASE_PATH + "keyboard_j.png"),
+	"keyboard_k.png": preload(ICON_BASE_PATH + "keyboard_k.png"),
+	"keyboard_l.png": preload(ICON_BASE_PATH + "keyboard_l.png"),
+	"keyboard_m.png": preload(ICON_BASE_PATH + "keyboard_m.png"),
+	"keyboard_n.png": preload(ICON_BASE_PATH + "keyboard_n.png"),
+	"keyboard_o.png": preload(ICON_BASE_PATH + "keyboard_o.png"),
+	"keyboard_p.png": preload(ICON_BASE_PATH + "keyboard_p.png"),
+	"keyboard_q.png": preload(ICON_BASE_PATH + "keyboard_q.png"),
+	"keyboard_r.png": preload(ICON_BASE_PATH + "keyboard_r.png"),
+	"keyboard_s.png": preload(ICON_BASE_PATH + "keyboard_s.png"),
+	"keyboard_t.png": preload(ICON_BASE_PATH + "keyboard_t.png"),
+	"keyboard_u.png": preload(ICON_BASE_PATH + "keyboard_u.png"),
+	"keyboard_v.png": preload(ICON_BASE_PATH + "keyboard_v.png"),
+	"keyboard_w.png": preload(ICON_BASE_PATH + "keyboard_w.png"),
+	"keyboard_x.png": preload(ICON_BASE_PATH + "keyboard_x.png"),
+	"keyboard_y.png": preload(ICON_BASE_PATH + "keyboard_y.png"),
+	"keyboard_z.png": preload(ICON_BASE_PATH + "keyboard_z.png"),
+}
+
+## Cached textures mapped to avoid redundant lookups at 60 FPS.
+var _icon_cache: Dictionary[String, Texture2D] = {}
 
 
 ## Resolves an [InputEvent] to a matching default Kenney prompt icon texture.
@@ -86,25 +151,12 @@ func get_event_icon(event: InputEvent) -> Texture2D:
 		return null
 
 	for file_name: String in possible_filenames:
-		var candidate_paths: Array[String] = [
-			ICON_BASE_PATH + file_name,
-			ICON_BASE_PATH + "Keyboard/" + file_name,
-			ICON_BASE_PATH + "Mouse/" + file_name
-		]
-
-		for full_path: String in candidate_paths:
-			if _icon_cache.has(full_path):
-				var cached_val: Variant = _icon_cache[full_path]
-				if cached_val is Texture2D:
-					return cached_val
-				return null
-
-			if ResourceLoader.exists(full_path):
-				var loaded_res: Resource = load(full_path)
-				if loaded_res is Texture2D:
-					var tex: Texture2D = loaded_res
-					_icon_cache[full_path] = tex
-					return tex
+		if _icon_cache.has(file_name):
+			return _icon_cache[file_name]
+		if PRELOADED_ICONS.has(file_name):
+			var tex: Texture2D = PRELOADED_ICONS[file_name]
+			_icon_cache[file_name] = tex
+			return tex
 
 	return null
 
@@ -133,9 +185,8 @@ func get_action_key_label(action: StringName) -> String:
 	if primary_ev.has_meta("chord_keys"):
 		var raw_keys: Variant = primary_ev.get_meta("chord_keys")
 		if raw_keys is Array:
-			var keys_arr: Array = raw_keys
 			var parts: PackedStringArray = PackedStringArray()
-			for item: Variant in keys_arr:
+			for item: Variant in raw_keys:
 				if item is int:
 					var key_id: int = item
 					if key_id >= 100000:

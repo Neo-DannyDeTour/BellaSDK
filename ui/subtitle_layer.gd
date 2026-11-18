@@ -192,8 +192,7 @@ func show_subtitle(speaker: String, text: String, duration: float) -> void:
 
 	var is_already_showing: bool = background_panel.visible and background_panel.modulate.a > 0.2
 
-	if fade_tween and fade_tween.is_valid():
-		fade_tween.kill()
+	fade_tween = Utilities.reset_tween(self, fade_tween)
 
 	_format_and_apply_text()
 
@@ -207,7 +206,6 @@ func show_subtitle(speaker: String, text: String, duration: float) -> void:
 	if is_already_showing:
 		background_panel.modulate.a = 1.0
 		subtitle_label.visible_characters = -1
-		fade_tween = create_tween()
 		fade_tween.tween_interval(duration + READING_GRACE_PERIOD)
 		(
 			fade_tween
@@ -227,7 +225,6 @@ func show_subtitle(speaker: String, text: String, duration: float) -> void:
 
 	var type_dur: float = duration if duration > 0.0 else (float(total_chars) / DEFAULT_CPS)
 
-	fade_tween = create_tween()
 	(
 		fade_tween
 		. tween_property(background_panel, "modulate:a", 1.0, FADE_DURATION)
@@ -308,10 +305,8 @@ func hide_subtitle() -> void:
 	if not is_instance_valid(background_panel):
 		return
 
-	if fade_tween and fade_tween.is_valid():
-		fade_tween.kill()
-
-	fade_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN))
+	fade_tween = Utilities.reset_tween(self, fade_tween)
+	fade_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	fade_tween.tween_property(background_panel, "modulate:a", 0.0, FADE_DURATION)
 	fade_tween.tween_callback(_hide_subtitles_immediate)
 

@@ -24,20 +24,22 @@ var current_seed: int = 0:
 ## In-memory runtime data cache for arbitrary cross-scene parameters.
 var cached_data: Dictionary[StringName, Variant] = {}
 
+## Start timestamp in milliseconds for computing elapsed session time.
+var _start_ticks_msec: int = 0
+
 ## Total play session active time in seconds.
-var session_elapsed_seconds: float = 0.0
+var session_elapsed_seconds: float:
+	get:
+		return float(Time.get_ticks_msec() - _start_ticks_msec) / 1000.0
 
 
-## Initializes random number generator and configures persistent processing.
+## Initializes random number generator and disables per-frame processing.
 func _ready() -> void:
 	print("[Global] Global Autoload initialized.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_start_ticks_msec = Time.get_ticks_msec()
+	set_process(false)
 	seed_rng_from_time()
-
-
-## Accumulates total game session running time each frame.
-func _process(delta: float) -> void:
-	session_elapsed_seconds += delta
 
 
 ## Sets active main level scene node reference and notifies listeners.

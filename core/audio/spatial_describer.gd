@@ -53,11 +53,15 @@ func _ready() -> void:
 	if err_symbols != OK:
 		print("SpatialDescriber: Failed to compile symbols RegEx pattern.")
 
-	if has_node("/root/Events"):
-		var events_node: Node = get_node("/root/Events")
-		if events_node.has_signal("describe_surroundings_requested"):
-			events_node.connect("describe_surroundings_requested", describe_surroundings)
-			print("SpatialDescriber: Hooked to Events.describe_surroundings_requested.")
+	if not Events.describe_surroundings_requested.is_connected(describe_surroundings):
+		Events.describe_surroundings_requested.connect(describe_surroundings)
+		print("SpatialDescriber: Hooked to Events.describe_surroundings_requested.")
+
+
+## Disconnects global event bus listeners when leaving the scene tree.
+func _exit_tree() -> void:
+	if Events.describe_surroundings_requested.is_connected(describe_surroundings):
+		Events.describe_surroundings_requested.disconnect(describe_surroundings)
 
 
 ## Executes a localized sweep and generates an audible narration summary.
@@ -83,7 +87,7 @@ func describe_surroundings(origin_node: Node3D) -> void:
 
 	print("SpatialDescriber: Viewpoint Y: ", view_pos.y, ", Ground Y: ", ground_y)
 
-	var unique_roots: Dictionary = {}
+	var unique_roots: Dictionary[int, Node3D] = {}
 	var candidate_nodes: Array[Node] = get_tree().get_nodes_in_group(&"interactables")
 
 	for item: Node in candidate_nodes:
@@ -150,12 +154,13 @@ func describe_surroundings(origin_node: Node3D) -> void:
 			filtered_targets.append(node)
 
 	var valid_targets: Array[Dictionary] = []
+	var max_radius_sq: float = description_radius * description_radius
 
 	for target_3d: Node3D in filtered_targets:
 		var target_pos: Vector3 = target_3d.global_position
-		var dist: float = view_pos.distance_to(target_pos)
+		var dist_sq: float = view_pos.distance_squared_to(target_pos)
 
-		if dist > description_radius or dist < 0.3:
+		if dist_sq > max_radius_sq or dist_sq < 0.09:
 			continue
 
 		if not camera.is_position_in_frustum(target_pos):
@@ -170,7 +175,7 @@ func describe_surroundings(origin_node: Node3D) -> void:
 			continue
 
 		valid_targets.append(
-			{"node": target_3d, "name": display_name, "position": target_pos, "distance": dist}
+			{"node": target_3d, "name": display_name, "position": target_pos, "dist_sq": dist_sq}
 		)
 
 	if valid_targets.is_empty():
@@ -186,10 +191,12 @@ func describe_surroundings(origin_node: Node3D) -> void:
 	var announced: Array[Dictionary] = clusters.slice(0, max_announced_clusters)
 
 	for cluster: Dictionary in announced:
-		var count: int = cluster.get("count", 1)
+		var raw_count: Variant = cluster.get("count", 1)
+		var count: int = raw_count if raw_count is int else 1
 		var item_name: String = str(cluster.get("name", ""))
-		var avg_pos: Vector3 = cluster.get("avg_pos", Vector3.ZERO)
-		var avg_dist: float = view_pos.distance_to(avg_pos)
+		var raw_avg_pos: Variant = cluster.get("avg_pos", Vector3.ZERO)
+		var avg_pos: Vector3 = raw_avg_pos if raw_avg_pos is Vector3 else Vector3.ZERO
+		var avg_dist: float = sqrt(view_pos.distance_squared_to(avg_pos))
 		var rounded_dist: int = maxi(1, int(roundf(avg_dist)))
 
 		var dir_phrase: String = _get_relative_direction(camera, view_pos, avg_pos, ground_y)
@@ -238,7 +245,11 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 
 		if current is Node3D:
 			var curr_3d: Node3D = current
-			if curr_3d is PickableObject:
+			if (
+				curr_3d.has_method(&"_get_clean_mesh_name")
+				or curr_3d.has_method(&"pickup")
+				or curr_3d.is_in_group(&"pickable")
+			):
 				return curr_3d
 			if curr_3d.has_node("InteractComponent") or curr_3d.has_node("TTSInteractComponent"):
 				candidate = curr_3d
@@ -284,12 +295,16 @@ func _sort_clusters_prioritized(
 	forward.y = 0.0
 	forward = forward.normalized()
 
+	var nearby_dist_sq: float = nearby_distance_threshold * nearby_distance_threshold
+
 	clusters.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			var pos_a: Vector3 = a.get("avg_pos", Vector3.ZERO)
-			var pos_b: Vector3 = b.get("avg_pos", Vector3.ZERO)
-			var dist_a: float = view_pos.distance_to(pos_a)
-			var dist_b: float = view_pos.distance_to(pos_b)
+			var raw_pos_a: Variant = a.get("avg_pos", Vector3.ZERO)
+			var raw_pos_b: Variant = b.get("avg_pos", Vector3.ZERO)
+			var pos_a: Vector3 = raw_pos_a if raw_pos_a is Vector3 else Vector3.ZERO
+			var pos_b: Vector3 = raw_pos_b if raw_pos_b is Vector3 else Vector3.ZERO
+			var dist_sq_a: float = view_pos.distance_squared_to(pos_a)
+			var dist_sq_b: float = view_pos.distance_squared_to(pos_b)
 
 			var dir_a: Vector3 = (
 				Vector3(pos_a.x - view_pos.x, 0.0, pos_a.z - view_pos.z).normalized()
@@ -301,19 +316,19 @@ func _sort_clusters_prioritized(
 			var dot_a: float = forward.dot(dir_a)
 			var dot_b: float = forward.dot(dir_b)
 
-			var priority_a: int = _get_cluster_priority(dist_a, dot_a)
-			var priority_b: int = _get_cluster_priority(dist_b, dot_b)
+			var priority_a: int = _get_cluster_priority(dist_sq_a, nearby_dist_sq, dot_a)
+			var priority_b: int = _get_cluster_priority(dist_sq_b, nearby_dist_sq, dot_b)
 
 			if priority_a != priority_b:
 				return priority_a < priority_b
 
-			return dist_a < dist_b
+			return dist_sq_a < dist_sq_b
 	)
 
 
-## Assigns an integer priority rank based on distance and forward alignment.
-func _get_cluster_priority(dist: float, dot_fwd: float) -> int:
-	if dist <= nearby_distance_threshold:
+## Assigns an integer priority rank based on squared distance and forward alignment.
+func _get_cluster_priority(dist_sq: float, nearby_dist_sq: float, dot_fwd: float) -> int:
+	if dist_sq <= nearby_dist_sq:
 		if dot_fwd >= 0.4:
 			return 0
 		return 1
@@ -324,6 +339,7 @@ func _get_cluster_priority(dist: float, dot_fwd: float) -> int:
 func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 	print("SpatialDescriber: Clustering %d detected targets." % targets.size())
 	var clusters: Array[Dictionary] = []
+	var cluster_dist_sq: float = cluster_distance_threshold * cluster_distance_threshold
 
 	for target: Dictionary in targets:
 		var target_name: String = str(target.get("name", ""))
@@ -335,7 +351,7 @@ func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 			if str(cluster.get("name", "")) == target_name:
 				var raw_center: Variant = cluster.get("avg_pos", Vector3.ZERO)
 				var center: Vector3 = raw_center if raw_center is Vector3 else Vector3.ZERO
-				if center.distance_to(target_pos) <= cluster_distance_threshold:
+				if center.distance_squared_to(target_pos) <= cluster_dist_sq:
 					var old_count_raw: Variant = cluster.get("count", 1)
 					var old_count: int = old_count_raw if old_count_raw is int else 1
 					var new_count: int = old_count + 1
@@ -393,13 +409,11 @@ func _get_relative_direction(
 
 ## Resolves accessible display name from properties or node hierarchy.
 func _resolve_display_name(target_node: Node3D) -> String:
-	if target_node is PickableObject:
-		var pickable: PickableObject = target_node
-		if pickable.has_method("_get_clean_mesh_name"):
-			var clean_mesh_var: Variant = pickable.call("_get_clean_mesh_name")
-			var clean_mesh: String = str(clean_mesh_var)
-			if clean_mesh != "object":
-				return clean_mesh
+	if target_node.has_method(&"_get_clean_mesh_name"):
+		var clean_mesh_var: Variant = target_node.call(&"_get_clean_mesh_name")
+		var clean_mesh: String = str(clean_mesh_var)
+		if clean_mesh != "object":
+			return clean_mesh
 
 	if target_node.has_meta(&"display_name"):
 		return _clean_name(str(target_node.get_meta(&"display_name")))

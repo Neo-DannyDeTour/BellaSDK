@@ -34,6 +34,60 @@ const ITEM_SCENE_PATHS: Dictionary[String, String] = {
 	"lever_stick": "res://interactables/lever_stick_item.tscn",
 }
 
+## Preloaded enemy [PackedScene] constants.
+const SCENE_BEAR_TRAP: PackedScene = preload("res://enemies/bear_trap.tscn")
+const SCENE_FLYING_TILE: PackedScene = preload("res://enemies/flying_tile.tscn")
+const SCENE_GUARDIAN_PILLAR: PackedScene = preload("res://enemies/guardian_pillar.tscn")
+const SCENE_ROOK_TRAP: PackedScene = preload("res://enemies/rook_trap.tscn")
+const SCENE_TENTACLE_ENEMY: PackedScene = preload("res://enemies/tentacle_enemy.tscn")
+const SCENE_TURRET: PackedScene = preload("res://enemies/turret.tscn")
+
+## Preloaded weapon [PackedScene] constants.
+const SCENE_REVOLVER: PackedScene = preload("res://assets/weapons/revolver.tscn")
+const SCENE_SHOTGUN: PackedScene = preload("res://assets/weapons/shotgun.tscn")
+const SCENE_SIGNAL_ROCKET: PackedScene = preload(
+	"res://weapons/signal_rocket/signal_rocket_weapon.tscn"
+)
+const SCENE_SMOKE_GRENADE: PackedScene = preload(
+	"res://weapons/smoke_grenade/smoke_grenade_weapon.tscn"
+)
+
+## Preloaded physical item [PackedScene] constants.
+const SCENE_GLIDER_ITEM: PackedScene = preload("res://interactables/glider_item.tscn")
+const SCENE_LEVER_STICK_ITEM: PackedScene = preload("res://interactables/lever_stick_item.tscn")
+
+## Preloaded enemy [PackedScene] resources keyed by enemy identifier.
+const ENEMY_SCENES: Dictionary[String, PackedScene] = {
+	"bear_trap": SCENE_BEAR_TRAP,
+	"beartrap": SCENE_BEAR_TRAP,
+	"flying_tile": SCENE_FLYING_TILE,
+	"flyingtile": SCENE_FLYING_TILE,
+	"guardian_pillar": SCENE_GUARDIAN_PILLAR,
+	"pillar": SCENE_GUARDIAN_PILLAR,
+	"rook_trap": SCENE_ROOK_TRAP,
+	"rook": SCENE_ROOK_TRAP,
+	"tentacle": SCENE_TENTACLE_ENEMY,
+	"tentacle_enemy": SCENE_TENTACLE_ENEMY,
+	"turret": SCENE_TURRET,
+}
+
+## Preloaded weapon [PackedScene] resources keyed by weapon identifier.
+const WEAPON_SCENES: Dictionary[String, PackedScene] = {
+	"grenade": SCENE_SMOKE_GRENADE,
+	"revolver": SCENE_REVOLVER,
+	"rocket": SCENE_SIGNAL_ROCKET,
+	"shotgun": SCENE_SHOTGUN,
+	"signal_rocket": SCENE_SIGNAL_ROCKET,
+	"smoke_grenade": SCENE_SMOKE_GRENADE,
+}
+
+## Preloaded physical item [PackedScene] resources keyed by item identifier.
+const ITEM_SCENES: Dictionary[String, PackedScene] = {
+	"glider": SCENE_GLIDER_ITEM,
+	"lever": SCENE_LEVER_STICK_ITEM,
+	"lever_stick": SCENE_LEVER_STICK_ITEM,
+}
+
 ## Maps keycard identifier strings to system clearance identifier tokens.
 const KEYCARD_CLEARANCE_MAP: Dictionary[String, StringName] = {
 	"card_g": &"G",
@@ -719,7 +773,7 @@ func _cmd_give(args: PackedStringArray) -> void:
 		)
 		return
 
-	if ITEM_SCENE_PATHS.has(item_name):
+	if ITEM_SCENES.has(item_name):
 		var player_node: Node3D = context.get_player()
 		if not is_instance_valid(player_node):
 			context.write("Player entity not found.", "red")
@@ -728,13 +782,9 @@ func _cmd_give(args: PackedStringArray) -> void:
 		if not is_instance_valid(tree) or not is_instance_valid(tree.current_scene):
 			context.write("Current scene tree invalid.", "red")
 			return
-		var item_path: String = ITEM_SCENE_PATHS[item_name]
-		if not ResourceLoader.exists(item_path):
-			context.write("Scene file not found: " + item_path, "red")
-			return
-		var packed_item: PackedScene = load(item_path) as PackedScene
+		var packed_item: PackedScene = ITEM_SCENES[item_name]
 		if not is_instance_valid(packed_item):
-			context.write("Failed to load scene: " + item_path, "red")
+			context.write("Failed to load scene for item: " + item_name, "red")
 			return
 		var item_instance: Node = packed_item.instantiate()
 		tree.current_scene.add_child(item_instance)
@@ -818,14 +868,10 @@ func _grant_or_topup_weapon(
 		_topup_weapon_ammo(existing, reserve_amount)
 		return
 
-	if not WEAPON_SCENE_PATHS.has(w_key):
+	if not WEAPON_SCENES.has(w_key):
 		return
 
-	var scene_path: String = WEAPON_SCENE_PATHS[w_key]
-	if not ResourceLoader.exists(scene_path):
-		return
-
-	var packed: PackedScene = load(scene_path) as PackedScene
+	var packed: PackedScene = WEAPON_SCENES[w_key]
 	if not is_instance_valid(packed):
 		return
 
@@ -896,18 +942,13 @@ func _cmd_spawnenemy(args: PackedStringArray) -> void:
 		return
 
 	var enemy_key: String = args[0].to_lower()
-	if not ENEMY_SCENE_PATHS.has(enemy_key):
+	if not ENEMY_SCENES.has(enemy_key):
 		context.write("Unknown enemy: '" + enemy_key + "'.", "red")
 		return
 
-	var scene_path: String = ENEMY_SCENE_PATHS[enemy_key]
-	if not ResourceLoader.exists(scene_path):
-		context.write("Scene file not found: " + scene_path, "red")
-		return
-
-	var packed_scene: PackedScene = load(scene_path) as PackedScene
+	var packed_scene: PackedScene = ENEMY_SCENES[enemy_key]
 	if not packed_scene:
-		context.write("Failed to load scene: " + scene_path, "red")
+		context.write("Failed to load scene for enemy: " + enemy_key, "red")
 		return
 
 	var enemy_node: Node = packed_scene.instantiate()
@@ -958,7 +999,8 @@ func _cmd_killall(_args: PackedStringArray) -> void:
 func _cmd_sv_gravity(args: PackedStringArray) -> void:
 	print("ConsoleCheatCommands: _cmd_sv_gravity called with args: ", args)
 	if args.is_empty():
-		var cur_g: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+		var raw_g: Variant = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+		var cur_g: float = float(raw_g) if (raw_g is float or raw_g is int) else 9.8
 		var msg: String = "Current gravity: " + str(cur_g) + ". Usage: sv_gravity <val>"
 		context.write(msg, "yellow")
 		return

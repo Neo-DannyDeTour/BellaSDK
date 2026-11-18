@@ -20,48 +20,58 @@ const MASH_TAP_COUNT: int = 3
 const BUFFER_DURATION: float = 0.20
 
 ## Internal tracking state for active physical inputs.
-var _active_inputs: Dictionary = {}
+var _active_inputs: Dictionary[String, Dictionary] = {}
 
 ## Maps action names to the physics frame tick when they were triggered.
-var _triggered_actions_frame: Dictionary = {}
+var _triggered_actions_frame: Dictionary[String, int] = {}
 
 ## Dictionary tracking the physics frame when an action was released.
-var _released_actions_frame: Dictionary = {}
+var _released_actions_frame: Dictionary[String, int] = {}
 
 ## Set of currently held physical key/button unique IDs.
-var _held_keys: Dictionary = {}
+var _held_keys: Dictionary[int, bool] = {}
 
 ## Circular buffer tracking recent action timestamps for input buffering.
-var _input_buffer: Dictionary = {}
+var _input_buffer: Dictionary[String, float] = {}
+
+## Pre-allocated scratch array for expiring dictionary keys without per-frame allocations.
+var _keys_to_remove: Array[String] = []
 
 
 ## Lifecycle method called when the node enters the scene tree.
 func _ready() -> void:
 	print("System: GestureInputManager initialized.")
+	set_process(false)
 
 
 ## Frame lifecycle method updating gesture timers and expiring buffered inputs.
 ## [param delta] Frame execution delta in seconds.
 func _process(delta: float) -> void:
-	var keys_to_remove: Array = []
+	if (
+		_input_buffer.is_empty()
+		and _active_inputs.is_empty()
+		and _triggered_actions_frame.is_empty()
+		and _released_actions_frame.is_empty()
+	):
+		set_process(false)
+		return
+
 	var now: float = Time.get_ticks_msec() / 1000.0
 
-	for action: Variant in _input_buffer.keys():
-		var timestamp_var: Variant = _input_buffer[action]
-		var timestamp: float = timestamp_var if timestamp_var is float else 0.0
+	_keys_to_remove.clear()
+	for action: String in _input_buffer:
+		var timestamp: float = _input_buffer[action]
 		if now - timestamp > BUFFER_DURATION:
-			keys_to_remove.append(action)
+			_keys_to_remove.append(action)
 
-	for action: Variant in keys_to_remove:
+	for action: String in _keys_to_remove:
 		_input_buffer.erase(action)
-	keys_to_remove.clear()
 
-	for input_key: Variant in _active_inputs.keys():
-		var data_var: Variant = _active_inputs[input_key]
-		if not (data_var is Dictionary):
-			continue
-		var data: Dictionary = data_var
-		var is_pressed: bool = data.get("is_pressed", false)
+	_keys_to_remove.clear()
+	for input_key: String in _active_inputs:
+		var data: Dictionary = _active_inputs[input_key]
+		var is_pressed_raw: Variant = data.get("is_pressed", false)
+		var is_pressed: bool = is_pressed_raw if is_pressed_raw is bool else false
 		var gesture_type: String = str(data.get("gesture_type", ""))
 		var action: String = str(data.get("action", ""))
 
@@ -92,28 +102,24 @@ func _process(delta: float) -> void:
 				if tap_window <= 0.0:
 					if gesture_type == "single_tap" and tap_count == 1:
 						_dispatch_action(action, "single_tap")
-					keys_to_remove.append(input_key)
+					_keys_to_remove.append(input_key)
 
-	for key: Variant in keys_to_remove:
+	for key: String in _keys_to_remove:
 		_active_inputs.erase(key)
 
 	var current_frame: int = Engine.get_physics_frames()
-	var triggered_keys_to_remove: Array = []
-	for action: Variant in _triggered_actions_frame.keys():
-		var frame_raw: Variant = _triggered_actions_frame[action]
-		var target_frame: int = frame_raw if frame_raw is int else 0
-		if current_frame > target_frame + 2:
-			triggered_keys_to_remove.append(action)
-	for key: Variant in triggered_keys_to_remove:
+	_keys_to_remove.clear()
+	for action: String in _triggered_actions_frame:
+		if current_frame > _triggered_actions_frame[action] + 2:
+			_keys_to_remove.append(action)
+	for key: String in _keys_to_remove:
 		_triggered_actions_frame.erase(key)
 
-	var released_keys_to_remove: Array = []
-	for action: Variant in _released_actions_frame.keys():
-		var frame_raw: Variant = _released_actions_frame[action]
-		var target_frame: int = frame_raw if frame_raw is int else 0
-		if current_frame > target_frame + 2:
-			released_keys_to_remove.append(action)
-	for key: Variant in released_keys_to_remove:
+	_keys_to_remove.clear()
+	for action: String in _released_actions_frame:
+		if current_frame > _released_actions_frame[action] + 2:
+			_keys_to_remove.append(action)
+	for key: String in _keys_to_remove:
 		_released_actions_frame.erase(key)
 
 
@@ -185,6 +191,7 @@ func _input(event: InputEvent) -> void:
 					"tap_window": 0.0,
 					"tap_count": 1
 				}
+				set_process(true)
 			else:
 				var data_var: Variant = _active_inputs[tracking_key]
 				if data_var is Dictionary:
@@ -213,6 +220,7 @@ func _input(event: InputEvent) -> void:
 			var tracking_key: String = str(input_id) + "_" + action
 
 			_released_actions_frame[action] = Engine.get_physics_frames()
+			set_process(true)
 
 			if _active_inputs.has(tracking_key):
 				var data_var: Variant = _active_inputs[tracking_key]
@@ -231,8 +239,7 @@ func _input(event: InputEvent) -> void:
 func consume_buffered_action(action: String) -> bool:
 	var now: float = Time.get_ticks_msec() / 1000.0
 	if _input_buffer.has(action):
-		var timestamp_raw: Variant = _input_buffer[action]
-		var timestamp: float = timestamp_raw if timestamp_raw is float else 0.0
+		var timestamp: float = _input_buffer[action]
 		if now - timestamp <= BUFFER_DURATION:
 			print("Buffer: Consumed buffered action: ", action)
 			_input_buffer.erase(action)
@@ -247,8 +254,7 @@ func consume_buffered_action(action: String) -> bool:
 func is_action_just_triggered(action: String) -> bool:
 	var current_frame: int = Engine.get_physics_frames()
 	if _triggered_actions_frame.has(action):
-		var frame_raw: Variant = _triggered_actions_frame[action]
-		var target_frame: int = frame_raw if frame_raw is int else 0
+		var target_frame: int = _triggered_actions_frame[action]
 		if abs(current_frame - target_frame) <= 2:
 			return true
 	return false
@@ -321,8 +327,7 @@ func is_action_pressed(action: String) -> bool:
 func is_action_just_pressed(action: String) -> bool:
 	var current_frame: int = Engine.get_physics_frames()
 	if _triggered_actions_frame.has(action):
-		var frame_raw: Variant = _triggered_actions_frame[action]
-		var target_frame: int = frame_raw if frame_raw is int else 0
+		var target_frame: int = _triggered_actions_frame[action]
 		if abs(current_frame - target_frame) <= 2:
 			return true
 	return false
@@ -332,11 +337,9 @@ func is_action_just_pressed(action: String) -> bool:
 ## [param action] The input action key string to evaluate.
 ## Returns true if the action was released this frame.
 func is_action_just_released(action: String) -> bool:
-	print("Input: Polling is_action_just_released for action: ", action)
 	var current_frame: int = Engine.get_physics_frames()
 	if _released_actions_frame.has(action):
-		var frame_raw: Variant = _released_actions_frame[action]
-		var target_frame: int = frame_raw if frame_raw is int else 0
+		var target_frame: int = _released_actions_frame[action]
 		if abs(current_frame - target_frame) <= 2:
 			return true
 	return false
@@ -490,4 +493,5 @@ func _dispatch_action(action: String, gesture: String) -> void:
 	var now: float = Time.get_ticks_msec() / 1000.0
 	_input_buffer[action] = now
 	_triggered_actions_frame[action] = Engine.get_physics_frames()
+	set_process(true)
 	action_triggered.emit(action, gesture)

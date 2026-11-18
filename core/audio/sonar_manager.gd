@@ -56,11 +56,15 @@ func _ready() -> void:
 	print("SonarManager: Initializing spatial audio pool.")
 	_setup_audio_nodes()
 
-	if has_node("/root/Events"):
-		var events_node: Node = get_node("/root/Events")
-		if events_node.has_signal("sonar_ping_requested"):
-			Utilities.safe_connect(Signal(events_node, &"sonar_ping_requested"), trigger_sonar)
-			print("SonarManager: Hooked to Events.sonar_ping_requested.")
+	if not Events.sonar_ping_requested.is_connected(trigger_sonar):
+		Events.sonar_ping_requested.connect(trigger_sonar)
+		print("SonarManager: Hooked to Events.sonar_ping_requested.")
+
+
+## Disconnects global event bus listeners when leaving the scene tree.
+func _exit_tree() -> void:
+	if Events.sonar_ping_requested.is_connected(trigger_sonar):
+		Events.sonar_ping_requested.disconnect(trigger_sonar)
 
 
 ## Executes active sonar sweep centered on origin node using [method Utilities.delay_call].
@@ -170,12 +174,16 @@ func trigger_sonar(origin_node: Node3D) -> void:
 
 	targets_to_ping.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			var pri_a: int = a.get("priority", 0)
-			var pri_b: int = b.get("priority", 0)
+			var raw_pri_a: Variant = a.get("priority", 0)
+			var raw_pri_b: Variant = b.get("priority", 0)
+			var pri_a: int = raw_pri_a if raw_pri_a is int else 0
+			var pri_b: int = raw_pri_b if raw_pri_b is int else 0
 			if pri_a != pri_b:
 				return pri_a < pri_b
-			var dist_a: float = a.get("distance_sq", 0.0)
-			var dist_b: float = b.get("distance_sq", 0.0)
+			var raw_dist_a: Variant = a.get("distance_sq", 0.0)
+			var raw_dist_b: Variant = b.get("distance_sq", 0.0)
+			var dist_a: float = raw_dist_a if raw_dist_a is float else 0.0
+			var dist_b: float = raw_dist_b if raw_dist_b is float else 0.0
 			return dist_a < dist_b
 	)
 
@@ -184,17 +192,22 @@ func trigger_sonar(origin_node: Node3D) -> void:
 
 	targets_to_ping.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			var dist_a: float = a.get("distance_sq", 0.0)
-			var dist_b: float = b.get("distance_sq", 0.0)
+			var raw_dist_a: Variant = a.get("distance_sq", 0.0)
+			var raw_dist_b: Variant = b.get("distance_sq", 0.0)
+			var dist_a: float = raw_dist_a if raw_dist_a is float else 0.0
+			var dist_b: float = raw_dist_b if raw_dist_b is float else 0.0
 			return dist_a < dist_b
 	)
 
 	var last_scheduled_time: float = 0.0
 	for target_data: Dictionary in targets_to_ping:
-		var target_node: Node3D = target_data.get("node")
-		var dist_sq: float = target_data.get("distance_sq", 0.0)
+		var raw_node: Variant = target_data.get("node")
+		var target_node: Node3D = raw_node as Node3D if raw_node is Node3D else null
+		var raw_dist_sq: Variant = target_data.get("distance_sq", 0.0)
+		var dist_sq: float = raw_dist_sq if raw_dist_sq is float else 0.0
 		var distance: float = sqrt(dist_sq)
-		var is_occluded: bool = target_data.get("is_occluded", false)
+		var raw_occluded: Variant = target_data.get("is_occluded", false)
+		var is_occluded: bool = raw_occluded if raw_occluded is bool else false
 		var natural_delay: float = distance / wave_speed
 		var scheduled_delay: float = maxf(natural_delay, last_scheduled_time + min_cue_separation)
 		last_scheduled_time = scheduled_delay
@@ -248,7 +261,11 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 
 		if current is Node3D:
 			var curr_3d: Node3D = current
-			if curr_3d is PickableObject:
+			if (
+				curr_3d.has_method(&"_get_clean_mesh_name")
+				or curr_3d.has_method(&"pickup")
+				or curr_3d.is_in_group(&"pickable")
+			):
 				return curr_3d
 			if curr_3d.has_node("InteractComponent") or curr_3d.has_node("TTSInteractComponent"):
 				candidate = curr_3d

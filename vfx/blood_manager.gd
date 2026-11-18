@@ -362,9 +362,8 @@ func _place_decal(surface_pos: Vector3, surface_normal: Vector3, base_size: floa
 	var slot: int = _decal_idx
 	_decal_idx = (_decal_idx + 1) % DECAL_POOL_SIZE
 
-	var existing_tween: Tween = _decal_tweens[slot]
-	if is_instance_valid(existing_tween):
-		existing_tween.kill()
+	var fade_tween: Tween = Utilities.reset_tween(self, _decal_tweens[slot])
+	_decal_tweens[slot] = fade_tween
 
 	var decal: Decal = _decal_pool[slot]
 	var normal: Vector3 = (
@@ -383,8 +382,6 @@ func _place_decal(surface_pos: Vector3, surface_normal: Vector3, base_size: floa
 	decal.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	decal.visible = true
 
-	var fade_tween: Tween = create_tween()
-	_decal_tweens[slot] = fade_tween
 	fade_tween.tween_property(decal, PROP_MODULATE_ALPHA, 0.0, DECAL_FADE_DURATION)
 	fade_tween.tween_callback(decal.hide)
 

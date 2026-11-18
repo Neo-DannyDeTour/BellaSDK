@@ -22,6 +22,7 @@ var _last_hover_frame: int = 0
 ## Lifecycle method called when the node enters the scene tree.
 func _ready() -> void:
 	print("TTSInteractComponent: Initialized and waiting for scanner.")
+	set_process(false)
 
 
 ## Called every frame to evaluate if the player's crosshair has left the object.
@@ -31,7 +32,7 @@ func _process(_delta: float) -> void:
 	# We use this to cheaply detect focus loss without using heavy Area3D overlap checks.
 	if _has_spoken and Engine.get_process_frames() > _last_hover_frame + 1:
 		_has_spoken = false
-		# print("TTSInteractComponent: Focus lost. Resetting TTS trigger.")
+		set_process(false)
 
 
 ## Triggered by the InteractionScanner when the player looks at the host object.
@@ -43,6 +44,7 @@ func hover_cursor(_player: Node3D, _hit_point: Vector3) -> void:
 
 	if not _has_spoken:
 		_has_spoken = true
+		set_process(true)
 		var text_to_speak: String = (
 			alt_text_override if alt_text_override != "" else _get_label_text()
 		)

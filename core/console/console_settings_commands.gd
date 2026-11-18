@@ -462,6 +462,15 @@ func _cmd_mono_audio(args: PackedStringArray) -> void:
 		return
 	var active: bool = parsed == true
 	context.toggle_states["mono_audio"] = active
+	var master_idx: int = AudioServer.get_bus_index("Master")
+	if master_idx >= 0:
+		var effect_count: int = AudioServer.get_bus_effect_count(master_idx)
+		for i: int in range(effect_count):
+			var eff: AudioEffect = AudioServer.get_bus_effect(master_idx, i)
+			if eff is AudioEffectStereoEnhance:
+				AudioServer.set_bus_effect_enabled(master_idx, i, active)
+				break
+	GlobalSettings.save_setting("Audio", "mono_audio", active, true)
 	print("ConsoleSettingsCommands: Toggled mono_audio to: ", active)
 	context.write("Mono audio " + ("activated." if active else "deactivated."), "green")
 
@@ -846,8 +855,8 @@ func _cmd_perf_uncap(args: PackedStringArray) -> void:
 		Engine.max_fps = 0
 		context.write("Performance uncap ACTIVATED: VSync disabled, Engine.max_fps = 0.", "yellow")
 	else:
-		var vsync_setting: int = GlobalSettings.get_setting_int("Video", "vsync_mode", 1)
-		var fps_setting: int = GlobalSettings.get_setting_int("Video", "fps_limit", 60)
+		var vsync_setting: int = GlobalSettings.get_setting_int("Settings", "vsync_mode", 1)
+		var fps_setting: int = GlobalSettings.get_setting_int("Settings", "fps_limit", 60)
 		DisplayServer.window_set_vsync_mode(vsync_setting as DisplayServer.VSyncMode)
 		Engine.max_fps = fps_setting
 		context.write(

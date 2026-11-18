@@ -30,17 +30,21 @@ func _ready() -> void:
 	_connect_event_bus()
 
 
-## Binds listeners to the global event bus if present in the tree.
+## Disconnects global event bus listeners when leaving the scene tree.
+func _exit_tree() -> void:
+	if Events.sfx_2d_requested.is_connected(_on_sfx_2d_requested):
+		Events.sfx_2d_requested.disconnect(_on_sfx_2d_requested)
+	if Events.sfx_3d_requested.is_connected(_on_sfx_3d_requested):
+		Events.sfx_3d_requested.disconnect(_on_sfx_3d_requested)
+
+
+## Binds listeners to the global event bus.
 func _connect_event_bus() -> void:
 	print("[AudioPool] Checking for global event bus...")
-	var events_node: Node = get_node_or_null("/root/Events")
-	if not is_instance_valid(events_node):
-		return
-
-	if events_node.has_signal(&"sfx_2d_requested"):
-		events_node.connect(&"sfx_2d_requested", _on_sfx_2d_requested)
-	if events_node.has_signal(&"sfx_3d_requested"):
-		events_node.connect(&"sfx_3d_requested", _on_sfx_3d_requested)
+	if not Events.sfx_2d_requested.is_connected(_on_sfx_2d_requested):
+		Events.sfx_2d_requested.connect(_on_sfx_2d_requested)
+	if not Events.sfx_3d_requested.is_connected(_on_sfx_3d_requested):
+		Events.sfx_3d_requested.connect(_on_sfx_3d_requested)
 	print("[AudioPool] Event bus signals connected successfully.")
 
 

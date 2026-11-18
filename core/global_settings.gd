@@ -33,6 +33,19 @@ const FONT_REGISTRY: Array[Dictionary] = [
 	{"id": "super_funky", "name": "Super Funky", "path": "res://assets/fonts/Super Funky.ttf"}
 ]
 
+## Preloaded font resources mapped by internal font ID.
+const FONT_RESOURCES: Dictionary[String, Font] = {
+	"kramola": preload("res://assets/fonts/kramola/Kramola.otf"),
+	"dyslexic": preload("res://assets/fonts/opendyslexic-0.92/OpenDyslexic-Regular.otf"),
+	"papyrus": preload("res://assets/fonts/papyrus-font/papyrus.ttf"),
+	"comic": preload("res://assets/fonts/Comic Sans MS.ttf"),
+	"futura": preload("res://assets/fonts/FuturaHandwritten.ttf"),
+	"help_me": preload("res://assets/fonts/HelpMe.ttf"),
+	"olde_english": preload("res://assets/fonts/OldeEnglish.ttf"),
+	"stalinist": preload("res://assets/fonts/StalinistOne-Regular.ttf"),
+	"super_funky": preload("res://assets/fonts/Super Funky.ttf"),
+}
+
 ## Single source of truth for all post-process screen filters and metadata.
 const SCREEN_FILTER_REGISTRY: Array[Dictionary] = [
 	{"id": "off", "name": "Off", "index": 0, "path": ""},
@@ -226,8 +239,8 @@ func get_screen_filter_index(filter_id: String) -> int:
 	var clean_id: String = filter_id.to_lower()
 	for item: Dictionary in SCREEN_FILTER_REGISTRY:
 		if str(item.get("id", "")) == clean_id:
-			var filter_idx: int = item.get("index", 0)
-			return filter_idx
+			var raw_idx: Variant = item.get("index", 0)
+			return raw_idx if raw_idx is int else 0
 	return 0
 
 
@@ -248,15 +261,14 @@ func get_font_path(font_id: String) -> String:
 	return ""
 
 
-## Loads and returns the [Font] resource for the given font identifier.
+## Returns the preloaded [Font] resource for the given font identifier.
 func get_font_resource(font_id: String) -> Font:
 	print("GlobalSettings: Loading font resource for -> ", font_id)
+	if FONT_RESOURCES.has(font_id):
+		return FONT_RESOURCES[font_id]
 	var path: String = get_font_path(font_id)
-	if path.is_empty():
-		return null
-	if ResourceLoader.exists(path):
-		return load(path) as Font
-	push_warning("GlobalSettings: Font resource path not found: " + path)
+	if not path.is_empty():
+		push_warning("GlobalSettings: Font resource not preloaded for: " + font_id)
 	return null
 
 
@@ -346,41 +358,31 @@ func _apply_boot_settings() -> void:
 	var effective_scale: float = VideoConfig.compute_effective_ui_scale(ui_scale, res)
 	win.content_scale_factor = effective_scale
 
-	var events: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events):
-		var saved_font_idx: int = get_setting("Settings", "font_mode", 0)
+	if is_instance_valid(Events):
+		var saved_font_idx: int = get_setting_int("Settings", "font_mode", 0)
 		if saved_font_idx >= 0 and saved_font_idx < FONT_REGISTRY.size():
 			var font_id: String = str(FONT_REGISTRY[saved_font_idx].get("id", ""))
-			if events.has_signal("font_changed"):
-				events.emit_signal("font_changed", font_id)
+			Events.font_changed.emit(font_id)
 
-		var saved_cb: int = get_setting("Settings", "colorblind_mode", 0)
-		if events.has_signal("colorblind_mode_changed"):
-			events.emit_signal("colorblind_mode_changed", saved_cb)
+		var saved_cb: int = get_setting_int("Settings", "colorblind_mode", 0)
+		Events.colorblind_mode_changed.emit(saved_cb)
 
-		var saved_filter_idx: int = get_setting("Settings", "screen_filter", 0)
+		var saved_filter_idx: int = get_setting_int("Settings", "screen_filter", 0)
 		var filter_ids: Array[String] = get_screen_filter_ids()
 		if saved_filter_idx >= 0 and saved_filter_idx < filter_ids.size():
-			if events.has_signal("screen_filter_changed"):
-				events.emit_signal("screen_filter_changed", filter_ids[saved_filter_idx])
+			Events.screen_filter_changed.emit(filter_ids[saved_filter_idx])
 
-		if events.has_signal("item_prompts_toggled"):
-			var show_prompts: bool = get_setting("Gameplay", "show_item_prompts", true)
-			events.emit_signal("item_prompts_toggled", show_prompts)
+		var show_prompts: bool = get_setting_bool("Gameplay", "show_item_prompts", true)
+		Events.item_prompts_toggled.emit(show_prompts)
 
-		if events.has_signal("infinite_swim_toggled"):
-			var inf_swim_raw: Variant = get_setting("Accessibility", "infinite_swim", false)
-			var inf_swim: bool = inf_swim_raw == true
-			events.emit_signal("infinite_swim_toggled", inf_swim)
+		var inf_swim: bool = get_setting_bool("Accessibility", "infinite_swim", false)
+		Events.infinite_swim_toggled.emit(inf_swim)
 
-		if events.has_signal("infinite_ammo_toggled"):
-			var inf_ammo_raw: Variant = get_setting("Accessibility", "infinite_ammo", false)
-			var inf_ammo: bool = inf_ammo_raw == true
-			events.emit_signal("infinite_ammo_toggled", inf_ammo)
+		var inf_ammo: bool = get_setting_bool("Accessibility", "infinite_ammo", false)
+		Events.infinite_ammo_toggled.emit(inf_ammo)
 
-		if events.has_signal("aim_assist_mode_changed"):
-			var assist_mode: int = get_setting_int("Gameplay", "aim_assist_mode", 1)
-			events.emit_signal("aim_assist_mode_changed", assist_mode)
+		var assist_mode: int = get_setting_int("Gameplay", "aim_assist_mode", 1)
+		Events.aim_assist_mode_changed.emit(assist_mode)
 
 
 ## Overwrites the default Godot [InputMap] with any saved keybind overrides.

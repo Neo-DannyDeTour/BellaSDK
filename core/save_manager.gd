@@ -245,9 +245,8 @@ func _load_game_state(path: String) -> void:
 		var node: Node = get_node_or_null(node_path_str)
 		if node:
 			if node.has_method("load_save_data"):
-				var node_data: Dictionary = (
-					total_state[node_path_str] if total_state[node_path_str] is Dictionary else {}
-				)
+				var raw_node_data: Variant = total_state[node_path_str]
+				var node_data: Dictionary = raw_node_data if raw_node_data is Dictionary else {}
 				node.call("load_save_data", node_data)
 				loaded_nodes_count += 1
 			else:
@@ -289,8 +288,10 @@ func get_all_saves() -> Array[Dictionary]:
 
 ## Compares two save records by favorite flag and ID timestamp order.
 func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
-	var a_fav: bool = a.get("is_favorite", false)
-	var b_fav: bool = b.get("is_favorite", false)
+	var a_fav_raw: Variant = a.get("is_favorite", false)
+	var b_fav_raw: Variant = b.get("is_favorite", false)
+	var a_fav: bool = a_fav_raw if a_fav_raw is bool else false
+	var b_fav: bool = b_fav_raw if b_fav_raw is bool else false
 
 	if a_fav != b_fav:
 		return a_fav

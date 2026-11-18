@@ -57,6 +57,14 @@ func _ready() -> void:
 	set_process(false)
 
 
+## Disconnects global event bus listeners when leaving the scene tree.
+func _exit_tree() -> void:
+	if Events.screenshake_requested.is_connected(_on_screenshake_requested):
+		Events.screenshake_requested.disconnect(_on_screenshake_requested)
+	if Events.player_camera_registered.is_connected(register_camera):
+		Events.player_camera_registered.disconnect(register_camera)
+
+
 ## Steps trauma decay, samples organic noise, and updates listener camera offsets.
 func _process(delta: float) -> void:
 	if trauma <= 0.0 and _sustained_rumble_timer <= 0.0:

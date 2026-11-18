@@ -52,6 +52,7 @@ var _ray_end: Vector3 = Vector3.ZERO
 func _ready() -> void:
 	print("[InteractionManager] Initializing interaction manager.")
 	_setup_exclusions()
+	set_physics_process(is_instance_valid(source_camera))
 
 
 ## Executes per-tick scan via [method scan_for_interactable] on physics frame updates.
@@ -64,6 +65,7 @@ func set_source_camera(new_camera: Camera3D) -> void:
 	print("[InteractionManager] Setting source camera: ", new_camera)
 	source_camera = new_camera
 	_setup_exclusions()
+	set_physics_process(is_instance_valid(source_camera))
 
 
 ## Performs a zero-allocation raycast scan using [NodeQuery] along [member source_camera] view.
@@ -86,9 +88,9 @@ func scan_for_interactable() -> void:
 	)
 	var new_target: Node3D = null
 	if not hit.is_empty():
-		var collider: Object = hit.get(&"collider")
-		if collider is Node3D:
-			var col_3d: Node3D = collider
+		var raw_collider: Variant = hit.get(&"collider")
+		if raw_collider is Node3D:
+			var col_3d: Node3D = raw_collider as Node3D
 			var candidate: Node3D = NodeQuery.resolve_interactable_root(col_3d)
 			if is_instance_valid(candidate) and candidate.has_method(METHOD_INTERACT):
 				new_target = candidate

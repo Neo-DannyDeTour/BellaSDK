@@ -3,7 +3,7 @@ class_name StartScreen
 extends Control
 
 ## Target scene path to load once the user initiates focus.
-@export_file("*.tscn") var main_game_scene_path: String = "res://scenes/MainGame.tscn"
+@export_file("*.tscn") var main_game_scene_path: String = "res://ui/main_menu.tscn"
 
 ## Reference to the primary activation [Button] node.
 @onready var start_button: Button = $CenterContainer/StartButton

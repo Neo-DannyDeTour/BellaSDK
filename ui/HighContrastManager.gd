@@ -18,7 +18,7 @@ func _ready() -> void:
 	var setting_val: Variant = GlobalSettings.get_setting(
 		"Accessibility", "high_contrast_ui", false
 	)
-	is_active = (setting_val == true)
+	is_active = setting_val if setting_val is bool else false
 	get_tree().node_added.connect(_on_scene_node_added)
 
 
@@ -34,9 +34,8 @@ func _setup_stylebox() -> void:
 
 ## Hooks into the global Events autoload to listen for setting toggles.
 func _connect_to_events() -> void:
-	var root_events: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(root_events) and root_events.has_signal("high_contrast_changed"):
-		root_events.connect("high_contrast_changed", _on_high_contrast_toggled)
+	if is_instance_valid(Events):
+		Events.high_contrast_toggled.connect(_on_high_contrast_toggled)
 
 
 ## Triggered when the player changes the high contrast setting in the menu.
@@ -61,16 +60,9 @@ func _process_all_nodes(parent: Node) -> void:
 
 ## Checks if a node is a text element and applies the contrast style if active.
 func _apply_contrast_to_node(node: Node) -> void:
-	if node is Label:
-		var label_node: Label = node if node is Label else null
+	if node is Label or node is RichTextLabel:
+		var ctrl: Control = node
 		if is_active:
-			label_node.add_theme_stylebox_override("normal", high_contrast_style)
+			ctrl.add_theme_stylebox_override(&"normal", high_contrast_style)
 		else:
-			label_node.remove_theme_stylebox_override("normal")
-
-	elif node is RichTextLabel:
-		var rich_node: RichTextLabel = node if node is RichTextLabel else null
-		if is_active:
-			rich_node.add_theme_stylebox_override("normal", high_contrast_style)
-		else:
-			rich_node.remove_theme_stylebox_override("normal")
+			ctrl.remove_theme_stylebox_override(&"normal")

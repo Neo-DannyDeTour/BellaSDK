@@ -183,11 +183,17 @@ func _cmd_gamespeed(args: PackedStringArray) -> void:
 ## Sets the UI display scale factor.
 func _cmd_uiscale(args: PackedStringArray) -> void:
 	print("ConsoleSystemCommands: _cmd_uiscale called with args: ", args)
-	if not args.is_empty():
-		var sc: float = args[0].to_float()
-		context.write("UI Scale set to: " + str(sc), "green")
-	else:
-		context.write("Usage: uiscale <float> (Default: 1.0)", "yellow")
+	if args.is_empty():
+		context.write("Usage: uiscale <float> (0.5 - 2.5, Default: 1.0)", "yellow")
+		return
+
+	var sc: float = clampf(args[0].to_float(), 0.5, 2.5)
+	var tree: SceneTree = context.get_tree()
+	if is_instance_valid(tree) and is_instance_valid(tree.root):
+		tree.root.content_scale_factor = sc
+	GlobalSettings.save_setting("Settings", "ui_scale", sc, true)
+	GraphicsManager.set_setting("ui_scale", sc)
+	context.write("UI Scale set to: " + str(sc), "green")
 
 
 ## Loads a level scene by shorthand name or explicit resource path.

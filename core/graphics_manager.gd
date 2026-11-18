@@ -56,7 +56,6 @@ func load_from_disk() -> void:
 	for key_var: Variant in defaults.keys():
 		var key: String = str(key_var)
 		var def_val: Variant = defaults[key]
-		var saved_val: Variant = GlobalSettings.get_setting("Settings", key, def_val)
 
 		if def_val is bool:
 			var def_bool: bool = def_val
@@ -68,9 +67,10 @@ func load_from_disk() -> void:
 			var def_float: float = def_val
 			active_config[key] = GlobalSettings.get_setting_float("Settings", key, def_float)
 		else:
+			var saved_val: Variant = GlobalSettings.get_setting("Settings", key, def_val)
 			active_config[key] = str(saved_val)
 
-	var screen_idx: int = VideoApplier._get_int(active_config, "screen_index", 0)
+	var screen_idx: int = _get_config_int("screen_index", 0)
 	var display_user_set: bool = GlobalSettings.get_setting_bool(
 		"Settings", "display_mode_user_set", false
 	)
@@ -182,25 +182,19 @@ func apply_display_settings() -> void:
 	if not is_instance_valid(win):
 		return
 
-	var mode_int: int = VideoApplier._get_int(
-		active_config, "display_mode", VideoConfig.DEFAULT_DISPLAY
-	)
-	var screen_idx: int = VideoApplier._get_int(active_config, "screen_index", 0)
-	var res_x: int = VideoApplier._get_int(active_config, "resolution_x", VideoConfig.DEFAULT_RES_X)
-	var res_y: int = VideoApplier._get_int(active_config, "resolution_y", VideoConfig.DEFAULT_RES_Y)
+	var mode_int: int = _get_config_int("display_mode", VideoConfig.DEFAULT_DISPLAY)
+	var screen_idx: int = _get_config_int("screen_index", 0)
+	var res_x: int = _get_config_int("resolution_x", VideoConfig.DEFAULT_RES_X)
+	var res_y: int = _get_config_int("resolution_y", VideoConfig.DEFAULT_RES_Y)
 	VideoApplier.apply_window_settings(
 		win, mode_int as DisplayServer.WindowMode, screen_idx, Vector2i(res_x, res_y)
 	)
 
-	var vsync_int: int = VideoApplier._get_int(
-		active_config, "vsync_mode", VideoConfig.DEFAULT_VSYNC
-	)
-	var fps_cap: int = VideoApplier._get_int(active_config, "fps_limit", VideoConfig.DEFAULT_FPS)
+	var vsync_int: int = _get_config_int("vsync_mode", VideoConfig.DEFAULT_VSYNC)
+	var fps_cap: int = _get_config_int("fps_limit", VideoConfig.DEFAULT_FPS)
 	VideoApplier.apply_engine_limits(vsync_int as DisplayServer.VSyncMode, fps_cap)
 
-	var ui_scale: float = VideoApplier._get_float(
-		active_config, "ui_scale", VideoConfig.DEFAULT_UI_SCALE
-	)
+	var ui_scale: float = _get_config_float("ui_scale", VideoConfig.DEFAULT_UI_SCALE)
 	if not is_equal_approx(win.content_scale_factor, ui_scale):
 		win.content_scale_factor = ui_scale
 
@@ -403,7 +397,7 @@ func _on_node_added(node: Node) -> void:
 
 	if node.is_in_group(&"sunshine_clouds"):
 		var clouds_tier: StringName = StringName(
-			VideoApplier._get_str(active_config, "clouds", VideoConfig.DEFAULT_CLOUDS)
+			_get_config_str("clouds", VideoConfig.DEFAULT_CLOUDS)
 		)
 		if node.has_method(&"set_quality_tier"):
 			node.call(&"set_quality_tier", clouds_tier)
@@ -453,9 +447,39 @@ func _is_menu_visible() -> bool:
 	var tree: SceneTree = get_tree()
 	if not is_instance_valid(tree) or not is_instance_valid(tree.root):
 		return false
-	var menu_nodes: Array[Node] = tree.root.find_children("*", "MainMenu", true, false)
+	var menu_nodes: Array[Node] = tree.get_nodes_in_group(&"main_menu")
+	if menu_nodes.is_empty():
+		menu_nodes = tree.root.find_children("MainMenu", "CanvasLayer", true, false)
 	for m_node: Node in menu_nodes:
 		var menu: CanvasLayer = m_node as CanvasLayer
 		if is_instance_valid(menu) and menu.visible:
 			return true
 	return false
+
+
+## Reads an integer setting from [member active_config] with type narrowing.
+func _get_config_int(key: String, default_val: int) -> int:
+	var raw: Variant = active_config.get(key, default_val)
+	if raw is int:
+		return raw
+	if raw is float:
+		var f_val: float = raw
+		return int(f_val)
+	return default_val
+
+
+## Reads a float setting from [member active_config] with type narrowing.
+func _get_config_float(key: String, default_val: float) -> float:
+	var raw: Variant = active_config.get(key, default_val)
+	if raw is float:
+		return raw
+	if raw is int:
+		var i_val: int = raw
+		return float(i_val)
+	return default_val
+
+
+## Reads a string setting from [member active_config] with type narrowing.
+func _get_config_str(key: String, default_val: String) -> String:
+	var raw: Variant = active_config.get(key, default_val)
+	return str(raw) if raw != null else default_val

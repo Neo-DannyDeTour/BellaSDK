@@ -77,6 +77,7 @@ func _ready() -> void:
 	_init_ring_buffers()
 	_cache_hardware_info()
 	_cache_static_settings_info()
+	set_process(false)
 
 
 ## Samples frametimes per frame and updates HUD at a throttled rate.
@@ -95,6 +96,7 @@ func _process(delta: float) -> void:
 ## Toggles the visual state of the metrics panel on and off.
 func toggle_window() -> void:
 	visible = not visible
+	set_process(visible)
 	print("DevMetricsPanel: Visibility toggled to ", visible)
 
 

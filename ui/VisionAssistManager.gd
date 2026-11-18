@@ -3,6 +3,15 @@
 # class_name VisionAssistManager
 extends Node
 
+## Pre-allocated shader uniform key for silhouette highlight color.
+const UNIFORM_HIGHLIGHT_COLOR: StringName = &"highlight_color"
+
+## Pre-allocated shader uniform key for sprite/material albedo texture.
+const UNIFORM_BASE_TEXTURE: StringName = &"base_texture"
+
+## Pre-allocated shader uniform key for camera-facing billboard toggle.
+const UNIFORM_ENABLE_BILLBOARD: StringName = &"enable_billboard"
+
 ## Named color lookups for console and UI palette selections.
 const COLOR_PALETTE: Dictionary[String, Color] = {
 	"cyan": Color(0.0, 0.8, 1.0, 1.0),
@@ -94,14 +103,10 @@ func _ready() -> void:
 	for group_name: String in group_colors.keys():
 		_rebuild_material_for_group(group_name)
 
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("vision_assist_toggled"):
-			events.connect("vision_assist_toggled", _on_vision_assist_toggled)
-		if events.has_signal("vision_assist_mode_changed"):
-			events.connect("vision_assist_mode_changed", _on_vision_assist_mode_changed)
-		if events.has_signal("vision_assist_color_changed"):
-			events.connect("vision_assist_color_changed", _on_vision_assist_color_changed)
+	if is_instance_valid(Events):
+		Events.vision_assist_toggled.connect(_on_vision_assist_toggled)
+		Events.vision_assist_mode_changed.connect(_on_vision_assist_mode_changed)
+		Events.vision_assist_color_changed.connect(_on_vision_assist_color_changed)
 
 	Utilities.safe_connect(get_tree().node_added, _on_scene_node_added)
 
@@ -110,7 +115,7 @@ func _ready() -> void:
 func _rebuild_material_for_group(group_name: String) -> void:
 	var mat: ShaderMaterial = ShaderMaterial.new()
 	mat.shader = _silhouette_shader
-	mat.set_shader_parameter("highlight_color", group_colors[group_name])
+	mat.set_shader_parameter(UNIFORM_HIGHLIGHT_COLOR, group_colors[group_name])
 	mat.render_priority = 100
 	_group_materials[group_name] = mat
 	#print("VisionAssistManager: Rebuilt material for group -> ", group_name)
@@ -255,8 +260,8 @@ func _apply_overlay_to_meshes(
 					var cached_mat: ShaderMaterial = cached_var
 					final_mat = cached_mat
 				if is_instance_valid(base_tex):
-					final_mat.set_shader_parameter("base_texture", base_tex)
-				final_mat.set_shader_parameter("enable_billboard", needs_billboard)
+					final_mat.set_shader_parameter(UNIFORM_BASE_TEXTURE, base_tex)
+				final_mat.set_shader_parameter(UNIFORM_ENABLE_BILLBOARD, needs_billboard)
 
 			geom_node.material_overlay = final_mat
 		else:

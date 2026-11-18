@@ -45,9 +45,6 @@ var _shockwave_container: Node3D = null
 ## Next index to allocate within the cyclic shockwave particle pool.
 var _next_shockwave_index: int = 0
 
-## Current camera trauma level clamped between 0.0 and 1.0.
-var _current_trauma: float = 0.0
-
 
 ## Initializes screen overlay, shader resources, and event listeners.
 func _ready() -> void:
@@ -58,6 +55,18 @@ func _ready() -> void:
 	_setup_overlay_rect()
 	_connect_event_bus()
 	_init_shockwave_pool()
+
+
+## Disconnects event bus and viewport listeners and frees pooled shockwave container.
+func _exit_tree() -> void:
+	_disconnect_event_bus()
+	var vp: Viewport = get_viewport()
+	if is_instance_valid(vp) and vp.size_changed.is_connected(_on_viewport_size_changed):
+		vp.size_changed.disconnect(_on_viewport_size_changed)
+	if is_instance_valid(_shockwave_container):
+		_shockwave_container.queue_free()
+		_shockwave_container = null
+	_shockwave_pool.clear()
 
 
 ## Configures full-screen overlay rect dimensions and default shader.
@@ -99,16 +108,26 @@ func _on_viewport_size_changed() -> void:
 ## Connects the core effects controller to global [Events] bus signals.
 func _connect_event_bus() -> void:
 	print("ScreenEffectsCore: Connecting event bus listeners.")
-	if Events.has_signal(&"screenshake_requested"):
-		Events.screenshake_requested.connect(_on_screenshake_requested)
-	if Events.has_signal(&"screen_fade_requested"):
+	if not Events.screen_fade_requested.is_connected(start_screen_fade):
 		Events.screen_fade_requested.connect(start_screen_fade)
-	if Events.has_signal(&"shockwave_requested"):
+	if not Events.shockwave_requested.is_connected(trigger_shockwave):
 		Events.shockwave_requested.connect(trigger_shockwave)
-	if Events.has_signal(&"screen_blackout_instant_requested"):
+	if not Events.screen_blackout_instant_requested.is_connected(set_screen_black_instant):
 		Events.screen_blackout_instant_requested.connect(set_screen_black_instant)
-	if Events.has_signal(&"screen_wake_up_requested"):
+	if not Events.screen_wake_up_requested.is_connected(start_wake_up):
 		Events.screen_wake_up_requested.connect(start_wake_up)
+
+
+## Disconnects all [Events] bus listeners registered by this controller.
+func _disconnect_event_bus() -> void:
+	if Events.screen_fade_requested.is_connected(start_screen_fade):
+		Events.screen_fade_requested.disconnect(start_screen_fade)
+	if Events.shockwave_requested.is_connected(trigger_shockwave):
+		Events.shockwave_requested.disconnect(trigger_shockwave)
+	if Events.screen_blackout_instant_requested.is_connected(set_screen_black_instant):
+		Events.screen_blackout_instant_requested.disconnect(set_screen_black_instant)
+	if Events.screen_wake_up_requested.is_connected(start_wake_up):
+		Events.screen_wake_up_requested.disconnect(start_wake_up)
 
 
 ## Pre-instantiates a cyclic pool of shockwave particles to avoid GC allocations.
@@ -126,22 +145,13 @@ func _init_shockwave_pool() -> void:
 	for i: int in range(SHOCKWAVE_POOL_SIZE):
 		var raw_node: Node = shockwave_scene.instantiate()
 		if raw_node is GPUParticles3D:
-			var particles: GPUParticles3D = raw_node if raw_node is GPUParticles3D else null
+			var particles: GPUParticles3D = raw_node as GPUParticles3D
 			particles.one_shot = true
 			particles.emitting = false
 			_shockwave_container.add_child(particles)
 			_shockwave_pool.append(particles)
 		else:
 			raw_node.queue_free()
-
-
-## Handles screenshake trauma requests dispatched from triggers or weapons.
-func _on_screenshake_requested(intensity: float, _duration: float) -> void:
-	print("ScreenEffectsCore: Trauma impulse received -> ", intensity)
-	_current_trauma = clampf(_current_trauma + intensity, 0.0, 1.0)
-	var cam_manager: Node = SystemLocator.get_service(&"CameraShakeManager")
-	if is_instance_valid(cam_manager) and cam_manager.has_method(&"add_trauma"):
-		cam_manager.call(&"add_trauma", intensity)
 
 
 ## Executes a screen fade transition sequence with optional blur and eye blinks.
@@ -173,10 +183,9 @@ func start_screen_fade(
 	_overlay_material.set_shader_parameter(&"blur_amount", 0.0)
 	_overlay_material.set_shader_parameter(&"blink_openness", 1.0)
 
-	if _active_fade_tween != null and _active_fade_tween.is_valid():
-		_active_fade_tween.kill()
-
-	_active_fade_tween = create_tween()
+	_active_fade_tween = Utilities.reset_tween(self, _active_fade_tween)
+	if not is_instance_valid(_active_fade_tween):
+		return
 
 	(
 		_active_fade_tween
@@ -239,10 +248,9 @@ func start_screen_fade(
 func _run_simple_color_fade(fade_in: float, hold: float, fade_out: float) -> void:
 	print("ScreenEffectsCore: Running simple ColorRect alpha fade.")
 	overlay_rect.modulate.a = 0.0
-	if _active_fade_tween != null and _active_fade_tween.is_valid():
-		_active_fade_tween.kill()
-
-	_active_fade_tween = create_tween()
+	_active_fade_tween = Utilities.reset_tween(self, _active_fade_tween)
+	if not is_instance_valid(_active_fade_tween):
+		return
 	_active_fade_tween.tween_property(overlay_rect, "modulate:a", 1.0, fade_in)
 	_active_fade_tween.tween_interval(hold)
 	_active_fade_tween.tween_property(overlay_rect, "modulate:a", 0.0, fade_out)
@@ -309,7 +317,7 @@ func _spawn_dynamic_shockwave(spawn_pos: Vector3, radius: float, speed: float) -
 
 	var instance: Node = shockwave_scene.instantiate()
 	if instance is GPUParticles3D:
-		var effect: GPUParticles3D = instance if instance is GPUParticles3D else null
+		var effect: GPUParticles3D = instance as GPUParticles3D
 		effect.one_shot = true
 		effect.explosiveness = 1.0
 		effect.speed_scale = maxf(0.01, speed)
@@ -388,10 +396,9 @@ func start_wake_up(
 		_set_shader_blur(max_blur)
 		_set_shader_blink(0.0)
 
-	if _active_fade_tween != null and _active_fade_tween.is_valid():
-		_active_fade_tween.kill()
-
-	_active_fade_tween = create_tween()
+	_active_fade_tween = Utilities.reset_tween(self, _active_fade_tween)
+	if not is_instance_valid(_active_fade_tween):
+		return
 
 	# Phase 1: Blackness dissipates and eyelids flutter open. Blur stays at max_blur.
 	(

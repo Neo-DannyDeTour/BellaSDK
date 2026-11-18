@@ -16,7 +16,7 @@ const LOS_OPTICAL_DEPTH_THRESHOLD: float = 1.15
 var _zones: Array[FogVolume] = []
 
 ## Active smoke grenade clouds currently registered in the scene tree.
-var _grenade_clouds: Array[SmokeGrenadeCloud] = []
+var _grenade_clouds: Array[FogVolume] = []
 
 
 ## Disables per-frame processing on startup; runs strictly on weapon/zone events.
@@ -29,7 +29,7 @@ func _ready() -> void:
 ## Force-clears all tracked references and frees orphaned clouds for test isolation.
 func clear_all() -> void:
 	for i: int in range(_grenade_clouds.size() - 1, -1, -1):
-		var cloud: SmokeGrenadeCloud = _grenade_clouds[i]
+		var cloud: FogVolume = _grenade_clouds[i]
 		if is_instance_valid(cloud) and not cloud.is_queued_for_deletion():
 			cloud.queue_free()
 	_grenade_clouds.clear()
@@ -54,8 +54,8 @@ func unregister_zone(zone: FogVolume) -> void:
 		print("[SmokeManager] Unregistered volumetric zone: ", zone.name)
 
 
-## Registers an active [SmokeGrenadeCloud] to receive bullet and blast carve events.
-func register_cloud(cloud: SmokeGrenadeCloud) -> void:
+## Registers an active smoke grenade cloud [FogVolume] to receive bullet and blast carve events.
+func register_cloud(cloud: FogVolume) -> void:
 	if not is_instance_valid(cloud) or _grenade_clouds.has(cloud):
 		return
 	_grenade_clouds.append(cloud)
@@ -64,8 +64,8 @@ func register_cloud(cloud: SmokeGrenadeCloud) -> void:
 	print("[SmokeManager] Registered SmokeGrenadeCloud: ", cloud.name)
 
 
-## Unregisters a [SmokeGrenadeCloud] when it expires or exits the scene tree.
-func unregister_cloud(cloud: SmokeGrenadeCloud) -> void:
+## Unregisters a smoke grenade cloud [FogVolume] when it expires or exits the scene tree.
+func unregister_cloud(cloud: FogVolume) -> void:
 	var idx: int = _grenade_clouds.find(cloud)
 	if idx != -1:
 		_grenade_clouds.remove_at(idx)
@@ -119,12 +119,16 @@ func carve_segment(
 				zone.call(&"carve_bullet_ray", start_pos, end_pos, radius)
 
 	for i: int in range(_grenade_clouds.size() - 1, -1, -1):
-		var cloud: SmokeGrenadeCloud = _grenade_clouds[i]
+		var cloud: FogVolume = _grenade_clouds[i]
 		if not is_instance_valid(cloud):
 			_grenade_clouds.remove_at(i)
 			continue
-		if cloud.intersects_world_aabb(seg_aabb):
-			cloud.carve_bullet_ray(start_pos, end_pos, radius)
+		if (
+			cloud.has_method(&"intersects_world_aabb")
+			and cloud.call(&"intersects_world_aabb", seg_aabb)
+		):
+			if cloud.has_method(&"carve_bullet_ray"):
+				cloud.call(&"carve_bullet_ray", start_pos, end_pos, radius)
 
 
 ## Carves a spherical explosion blast cavity in all overlapping volumetric zones and clouds.
@@ -155,16 +159,22 @@ func carve_explosion(center: Vector3, radius: float, duration: float = 3.5) -> v
 				)
 
 	for i: int in range(_grenade_clouds.size() - 1, -1, -1):
-		var cloud: SmokeGrenadeCloud = _grenade_clouds[i]
+		var cloud: FogVolume = _grenade_clouds[i]
 		if not is_instance_valid(cloud):
 			_grenade_clouds.remove_at(i)
 			continue
-		if cloud.intersects_world_aabb(blast_aabb):
+		if (
+			cloud.has_method(&"intersects_world_aabb")
+			and cloud.call(&"intersects_world_aabb", blast_aabb)
+		):
 			if cloud.has_method(&"carve_explosion_sphere"):
 				cloud.call(&"carve_explosion_sphere", center, radius, duration)
 			elif cloud.has_method(&"carve_bullet_ray"):
-				cloud.carve_bullet_ray(
-					center - Vector3(0.0, 0.05, 0.0), center + Vector3(0.0, 0.05, 0.0), radius
+				cloud.call(
+					&"carve_bullet_ray",
+					center - Vector3(0.0, 0.05, 0.0),
+					center + Vector3(0.0, 0.05, 0.0),
+					radius
 				)
 
 
@@ -199,14 +209,20 @@ func is_line_of_sight_obscured(from: Vector3, to: Vector3) -> bool:
 					return true
 
 	for i: int in range(_grenade_clouds.size() - 1, -1, -1):
-		var cloud: SmokeGrenadeCloud = _grenade_clouds[i]
+		var cloud: FogVolume = _grenade_clouds[i]
 		if not is_instance_valid(cloud):
 			_grenade_clouds.remove_at(i)
 			continue
 		if not cloud.visible:
 			continue
-		if cloud.intersects_world_aabb(ray_aabb):
-			if cloud.is_line_of_sight_obscured(from, to):
+		if (
+			cloud.has_method(&"intersects_world_aabb")
+			and cloud.call(&"intersects_world_aabb", ray_aabb)
+		):
+			if (
+				cloud.has_method(&"is_line_of_sight_obscured")
+				and cloud.call(&"is_line_of_sight_obscured", from, to)
+			):
 				return true
 
 	return false
@@ -244,10 +260,12 @@ func _sync_clouds_with_sunshine() -> void:
 		return
 
 	var effector_data: Array[Vector4] = []
-	for cloud: SmokeGrenadeCloud in _grenade_clouds:
+	for cloud: FogVolume in _grenade_clouds:
 		if is_instance_valid(cloud) and cloud.is_inside_tree() and cloud.visible:
 			var pos: Vector3 = cloud.global_position
-			var r: float = cloud.max_radius * 1.15
+			var raw_radius: Variant = cloud.get(&"max_radius")
+			var max_rad: float = raw_radius if raw_radius is float else 4.0
+			var r: float = max_rad * 1.15
 			effector_data.append(Vector4(pos.x, pos.y, pos.z, r))
 			effector_data.append(Vector4(-4.5, 0.0, 0.0, 0.0))
 
