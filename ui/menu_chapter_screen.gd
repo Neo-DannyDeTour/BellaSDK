@@ -142,9 +142,8 @@ func _on_back_pressed() -> void:
 
 	var parent: Node = get_parent()
 	if is_instance_valid(parent) and &"main_buttons" in parent:
-		var mb: CanvasItem = (
-			parent.get(&"main_buttons") if parent.get(&"main_buttons") is CanvasItem else null
-		)
+		var raw_mb: Variant = parent.get(&"main_buttons")
+		var mb: CanvasItem = raw_mb as CanvasItem if raw_mb is CanvasItem else null
 		if is_instance_valid(mb):
 			mb.show()
 		queue_free()

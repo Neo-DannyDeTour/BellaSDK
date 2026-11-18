@@ -3,11 +3,9 @@ class_name QualitySection
 extends VBoxContainer
 
 ## Emitted when the player selects a master quality preset ("Low", "Medium", "High", "Ultra").
-@warning_ignore("unused_signal")
 signal preset_changed(preset_name: String)
 
 ## Emitted when any individual quality setting is adjusted.
-@warning_ignore("unused_signal")
 signal quality_settings_changed
 
 ## Map associating master preset names with their toggle buttons.
@@ -167,9 +165,10 @@ func load_settings() -> void:
 	)
 	occlusion_checkbox.set_pressed_no_signal(occ_cull)
 
-	var vrs_str: String = str(
-		GlobalSettings.get_setting("Settings", "vrs_mode", VideoConfig.DEFAULT_VRS_MODE)
+	var raw_vrs: Variant = GlobalSettings.get_setting(
+		"Settings", "vrs_mode", VideoConfig.DEFAULT_VRS_MODE
 	)
+	var vrs_str: String = raw_vrs if raw_vrs is String else VideoConfig.DEFAULT_VRS_MODE
 	_select_dropdown_text(vrs_options, vrs_str)
 
 	var r_scale: float = GlobalSettings.get_setting_float(
@@ -178,14 +177,16 @@ func load_settings() -> void:
 	res_scale_slider.set_value_no_signal(r_scale)
 	res_scale_line.text = "%.1f" % r_scale
 
-	var aa_str: String = str(
-		GlobalSettings.get_setting("Settings", "aa_mode", VideoConfig.DEFAULT_AA_MODE)
+	var raw_aa: Variant = GlobalSettings.get_setting(
+		"Settings", "aa_mode", VideoConfig.DEFAULT_AA_MODE
 	)
+	var aa_str: String = raw_aa if raw_aa is String else VideoConfig.DEFAULT_AA_MODE
 	_select_dropdown_text(aa_options, aa_str)
 
-	var aniso_str: String = str(
-		GlobalSettings.get_setting("Settings", "anisotropy", VideoConfig.DEFAULT_ANISOTROPY)
+	var raw_aniso: Variant = GlobalSettings.get_setting(
+		"Settings", "anisotropy", VideoConfig.DEFAULT_ANISOTROPY
 	)
+	var aniso_str: String = raw_aniso if raw_aniso is String else VideoConfig.DEFAULT_ANISOTROPY
 	_select_dropdown_text(anisotropy_options, aniso_str)
 
 	var lod: float = GlobalSettings.get_setting_float(
@@ -237,45 +238,52 @@ func apply_preset_dict(data: Dictionary) -> void:
 
 ## Configures button group mappings for preset, shadow, texture filter, and FSR rows.
 func _setup_button_mappings() -> void:
-	_preset_btn_map = {
-		"Low": preset_low_button,
-		"Medium": preset_medium_button,
-		"High": preset_high_button,
-		"Ultra": preset_ultra_button,
-	}
-	_setup_group(_preset_btn_map)
+	_preset_btn_map = _init_button_map(
+		{
+			"Low": preset_low_button,
+			"Medium": preset_medium_button,
+			"High": preset_high_button,
+			"Ultra": preset_ultra_button,
+		}
+	)
+	_shadow_btn_map = _init_button_map(
+		{
+			"Off": shadow_off_button,
+			"Low (Fast)": shadow_low_button,
+			"Medium": shadow_medium_button,
+			"High (Smooth)": shadow_high_button,
+		}
+	)
+	_shadow_filter_btn_map = _init_button_map(
+		{
+			"Hard (Fast)": shadow_filter_hard_button,
+			"Soft Low": shadow_filter_low_button,
+			"Soft Medium": shadow_filter_medium_button,
+			"Soft High": shadow_filter_high_button,
+		}
+	)
+	_texture_filter_btn_map = _init_button_map(
+		{
+			"Nearest": tex_filter_nearest_button,
+			"Linear": tex_filter_linear_button,
+			"Linear Mipmap": tex_filter_lin_mip_button,
+			"Nearest Mipmap": tex_filter_near_mip_button,
+		}
+	)
+	_fsr_btn_map = _init_button_map(
+		{
+			"Disabled (Native)": fsr_native_button,
+			"Quality": fsr_quality_button,
+			"Balanced": fsr_balanced_button,
+			"Performance": fsr_perf_button,
+		}
+	)
 
-	_shadow_btn_map = {
-		"Off": shadow_off_button,
-		"Low (Fast)": shadow_low_button,
-		"Medium": shadow_medium_button,
-		"High (Smooth)": shadow_high_button,
-	}
-	_setup_group(_shadow_btn_map)
 
-	_shadow_filter_btn_map = {
-		"Hard (Fast)": shadow_filter_hard_button,
-		"Soft Low": shadow_filter_low_button,
-		"Soft Medium": shadow_filter_medium_button,
-		"Soft High": shadow_filter_high_button,
-	}
-	_setup_group(_shadow_filter_btn_map)
-
-	_texture_filter_btn_map = {
-		"Nearest": tex_filter_nearest_button,
-		"Linear": tex_filter_linear_button,
-		"Linear Mipmap": tex_filter_lin_mip_button,
-		"Nearest Mipmap": tex_filter_near_mip_button,
-	}
-	_setup_group(_texture_filter_btn_map)
-
-	_fsr_btn_map = {
-		"Disabled (Native)": fsr_native_button,
-		"Quality": fsr_quality_button,
-		"Balanced": fsr_balanced_button,
-		"Performance": fsr_perf_button,
-	}
-	_setup_group(_fsr_btn_map)
+## Binds a unified [ButtonGroup] to a label-to-button mapping and returns it.
+func _init_button_map(mapping: Dictionary[String, Button]) -> Dictionary[String, Button]:
+	_setup_group(mapping)
+	return mapping
 
 
 ## Assigns a unified [ButtonGroup] and pressed visual styles to a button dictionary.
@@ -419,7 +427,8 @@ func _commit_slider_line(
 	is_int: bool
 ) -> void:
 	var trimmed: String = line.text.strip_edges()
-	var fallback: String = str(line.get_meta("pre_focus_text", ""))
+	var raw_meta: Variant = line.get_meta("pre_focus_text", "")
+	var fallback: String = raw_meta if raw_meta is String else ""
 	if trimmed.is_empty() or not trimmed.is_valid_float():
 		line.text = fallback
 		return
@@ -440,7 +449,8 @@ func _commit_slider_line(
 func _sync_button_row(
 	mapping: Dictionary[String, Button], config_key: String, default_val: String
 ) -> void:
-	var saved: String = str(GlobalSettings.get_setting("Settings", config_key, default_val))
+	var raw_saved: Variant = GlobalSettings.get_setting("Settings", config_key, default_val)
+	var saved: String = raw_saved if raw_saved is String else default_val
 	var resolved: String = saved if mapping.has(saved) else default_val
 	_set_group_button_silent(mapping, resolved)
 
@@ -473,7 +483,8 @@ func _on_quality_button_pressed(config_key: String, mode_key: String) -> void:
 	print("QualitySection: Player selected ", config_key, " -> ", mode_key)
 	GraphicsManager.set_setting(config_key, mode_key)
 	if config_key == "fsr_mode":
-		var target_scale: float = VideoConfig.FSR_MODES.get(mode_key, 1.0)
+		var raw_scale: Variant = VideoConfig.FSR_MODES.get(mode_key, 1.0)
+		var target_scale: float = raw_scale if raw_scale is float else 1.0
 		res_scale_slider.set_value_no_signal(target_scale)
 		res_scale_line.text = "%.1f" % target_scale
 		GraphicsManager.set_setting("resolution_scale", target_scale)

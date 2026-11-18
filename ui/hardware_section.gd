@@ -3,7 +3,6 @@ class_name HardwareSection
 extends VBoxContainer
 
 ## Emitted when changing GPU adapter or rendering driver requires an application restart.
-@warning_ignore("unused_signal")
 signal restart_required(message: String, renderer_key: String, gpu_idx: int)
 
 ## Map associating GPU adapter display labels with physical hardware indices.

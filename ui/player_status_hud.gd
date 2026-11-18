@@ -164,6 +164,8 @@ var _current_smoke_density: float = 0.0
 
 ## Lifecycle method called when node enters the tree.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("PlayerStatusHUD: _ready() called. Initializing status HUD.")
 	var swim_val: Variant = GlobalSettings.get_setting("Accessibility", "infinite_swim", false)
 	if swim_val is bool:
@@ -176,10 +178,34 @@ func _ready() -> void:
 
 ## Disconnects global event bus signals when leaving the scene tree.
 func _exit_tree() -> void:
+	if not is_instance_valid(Events):
+		return
+	if Events.player_health_changed.is_connected(update_health):
+		Events.player_health_changed.disconnect(update_health)
+	if Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied):
+		Events.sprint_debuff_applied.disconnect(_on_sprint_debuff_applied)
+	if Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
+		Events.immobilize_debuff_applied.disconnect(_on_immobilize_debuff_applied)
+	if Events.sand_surface_toggled.is_connected(_on_sand_surface_toggled):
+		Events.sand_surface_toggled.disconnect(_on_sand_surface_toggled)
+	if Events.ice_surface_toggled.is_connected(_on_ice_surface_toggled):
+		Events.ice_surface_toggled.disconnect(_on_ice_surface_toggled)
+	if Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled):
+		Events.heavy_carry_toggled.disconnect(_on_heavy_carry_toggled)
+	if Events.oxygen_timer_started.is_connected(_on_oxygen_timer_started):
+		Events.oxygen_timer_started.disconnect(_on_oxygen_timer_started)
+	if Events.oxygen_timer_stopped.is_connected(_on_oxygen_timer_stopped):
+		Events.oxygen_timer_stopped.disconnect(_on_oxygen_timer_stopped)
+	if Events.steam_hazard_toggled.is_connected(_on_steam_hazard_toggled):
+		Events.steam_hazard_toggled.disconnect(_on_steam_hazard_toggled)
 	if Events.smoke_hazard_changed.is_connected(_on_smoke_hazard_changed):
 		Events.smoke_hazard_changed.disconnect(_on_smoke_hazard_changed)
 	if Events.smoke_exposure_changed.is_connected(_on_smoke_exposure_changed):
 		Events.smoke_exposure_changed.disconnect(_on_smoke_exposure_changed)
+	if Events.fire_hazard_toggled.is_connected(_on_fire_hazard_toggled):
+		Events.fire_hazard_toggled.disconnect(_on_fire_hazard_toggled)
+	if Events.infinite_swim_toggled.is_connected(_on_infinite_swim_toggled):
+		Events.infinite_swim_toggled.disconnect(_on_infinite_swim_toggled)
 
 
 ## Re-renders all heart frames and plays health change animations.

@@ -1,36 +1,52 @@
 @tool
+## Procedural 3D gel particle stream with dynamic teardrop trail geometry.
 class_name GelStream3D
 extends GPUParticles3D
 
+## Shader resource rendering the gel droplet surface.
+const GEL_SHADER: Shader = preload("res://ui/gel.gdshader")
+
+## Shader uniform key for gel surface tint color.
+const PARAM_GEL_COLOR: StringName = &"gel_color"
+
+## Base albedo and alpha color of the gel stream.
 @export var gel_color: Color = Color(0.0, 0.5, 1.0, 0.8):
 	set(value):
 		gel_color = value
 		_update_visuals()
 
+## Stream cohesion factor blending between dispersed droplets and a unified stream.
 @export_range(0.0, 1.0) var stream_unity: float = 0.0:
 	set(value):
 		stream_unity = value
 		_update_visuals()
 
+## Radius scale multiplier for individual gel droplets.
 @export var drop_scale: float = 1.0:
 	set(value):
 		drop_scale = maxf(0.01, value)
 		_update_visuals()
 
+## Base vertical trail length for each droplet.
 @export var drop_length: float = 0.1:
 	set(value):
 		drop_length = maxf(0.01, value)
 		_update_visuals()
 
+## Cached particle process material controlling velocity and spread.
 var _process_mat: ParticleProcessMaterial
+
+## Cached shader material applied to the trail mesh.
 var _draw_mat: ShaderMaterial
 
 
+## Initializes particle materials and applies initial visual parameters.
 func _ready() -> void:
 	_initialize_materials()
 	_update_visuals()
 
 
+## Ensures process material, trail mesh, and draw shader material are allocated.
 func _initialize_materials() -> void:
 	if process_material is ParticleProcessMaterial:
 		_process_mat = process_material as ParticleProcessMaterial
@@ -61,17 +77,22 @@ func _initialize_materials() -> void:
 		_draw_mat = current_mesh.material as ShaderMaterial
 	else:
 		_draw_mat = ShaderMaterial.new()
-		_draw_mat.shader = preload("res://ui/gel.gdshader") as Shader
+		_draw_mat.shader = GEL_SHADER
 		current_mesh.material = _draw_mat
 
 	trail_enabled = true
 
 
+## Synchronizes shader uniforms, trail dimensions, and emission settings.
 func _update_visuals() -> void:
-	if not is_inside_tree() or _draw_mat == null or _process_mat == null:
+	if (
+		not is_inside_tree()
+		or not is_instance_valid(_draw_mat)
+		or not is_instance_valid(_process_mat)
+	):
 		return
 
-	_draw_mat.set_shader_parameter("gel_color", gel_color)
+	_draw_mat.set_shader_parameter(PARAM_GEL_COLOR, gel_color)
 
 	var current_mesh: TubeTrailMesh = draw_pass_1 if draw_pass_1 is TubeTrailMesh else null
 	if current_mesh:

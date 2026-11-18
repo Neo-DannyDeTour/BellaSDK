@@ -35,6 +35,8 @@ var is_hovered: bool = false
 
 ## Captures baseline scale, centers pivot, and connects hover signals.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("JuicyButton: Initializing interactive button -> ", name)
 	original_scale = scale
 	Utilities.center_control(self)
@@ -54,12 +56,14 @@ func _on_resized() -> void:
 func _on_hover() -> void:
 	print("JuicyButton: Mouse entered hover state -> ", name)
 	is_hovered = true
+	set_process(true)
 
 
 ## Clears hover state and prints deactivation log.
 func _on_unhover() -> void:
 	print("JuicyButton: Mouse exited hover state -> ", name)
 	is_hovered = false
+	set_process(true)
 
 
 ## Evaluates interactive mouse tilt and scale via [method MathUtils.damped_spring].
@@ -92,3 +96,16 @@ func _process(delta: float) -> void:
 	)
 	rotation = rot_spring[&"position"]
 	_rotation_velocity = rot_spring[&"velocity"]
+
+	if (
+		not is_hovered
+		and scale.is_equal_approx(original_scale)
+		and absf(rotation) < 0.0005
+		and _scale_velocity.length_squared() < 0.0001
+		and absf(_rotation_velocity) < 0.0005
+	):
+		scale = original_scale
+		rotation = 0.0
+		_scale_velocity = Vector2.ZERO
+		_rotation_velocity = 0.0
+		set_process(false)

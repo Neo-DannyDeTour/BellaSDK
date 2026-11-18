@@ -96,7 +96,7 @@ func _ready() -> void:
 ## Cleans up external event subscriptions on exit tree.
 func _exit_tree() -> void:
 	if (
-		Events.has_signal("infinite_ammo_toggled")
+		Events.has_signal(&"infinite_ammo_toggled")
 		and Events.infinite_ammo_toggled.is_connected(_on_external_infinite_ammo_toggled)
 	):
 		Events.infinite_ammo_toggled.disconnect(_on_external_infinite_ammo_toggled)
@@ -186,7 +186,7 @@ func _connect_signals() -> void:
 		if not infinite_ammo_toggle.toggled.is_connected(_on_infinite_ammo_toggled):
 			infinite_ammo_toggle.toggled.connect(_on_infinite_ammo_toggled)
 
-	if Events.has_signal("infinite_ammo_toggled"):
+	if Events.has_signal(&"infinite_ammo_toggled"):
 		if not Events.infinite_ammo_toggled.is_connected(_on_external_infinite_ammo_toggled):
 			Events.infinite_ammo_toggled.connect(_on_external_infinite_ammo_toggled)
 
@@ -337,7 +337,8 @@ func _commit_control_line_edit(
 	apply_cb: Callable
 ) -> void:
 	var trimmed: String = input_box.text.strip_edges()
-	var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
+	var raw_fallback: Variant = input_box.get_meta("pre_focus_text", "")
+	var fallback: String = raw_fallback if raw_fallback is String else ""
 	if trimmed.is_empty() or not trimmed.is_valid_float():
 		input_box.text = fallback
 		return
@@ -488,9 +489,8 @@ func _on_infinite_swim_toggled(toggled_on: bool) -> void:
 
 	print("Player toggled Infinite Swim to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "infinite_swim", toggled_on, true)
-	var events_node: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events_node) and events_node.has_signal("infinite_swim_toggled"):
-		events_node.emit_signal("infinite_swim_toggled", toggled_on)
+	if is_instance_valid(Events) and Events.has_signal(&"infinite_swim_toggled"):
+		Events.infinite_swim_toggled.emit(toggled_on)
 
 
 ## Handles infinite ammo toggle updates and broadcasts state changes.
@@ -503,9 +503,8 @@ func _on_infinite_ammo_toggled(toggled_on: bool) -> void:
 
 	print("Player toggled Infinite Ammo to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "infinite_ammo", toggled_on, true)
-	var events_node: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events_node) and events_node.has_signal("infinite_ammo_toggled"):
-		events_node.emit_signal("infinite_ammo_toggled", toggled_on)
+	if is_instance_valid(Events) and Events.has_signal(&"infinite_ammo_toggled"):
+		Events.infinite_ammo_toggled.emit(toggled_on)
 
 
 ## Updates toggle state when changed externally via console.

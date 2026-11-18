@@ -603,7 +603,8 @@ func _commit_visual_line_edit(
 	custom_cb: Callable
 ) -> void:
 	var trimmed: String = input_box.text.strip_edges()
-	var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
+	var raw_fallback: Variant = input_box.get_meta("pre_focus_text", "")
+	var fallback: String = raw_fallback if raw_fallback is String else ""
 	if trimmed.is_empty() or not trimmed.is_valid_float():
 		input_box.text = fallback
 		return

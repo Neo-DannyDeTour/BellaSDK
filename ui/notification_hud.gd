@@ -59,6 +59,7 @@ var _is_claw_mark_showing: bool = false
 ## Initializes UI components and binds global bus listeners.
 func _ready() -> void:
 	print("NotificationHUD: _ready() called. Initializing UI.")
+	set_process(false)
 	if is_instance_valid(note_overlay_ui):
 		note_overlay_ui.hide()
 
@@ -78,6 +79,27 @@ func _ready() -> void:
 
 	_setup_claw_mark_ui()
 	_connect_signals()
+
+
+## Disconnects global [Events] signals when removed from the scene tree.
+func _exit_tree() -> void:
+	if not is_instance_valid(Events):
+		return
+	if Events.hint_requested.is_connected(show_warning_message):
+		Events.hint_requested.disconnect(show_warning_message)
+	if Events.note_opened.is_connected(_on_note_opened):
+		Events.note_opened.disconnect(_on_note_opened)
+	if Events.note_closed.is_connected(_on_note_closed):
+		Events.note_closed.disconnect(_on_note_closed)
+	if Events.vault_prompt_updated.is_connected(_on_vault_prompt_updated):
+		Events.vault_prompt_updated.disconnect(_on_vault_prompt_updated)
+	if Events.held_item_changed.is_connected(_on_held_item_changed):
+		Events.held_item_changed.disconnect(_on_held_item_changed)
+	if (
+		Events.has_signal(&"claw_target_updated")
+		and Events.claw_target_updated.is_connected(_on_claw_target_updated)
+	):
+		Events.claw_target_updated.disconnect(_on_claw_target_updated)
 
 
 ## Interpolates prompt position across 2D viewport coordinates.
@@ -204,6 +226,7 @@ func _on_claw_target_updated(is_available: bool, world_pos: Vector3) -> void:
 		if _is_claw_mark_showing:
 			_is_claw_mark_showing = false
 			_fade_claw_mark(0.0)
+	_update_process_state()
 
 
 ## Smoothly animates the alpha opacity of the wolf claw mark widget.
@@ -238,11 +261,8 @@ func _update_vault_key_icon() -> void:
 	if events.is_empty():
 		return
 
-	var icon_tex: Texture2D = (
-		helper.call("get_event_icon", events[0])
-		if helper.call("get_event_icon", events[0]) is Texture2D
-		else null
-	)
+	var raw_icon: Variant = helper.call("get_event_icon", events[0])
+	var icon_tex: Texture2D = raw_icon if raw_icon is Texture2D else null
 	if is_instance_valid(icon_tex):
 		vault_key_icon.texture = icon_tex
 		vault_key_icon.custom_minimum_size = prompt_size
@@ -273,6 +293,7 @@ func _on_vault_prompt_updated(is_available: bool, world_pos: Vector3) -> void:
 		if _is_prompt_showing:
 			_is_prompt_showing = false
 			_fade_vault_prompt(0.0)
+	_update_process_state()
 
 
 ## Handles held item status changes, immediately hiding prompt when carrying.
@@ -283,6 +304,19 @@ func _on_held_item_changed(is_holding: bool) -> void:
 	if _is_holding_item and _is_prompt_showing:
 		_is_prompt_showing = false
 		_fade_vault_prompt(0.0)
+	_update_process_state()
+
+
+## Enables or disables per-frame processing based on active prompt or claw mark state.
+func _update_process_state() -> void:
+	set_process(
+		(
+			_is_prompt_showing
+			or _is_vault_available
+			or _is_claw_mark_showing
+			or _is_claw_target_available
+		)
+	)
 
 
 ## Smoothly animates the alpha opacity of the vault prompt widget.

@@ -202,7 +202,6 @@ func _process(delta: float) -> void:
 					_is_frames_loaded = true
 					if is_instance_valid(audio_player.stream):
 						audio_player.play()
-					print("LoadingScreen: SpriteFrames loaded. Audio and animation started synced.")
 			ResourceLoader.THREAD_LOAD_FAILED, ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
 				set_process(false)
 				push_error("LoadingScreen: Failed loading selected SpriteFrames resource.")
@@ -225,7 +224,6 @@ func _process(delta: float) -> void:
 			ResourceLoader.THREAD_LOAD_LOADED:
 				_is_resource_loaded = true
 				_target_progress = disk_max
-				print("LoadingScreen: Disk streaming finished. Starting warmup.")
 				_start_shader_warmup()
 
 			ResourceLoader.THREAD_LOAD_FAILED:
@@ -519,9 +517,9 @@ func _finalize_scene_transition() -> void:
 	get_tree().current_scene = new_scene
 	_target_progress = 70.0
 
-	var locomotion: PlayerLocomotionComponent = _get_player_locomotion(player_node)
-	if is_instance_valid(locomotion):
-		locomotion.set_physics_active(false)
+	var locomotion: Node = _get_player_locomotion(player_node)
+	if is_instance_valid(locomotion) and locomotion.has_method(&"set_physics_active"):
+		locomotion.call(&"set_physics_active", false)
 	if is_instance_valid(player_node):
 		player_node.velocity = Vector3.ZERO
 
@@ -547,7 +545,7 @@ func _finalize_scene_transition() -> void:
 		await get_tree().process_frame
 	_target_progress = 85.0
 
-	var cam_controller: CameraController = _get_camera_controller(player_node)
+	var cam_controller: Node = _get_camera_controller(player_node)
 	if is_instance_valid(player_node) and is_instance_valid(cam_controller):
 		print("LoadingScreen: Sweeping frustum 360 deg to cache pipeline states.")
 		var original_rot: float = player_node.rotation.y
@@ -578,8 +576,8 @@ func _finalize_scene_transition() -> void:
 	_fade_tween.tween_property(visual_root, "modulate:a", 0.0, 0.25)
 	await _fade_tween.finished
 
-	if is_instance_valid(locomotion):
-		locomotion.set_physics_active(true)
+	if is_instance_valid(locomotion) and locomotion.has_method(&"set_physics_active"):
+		locomotion.call(&"set_physics_active", true)
 		print("LoadingScreen: Re-enabled player locomotion after visual fade.")
 
 	print("LoadingScreen: Transition complete. Freeing loading screen.")
@@ -626,7 +624,7 @@ func _snap_player_to_floor(player: CharacterBody3D) -> void:
 	var ray_origin: Vector3 = player.global_position + Vector3(0.0, 0.5, 0.0)
 	var ray_end: Vector3 = player.global_position - Vector3(0.0, 5.0, 0.0)
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		ray_origin, ray_end, 1
+		ray_origin, ray_end, CollisionLayers.MASK_ENVIRONMENT
 	)
 	query.exclude = [player.get_rid()]
 	var hit: Dictionary = space_state.intersect_ray(query)
@@ -637,23 +635,21 @@ func _snap_player_to_floor(player: CharacterBody3D) -> void:
 		print("LoadingScreen: Player aligned to floor at: ", player.global_position)
 
 
-## Retrieves [PlayerLocomotionComponent] from the target player entity safely.
-func _get_player_locomotion(p_player: Node) -> PlayerLocomotionComponent:
+## Retrieves the locomotion component node from the target player entity safely.
+func _get_player_locomotion(p_player: Node) -> Node:
 	if not is_instance_valid(p_player):
 		return null
 	var raw: Variant = p_player.get(PROP_LOCOMOTION)
-	if raw is PlayerLocomotionComponent and is_instance_valid(raw):
-		var locomotion: PlayerLocomotionComponent = raw
-		return locomotion
+	if raw is Node and is_instance_valid(raw):
+		return raw as Node
 	return null
 
 
-## Retrieves [CameraController] from the target player entity safely.
-func _get_camera_controller(p_player: Node) -> CameraController:
+## Retrieves the camera controller node from the target player entity safely.
+func _get_camera_controller(p_player: Node) -> Node:
 	if not is_instance_valid(p_player):
 		return null
 	var raw: Variant = p_player.get(PROP_CAMERA_CONTROLLER)
-	if raw is CameraController and is_instance_valid(raw):
-		var controller: CameraController = raw
-		return controller
+	if raw is Node and is_instance_valid(raw):
+		return raw as Node
 	return null

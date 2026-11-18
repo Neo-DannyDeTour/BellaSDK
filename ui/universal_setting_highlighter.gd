@@ -3,11 +3,9 @@ class_name UniversalSettingHighlighter
 extends ColorRect
 
 ## Emitted when a row gains hover focus with [param controls].
-@warning_ignore("unused_signal")
 signal row_highlighted(controls: Array[Control])
 
 ## Emitted when hover focus leaves the active row.
-@warning_ignore("unused_signal")
 signal highlight_cleared
 
 ## Default padding added around unscaled row boundaries in pixels.

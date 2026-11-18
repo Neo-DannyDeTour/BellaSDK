@@ -91,6 +91,27 @@ func _ready() -> void:
 	load_settings()
 
 
+## Disconnects global [Events] signals when removed from the scene tree.
+func _exit_tree() -> void:
+	if not is_instance_valid(Events):
+		return
+	if (
+		Events.has_signal(&"subtitles_toggled")
+		and Events.subtitles_toggled.is_connected(sync_external_subtitles_enabled)
+	):
+		Events.subtitles_toggled.disconnect(sync_external_subtitles_enabled)
+	if (
+		Events.has_signal(&"subtitle_size_changed")
+		and Events.subtitle_size_changed.is_connected(sync_external_subtitle_size)
+	):
+		Events.subtitle_size_changed.disconnect(sync_external_subtitle_size)
+	if (
+		Events.has_signal(&"subtitle_bg_opacity_changed")
+		and Events.subtitle_bg_opacity_changed.is_connected(sync_external_subtitle_opacity)
+	):
+		Events.subtitle_bg_opacity_changed.disconnect(sync_external_subtitle_opacity)
+
+
 ## Populates [OptionButton] items for subtitle colors and typography.
 func _populate_dropdowns() -> void:
 	print("UI: Populating subtitle options dropdowns.")
@@ -154,12 +175,22 @@ func _connect_signals() -> void:
 	if is_instance_valid(mono_audio_toggle):
 		mono_audio_toggle.toggled.connect(_on_mono_audio_toggled)
 
-	if Events.has_signal(&"subtitles_toggled"):
-		Events.subtitles_toggled.connect(sync_external_subtitles_enabled)
-	if Events.has_signal(&"subtitle_size_changed"):
-		Events.subtitle_size_changed.connect(sync_external_subtitle_size)
-	if Events.has_signal(&"subtitle_bg_opacity_changed"):
-		Events.subtitle_bg_opacity_changed.connect(sync_external_subtitle_opacity)
+	if is_instance_valid(Events):
+		if (
+			Events.has_signal(&"subtitles_toggled")
+			and not Events.subtitles_toggled.is_connected(sync_external_subtitles_enabled)
+		):
+			Events.subtitles_toggled.connect(sync_external_subtitles_enabled)
+		if (
+			Events.has_signal(&"subtitle_size_changed")
+			and not Events.subtitle_size_changed.is_connected(sync_external_subtitle_size)
+		):
+			Events.subtitle_size_changed.connect(sync_external_subtitle_size)
+		if (
+			Events.has_signal(&"subtitle_bg_opacity_changed")
+			and not Events.subtitle_bg_opacity_changed.is_connected(sync_external_subtitle_opacity)
+		):
+			Events.subtitle_bg_opacity_changed.connect(sync_external_subtitle_opacity)
 
 
 ## Reads subtitle and audio preferences from [GlobalSettings] silently.

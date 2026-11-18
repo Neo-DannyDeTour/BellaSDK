@@ -73,6 +73,20 @@ func _ready() -> void:
 		noclip_message_container.hide()
 
 
+## Disconnects global [Events] signals when removed from the scene tree.
+func _exit_tree() -> void:
+	if not is_instance_valid(Events):
+		return
+	if Events.noclip_toggled.is_connected(_on_noclip_toggled):
+		Events.noclip_toggled.disconnect(_on_noclip_toggled)
+	if Events.noclip_speed_changed.is_connected(_on_noclip_speed_changed):
+		Events.noclip_speed_changed.disconnect(_on_noclip_speed_changed)
+	if Events.debug_menu_toggled.is_connected(_on_debug_menu_toggled):
+		Events.debug_menu_toggled.disconnect(_on_debug_menu_toggled)
+	if Events.console_toggled.is_connected(_on_console_toggled):
+		Events.console_toggled.disconnect(_on_console_toggled)
+
+
 ## Compiles the runtime spatial green wireframe debug shader material.
 func _build_wireframe_material() -> void:
 	print("DebugOverlay: Compiling green wireframe shader material.")

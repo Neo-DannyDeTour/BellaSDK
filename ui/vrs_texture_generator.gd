@@ -17,12 +17,14 @@ static func create_radial_density_map(size: Vector2i = Vector2i(128, 128)) -> Im
 	print("VrsTextureGenerator: Generating radial VRS density map.")
 	var img: Image = Image.create(size.x, size.y, false, Image.FORMAT_L8)
 	var center: Vector2 = Vector2(size) * 0.5
-	var max_dist: float = center.length()
+	var max_dist_sq: float = center.length_squared()
 
 	for y: int in range(size.y):
 		for x: int in range(size.x):
-			var dist: float = Vector2(x, y).distance_to(center)
-			var factor: float = clampf(1.0 - (dist / max_dist), 0.0, 1.0)
+			var dist_sq: float = Vector2(x, y).distance_squared_to(center)
+			var factor: float = (
+				clampf(1.0 - (dist_sq / max_dist_sq), 0.0, 1.0) if max_dist_sq > 0.0 else 0.0
+			)
 			var density: float = smoothstep(0.0, 0.6, factor)
 			img.set_pixel(x, y, Color(density, density, density, 1.0))
 

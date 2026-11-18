@@ -96,9 +96,6 @@ var _chord_timer: float = 0.0
 ## Count of recorded sequential presses.
 var _press_count: int = 0
 
-## Cache mapping paths to loaded textures.
-var _icon_cache: Dictionary = {}
-
 ## Slider for mouse look sensitivity.
 @onready var mouse_sens_slider: HSlider = %MouseSensitivitySlider
 
@@ -156,6 +153,8 @@ var _icon_cache: Dictionary = {}
 
 ## Configures UI listeners and builds the action rebind list in [method _ready].
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("UI: Controls Panel initialized.")
 	if is_instance_valid(crouch_mode_option):
 		crouch_mode_option.focus_mode = Control.FOCUS_NONE
@@ -399,7 +398,8 @@ func _connect_slider(
 		input_box.text_submitted.connect(
 			func(txt: String) -> void:
 				var trimmed: String = txt.strip_edges()
-				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
+				var raw_fallback: Variant = input_box.get_meta("pre_focus_text", "")
+				var fallback: String = raw_fallback if raw_fallback is String else ""
 				if trimmed.is_empty() or not trimmed.is_valid_float():
 					input_box.text = fallback
 				else:
@@ -414,7 +414,8 @@ func _connect_slider(
 		input_box.focus_exited.connect(
 			func() -> void:
 				var trimmed: String = input_box.text.strip_edges()
-				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
+				var raw_fallback: Variant = input_box.get_meta("pre_focus_text", "")
+				var fallback: String = raw_fallback if raw_fallback is String else ""
 				if trimmed.is_empty() or not trimmed.is_valid_float():
 					input_box.text = fallback
 				else:
@@ -722,7 +723,7 @@ func _create_event_from_id(event_id: int) -> InputEvent:
 
 ## Builds an icon or text control for an event.
 func _create_event_display_node(event: InputEvent) -> Control:
-	var icon_tex: Texture2D = _get_event_icon(event)
+	var icon_tex: Texture2D = InputHelper.get_event_icon(event)
 	if icon_tex != null:
 		var tex_rect: TextureRect = TextureRect.new()
 		tex_rect.texture = icon_tex
@@ -822,6 +823,7 @@ func _on_remap_button_toggled(
 			remapping_button.button_pressed = false
 
 		is_remapping = true
+		set_process(true)
 		remapping_button = button
 		action_to_remap = action
 		target_slot_index = slot_index
@@ -832,6 +834,7 @@ func _on_remap_button_toggled(
 		print("UI: Remap canceled for: ", action)
 		if remapping_button == button:
 			is_remapping = false
+			set_process(false)
 			remapping_button = null
 			_reset_gesture_state()
 		_update_slot_button_text(button, action, slot_index)
@@ -937,6 +940,7 @@ func _finalize_gesture_remap(new_event: InputEvent) -> void:
 	_assign_event_to_action_slot(action_to_remap, target_slot_index, new_event)
 	var active_btn: Button = remapping_button
 	is_remapping = false
+	set_process(false)
 	remapping_button = null
 	_reset_gesture_state()
 	_save_action_mapping(action_to_remap)
@@ -973,62 +977,3 @@ func _save_action_mapping(action: String) -> void:
 	if InputMap.has_action(action):
 		var events: Array[InputEvent] = InputMap.action_get_events(action)
 		GlobalSettings.save_setting("Controls", action, events)
-
-
-## Resolves input prompt textures from cache or disk.
-func _get_event_icon(event: InputEvent) -> Texture2D:
-	var filenames: Array[String] = []
-	if event is InputEventKey:
-		var code: Key = (
-			(event as InputEventKey).physical_keycode
-			if (event as InputEventKey).physical_keycode != KEY_NONE
-			else (event as InputEventKey).keycode
-		)
-		var key_str: String = OS.get_keycode_string(code).to_lower()
-		match code:
-			KEY_SPACE:
-				filenames.append("keyboard_space.png")
-			KEY_ENTER:
-				filenames.append("keyboard_return.png")
-			KEY_SHIFT:
-				filenames.append("keyboard_shift.png")
-			KEY_CTRL:
-				filenames.append("keyboard_ctrl.png")
-			KEY_ALT:
-				filenames.append("keyboard_alt.png")
-			KEY_TAB:
-				filenames.append("keyboard_tab.png")
-			KEY_ESCAPE:
-				filenames.append("keyboard_escape.png")
-			_:
-				if key_str.length() == 1:
-					filenames.append("keyboard_%s.png" % key_str)
-	elif event is InputEventMouseButton:
-		match (event as InputEventMouseButton).button_index:
-			MOUSE_BUTTON_LEFT:
-				filenames.append("mouse_left.png")
-			MOUSE_BUTTON_RIGHT:
-				filenames.append("mouse_right.png")
-			MOUSE_BUTTON_MIDDLE:
-				filenames.append("mouse_middle.png")
-
-	for fname: String in filenames:
-		var paths: Array[String] = [
-			ICON_BASE_PATH + fname,
-			ICON_BASE_PATH + "Keyboard/" + fname,
-			ICON_BASE_PATH + "Mouse/" + fname
-		]
-		for p: String in paths:
-			if _icon_cache.has(p):
-				var cached: Variant = _icon_cache[p]
-				if cached is Texture2D:
-					return cached
-				return null
-			if ResourceLoader.exists(p):
-				var res: Resource = load(p)
-				var tex: Texture2D = null
-				if res is Texture2D:
-					tex = res
-				_icon_cache[p] = tex
-				return tex
-	return null

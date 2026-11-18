@@ -129,7 +129,10 @@ func _dismiss_stack() -> void:
 	if not has_valid_rect:
 		return
 
-	_stack_tween = create_tween().set_parallel(true)
+	_stack_tween = Utilities.reset_tween(self, _stack_tween)
+	if _stack_tween == null:
+		return
+	_stack_tween.set_parallel(true)
 	for weapon_id: String in _collected_order:
 		var rect: TextureRect = _spawned_tags.get(weapon_id, null)
 		if not is_instance_valid(rect):
@@ -185,7 +188,10 @@ func _rearrange_stack(is_pickup_drop: bool) -> void:
 
 	var screen_center_x: float = size.x * 0.5
 	var bg_index: int = 0
-	_stack_tween = create_tween().set_parallel(true)
+	_stack_tween = Utilities.reset_tween(self, _stack_tween)
+	if _stack_tween == null:
+		return
+	_stack_tween.set_parallel(true)
 
 	for weapon_id: String in _collected_order:
 		var rect: TextureRect = _spawned_tags.get(weapon_id, null)

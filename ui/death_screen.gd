@@ -43,6 +43,54 @@ const HEALTHY_POINTS: Array[Vector2] = [
 	Vector2(0.8, 0.0)
 ]
 
+## Pre-allocated [StringName] shader uniform for ECG waveform points.
+const PARAM_POINTS: StringName = &"points"
+
+## Pre-allocated [StringName] shader uniform for elapsed ECG shader time.
+const PARAM_U_TIME: StringName = &"u_time"
+
+## Pre-allocated [StringName] shader uniform for burn dissolve threshold.
+const PARAM_THRESHOLD: StringName = &"threshold"
+
+## Pre-allocated [StringName] shader uniform for jitter displacement power.
+const PARAM_POWER: StringName = &"power"
+
+## Pre-allocated [StringName] shader uniform for jitter intensity.
+const PARAM_INTENSITY: StringName = &"intensity"
+
+## Pre-allocated [StringName] shader uniform for black fade overlay factor.
+const PARAM_BLACK_FADE: StringName = &"black_fade"
+
+## Pre-allocated [StringName] shader uniform for glass distortion mix.
+const PARAM_DISTORTION_MIX: StringName = &"distortion_mix"
+
+## Pre-allocated [StringName] shader uniform for glass lens strength.
+const PARAM_LENS_STRENGTH: StringName = &"lens_strength"
+
+## Pre-allocated [StringName] shader uniform for glass lens curvature.
+const PARAM_LENS_CURVE: StringName = &"lens_curve"
+
+## Pre-allocated [StringName] shader uniform for chromatic aberration spread.
+const PARAM_CHROMATIC_SPREAD: StringName = &"chromatic_spread"
+
+## Pre-allocated [StringName] shader uniform for rounded box dimensions.
+const PARAM_BOX_SIZE: StringName = &"box_size"
+
+## Pre-allocated [StringName] shader uniform for rounded box corner radius.
+const PARAM_BOX_RADIUS: StringName = &"box_radius"
+
+## Pre-allocated [StringName] shader uniform for vignette border weight.
+const PARAM_BORDER_WEIGHT: StringName = &"border_weight"
+
+## Pre-allocated [StringName] shader uniform for viewport resolution.
+const PARAM_RESOLUTION: StringName = &"resolution"
+
+## Pre-allocated [StringName] shader uniform for lava emission intensity.
+const PARAM_EMISSION: StringName = &"emission"
+
+## Pre-allocated [StringName] shader uniform for CRT static intensity.
+const PARAM_STATIC_INTENSITY: StringName = &"static_intensity"
+
 ## Points defining stopped flatline ECG waveform trajectory.
 const FLATLINE_POINTS: Array[Vector2] = [
 	Vector2(-0.8, 0.0),
@@ -135,6 +183,8 @@ var _lerp_points: Array[Vector2] = []
 
 ## Initializes node references, audio buffers, and signal listeners.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("DeathScreen: _ready() initializing UI, audio, and overlays.")
 	hide()
 	death_label.modulate.a = 0.0
@@ -172,10 +222,18 @@ func _ready() -> void:
 			ecg_monitor.material if ecg_monitor.material is ShaderMaterial else null
 		)
 		if is_instance_valid(ecg_mat):
-			ecg_mat.set_shader_parameter(&"points", HEALTHY_POINTS)
+			ecg_mat.set_shader_parameter(PARAM_POINTS, HEALTHY_POINTS)
 
 	if Events.has_signal(&"player_died"):
 		Utilities.safe_connect(Events.player_died, play_death_sequence)
+
+
+## Disconnects global signals and stops looping audio when leaving the scene tree.
+func _exit_tree() -> void:
+	_stop_all_audio()
+	if is_instance_valid(Events) and Events.has_signal(&"player_died"):
+		if Events.player_died.is_connected(play_death_sequence):
+			Events.player_died.disconnect(play_death_sequence)
 
 
 ## Handles skip inputs via mouse click when permitted.
@@ -199,7 +257,7 @@ func _process(delta: float) -> void:
 		ecg_monitor.material if ecg_monitor.material is ShaderMaterial else null
 	)
 	if is_instance_valid(mat):
-		mat.set_shader_parameter(&"u_time", _shader_time)
+		mat.set_shader_parameter(PARAM_U_TIME, _shader_time)
 
 	var next_spike_time: float = float(_cycle_count) * (_aspect * 2.0)
 	if prev_time < next_spike_time and _shader_time >= next_spike_time:
@@ -238,6 +296,7 @@ func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
 	_aspect = viewport_size.x / viewport_size.y
 
 	_active_effect = _get_next_effect()
+	set_process(_active_effect == EffectType.ECG)
 	print("DeathScreen: Active effect: ", _active_effect)
 
 	background.modulate.a = 0.0
@@ -302,7 +361,7 @@ func _start_burn_effect() -> void:
 		push_error("DeathScreen: burn_overlay material is invalid.")
 		return
 
-	mat.set_shader_parameter(&"threshold", 1.2)
+	mat.set_shader_parameter(PARAM_THRESHOLD, 1.2)
 
 	var burn_tween: Tween = Utilities.reset_tween_ext(self, null, Tween.TRANS_QUAD, Tween.EASE_IN)
 	if is_instance_valid(burn_tween):
@@ -331,9 +390,9 @@ func _start_jitter_effect() -> void:
 		push_error("DeathScreen: jitter_overlay material is invalid.")
 		return
 
-	mat.set_shader_parameter(&"power", 0.0)
-	mat.set_shader_parameter(&"intensity", 0.0)
-	mat.set_shader_parameter(&"black_fade", 0.0)
+	mat.set_shader_parameter(PARAM_POWER, 0.0)
+	mat.set_shader_parameter(PARAM_INTENSITY, 0.0)
+	mat.set_shader_parameter(PARAM_BLACK_FADE, 0.0)
 
 	_play_static_audio()
 
@@ -383,14 +442,14 @@ func _start_glass_effect() -> void:
 		push_error("DeathScreen: glass_overlay material is invalid.")
 		return
 
-	mat.set_shader_parameter(&"distortion_mix", 0.0)
-	mat.set_shader_parameter(&"lens_strength", 1.8)
-	mat.set_shader_parameter(&"lens_curve", 0.15)
-	mat.set_shader_parameter(&"chromatic_spread", 0.0)
-	mat.set_shader_parameter(&"black_fade", 0.0)
-	mat.set_shader_parameter(&"box_size", Vector2(1.05, 1.05))
-	mat.set_shader_parameter(&"box_radius", 0.25)
-	mat.set_shader_parameter(&"border_weight", 0.0)
+	mat.set_shader_parameter(PARAM_DISTORTION_MIX, 0.0)
+	mat.set_shader_parameter(PARAM_LENS_STRENGTH, 1.8)
+	mat.set_shader_parameter(PARAM_LENS_CURVE, 0.15)
+	mat.set_shader_parameter(PARAM_CHROMATIC_SPREAD, 0.0)
+	mat.set_shader_parameter(PARAM_BLACK_FADE, 0.0)
+	mat.set_shader_parameter(PARAM_BOX_SIZE, Vector2(1.05, 1.05))
+	mat.set_shader_parameter(PARAM_BOX_RADIUS, 0.25)
+	mat.set_shader_parameter(PARAM_BORDER_WEIGHT, 0.0)
 
 	var warp_tween: Tween = create_tween().set_parallel(true)
 	(
@@ -451,8 +510,8 @@ func _start_ecg_effect(death_state: int) -> void:
 		ecg_monitor.material if ecg_monitor.material is ShaderMaterial else null
 	)
 	if is_instance_valid(mat):
-		mat.set_shader_parameter(&"points", HEALTHY_POINTS)
-		mat.set_shader_parameter(&"resolution", get_viewport().get_visible_rect().size)
+		mat.set_shader_parameter(PARAM_POINTS, HEALTHY_POINTS)
+		mat.set_shader_parameter(PARAM_RESOLUTION, get_viewport().get_visible_rect().size)
 
 	var ecg_tween: Tween = create_tween().set_parallel(true)
 	if is_instance_valid(background):
@@ -482,8 +541,8 @@ func _start_lava_effect() -> void:
 		lava_overlay.material if lava_overlay.material is ShaderMaterial else null
 	)
 	if is_instance_valid(lava_mat):
-		lava_mat.set_shader_parameter(&"emission", 0.0)
-		lava_mat.set_shader_parameter(&"resolution", get_viewport().get_visible_rect().size)
+		lava_mat.set_shader_parameter(PARAM_EMISSION, 0.0)
+		lava_mat.set_shader_parameter(PARAM_RESOLUTION, get_viewport().get_visible_rect().size)
 
 	var lava_tween: Tween = create_tween().set_parallel(true)
 	lava_tween.tween_property(lava_overlay, "modulate:a", 1.0, 2.5)
@@ -503,7 +562,7 @@ func _start_cave_tunnel_effect() -> void:
 		cave_tunnel_overlay.material if cave_tunnel_overlay.material is ShaderMaterial else null
 	)
 	if is_instance_valid(cave_mat):
-		cave_mat.set_shader_parameter(&"resolution", get_viewport().get_visible_rect().size)
+		cave_mat.set_shader_parameter(PARAM_RESOLUTION, get_viewport().get_visible_rect().size)
 
 	var tunnel_tween: Tween = create_tween().set_parallel(true)
 	tunnel_tween.tween_property(cave_tunnel_overlay, "modulate:a", 1.0, 2.5)
@@ -524,7 +583,7 @@ func _start_tv_static_effect() -> void:
 		tv_static_overlay.material if tv_static_overlay.material is ShaderMaterial else null
 	)
 	if is_instance_valid(mat):
-		mat.set_shader_parameter(&"static_intensity", 1.0)
+		mat.set_shader_parameter(PARAM_STATIC_INTENSITY, 1.0)
 
 	_play_static_audio()
 
@@ -640,7 +699,7 @@ func _lerp_heartbeat_to_flatline(weight: float) -> void:
 		ecg_monitor.material if ecg_monitor.material is ShaderMaterial else null
 	)
 	if is_instance_valid(mat):
-		mat.set_shader_parameter(&"points", _lerp_points)
+		mat.set_shader_parameter(PARAM_POINTS, _lerp_points)
 
 
 ## Plays one-shot heartbeat beep audio via [AudioPool].
@@ -690,6 +749,7 @@ func _return_to_main_menu() -> void:
 
 	print("DeathScreen: _return_to_main_menu() transitioning to main menu.")
 	_is_dead = false
+	set_process(false)
 	_stop_all_audio()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	SceneTransition.change_scene_to_file("res://ui/main_menu.tscn", 0.5)

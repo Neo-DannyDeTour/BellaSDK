@@ -57,8 +57,8 @@ func _exit_tree() -> void:
 		if Events.harsh_contrast_pulse_requested.is_connected(_on_pulse_requested):
 			Events.harsh_contrast_pulse_requested.disconnect(_on_pulse_requested)
 	if Events.has_signal(&"harsh_contrast_intensity_requested"):
-		if Events.harsh_contrast_intensity_requested.is_connected(set_sustained_intensity):
-			Events.harsh_contrast_intensity_requested.disconnect(set_sustained_intensity)
+		if Events.harsh_contrast_intensity_requested.is_connected(_on_intensity_requested):
+			Events.harsh_contrast_intensity_requested.disconnect(_on_intensity_requested)
 
 
 ## Triggers a dynamic harsh contrast pulse that flashes in and decays smoothly.

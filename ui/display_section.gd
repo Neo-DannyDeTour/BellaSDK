@@ -3,7 +3,6 @@ class_name DisplaySection
 extends VBoxContainer
 
 ## Emitted when any display or window setting is modified by the player.
-@warning_ignore("unused_signal")
 signal display_settings_changed
 
 ## Reference to the exclusive fullscreen toggle [Button].

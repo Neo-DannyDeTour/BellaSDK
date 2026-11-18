@@ -3,7 +3,6 @@ class_name EffectsSection
 extends VBoxContainer
 
 ## Emitted when any post-processing or environment effect setting changes.
-@warning_ignore("unused_signal")
 signal effects_settings_changed
 
 ## Valid tier labels for environment effect button rows.
@@ -166,8 +165,11 @@ func _ready() -> void:
 ## Synchronizes all effect widgets with saved settings without emitting signals.
 func load_settings() -> void:
 	print("EffectsSection: Synchronizing effects UI with active configuration.")
-	var saved_tonemap: String = str(
-		GlobalSettings.get_setting("Settings", "tonemap_mode", VideoConfig.DEFAULT_TONEMAP)
+	var raw_tonemap: Variant = GlobalSettings.get_setting(
+		"Settings", "tonemap_mode", VideoConfig.DEFAULT_TONEMAP
+	)
+	var saved_tonemap: String = (
+		raw_tonemap if raw_tonemap is String else VideoConfig.DEFAULT_TONEMAP
 	)
 	if not VideoConfig.TONEMAP_MODES.has(saved_tonemap):
 		saved_tonemap = VideoConfig.DEFAULT_TONEMAP
@@ -211,13 +213,11 @@ func load_settings() -> void:
 	lens_dirt_slider.set_value_no_signal(ld_val)
 	lens_dirt_line.text = "%.2f" % ld_val
 
-	_sync_button_row(_ssao_btn_map, "ssao", VideoConfig.DEFAULT_SSAO)
-	_sync_button_row(_ssi_btn_map, "ssi", VideoConfig.DEFAULT_SSI)
-	_sync_button_row(_ssr_btn_map, "ssr", VideoConfig.DEFAULT_SSR)
-	_sync_button_row(_sdfgi_btn_map, "sdfgi", VideoConfig.DEFAULT_SDFGI)
-	_sync_button_row(_fog_btn_map, "volumetric_fog", VideoConfig.DEFAULT_FOG)
-	_sync_button_row(_glow_btn_map, "glow", VideoConfig.DEFAULT_GLOW)
-	_sync_button_row(_clouds_btn_map, "clouds", VideoConfig.DEFAULT_CLOUDS)
+	for row: Array in _get_effect_row_bindings():
+		var mapping: Dictionary[String, Button] = row[0]
+		var config_key: String = row[1]
+		var default_tier: String = row[2]
+		_sync_button_row(mapping, config_key, default_tier)
 
 
 ## Updates local effect widgets from a preset dictionary without emitting signals.
@@ -256,79 +256,63 @@ func apply_preset_dict(data: Dictionary) -> void:
 		lens_dirt_slider.set_value_no_signal(ld_v)
 		lens_dirt_line.text = "%.2f" % ld_v
 
-	if data.has("ssao"):
-		_set_group_button_silent(_ssao_btn_map, str(data["ssao"]))
-	if data.has("ssi"):
-		_set_group_button_silent(_ssi_btn_map, str(data["ssi"]))
-	if data.has("ssr"):
-		_set_group_button_silent(_ssr_btn_map, str(data["ssr"]))
-	if data.has("sdfgi"):
-		_set_group_button_silent(_sdfgi_btn_map, str(data["sdfgi"]))
-	if data.has("volumetric_fog"):
-		_set_group_button_silent(_fog_btn_map, str(data["volumetric_fog"]))
-	if data.has("glow"):
-		_set_group_button_silent(_glow_btn_map, str(data["glow"]))
-	if data.has("clouds"):
-		_set_group_button_silent(_clouds_btn_map, str(data["clouds"]))
+	for row: Array in _get_effect_row_bindings():
+		var mapping: Dictionary[String, Button] = row[0]
+		var config_key: String = row[1]
+		if data.has(config_key):
+			_set_group_button_silent(mapping, str(data[config_key]))
+
+
+## Returns effect row bindings as [mapping, config_key, default_tier] tuples.
+func _get_effect_row_bindings() -> Array[Array]:
+	return [
+		[_ssao_btn_map, "ssao", VideoConfig.DEFAULT_SSAO],
+		[_ssi_btn_map, "ssi", VideoConfig.DEFAULT_SSI],
+		[_ssr_btn_map, "ssr", VideoConfig.DEFAULT_SSR],
+		[_sdfgi_btn_map, "sdfgi", VideoConfig.DEFAULT_SDFGI],
+		[_fog_btn_map, "volumetric_fog", VideoConfig.DEFAULT_FOG],
+		[_glow_btn_map, "glow", VideoConfig.DEFAULT_GLOW],
+		[_clouds_btn_map, "clouds", VideoConfig.DEFAULT_CLOUDS],
+	]
 
 
 ## Configures button group mappings for SSAO, SSIL, SSR, SDFGI, Fog, Glow, and Clouds rows.
 func _setup_button_mappings() -> void:
-	_ssao_btn_map = {
-		"Off": ssao_off_button,
-		"Low": ssao_low_button,
-		"Medium": ssao_medium_button,
-		"High": ssao_high_button,
-	}
-	_setup_group(_ssao_btn_map)
+	_ssao_btn_map = _init_tier_map(
+		ssao_off_button, ssao_low_button, ssao_medium_button, ssao_high_button
+	)
+	_ssi_btn_map = _init_tier_map(
+		ssi_off_button, ssi_low_button, ssi_medium_button, ssi_high_button
+	)
+	_ssr_btn_map = _init_tier_map(
+		ssr_off_button, ssr_low_button, ssr_medium_button, ssr_high_button
+	)
+	_sdfgi_btn_map = _init_tier_map(
+		sdfgi_off_button, sdfgi_low_button, sdfgi_medium_button, sdfgi_high_button
+	)
+	_fog_btn_map = _init_tier_map(
+		fog_off_button, fog_low_button, fog_medium_button, fog_high_button
+	)
+	_glow_btn_map = _init_tier_map(
+		glow_off_button, glow_low_button, glow_medium_button, glow_high_button
+	)
+	_clouds_btn_map = _init_tier_map(
+		clouds_off_button, clouds_low_button, clouds_medium_button, clouds_high_button
+	)
 
-	_ssi_btn_map = {
-		"Off": ssi_off_button,
-		"Low": ssi_low_button,
-		"Medium": ssi_medium_button,
-		"High": ssi_high_button,
-	}
-	_setup_group(_ssi_btn_map)
 
-	_ssr_btn_map = {
-		"Off": ssr_off_button,
-		"Low": ssr_low_button,
-		"Medium": ssr_medium_button,
-		"High": ssr_high_button,
+## Creates a tier-to-button map and binds its unified [ButtonGroup].
+func _init_tier_map(
+	off_btn: Button, low_btn: Button, med_btn: Button, high_btn: Button
+) -> Dictionary[String, Button]:
+	var mapping: Dictionary[String, Button] = {
+		"Off": off_btn,
+		"Low": low_btn,
+		"Medium": med_btn,
+		"High": high_btn,
 	}
-	_setup_group(_ssr_btn_map)
-
-	_sdfgi_btn_map = {
-		"Off": sdfgi_off_button,
-		"Low": sdfgi_low_button,
-		"Medium": sdfgi_medium_button,
-		"High": sdfgi_high_button,
-	}
-	_setup_group(_sdfgi_btn_map)
-
-	_fog_btn_map = {
-		"Off": fog_off_button,
-		"Low": fog_low_button,
-		"Medium": fog_medium_button,
-		"High": fog_high_button,
-	}
-	_setup_group(_fog_btn_map)
-
-	_glow_btn_map = {
-		"Off": glow_off_button,
-		"Low": glow_low_button,
-		"Medium": glow_medium_button,
-		"High": glow_high_button,
-	}
-	_setup_group(_glow_btn_map)
-
-	_clouds_btn_map = {
-		"Off": clouds_off_button,
-		"Low": clouds_low_button,
-		"Medium": clouds_medium_button,
-		"High": clouds_high_button,
-	}
-	_setup_group(_clouds_btn_map)
+	_setup_group(mapping)
+	return mapping
 
 
 ## Assigns a unified [ButtonGroup] and pressed visual styles to a button dictionary.
@@ -368,13 +352,10 @@ func _connect_signals() -> void:
 	lens_dirt_checkbox.toggled.connect(_on_lens_dirt_toggled)
 	_connect_slider(lens_dirt_slider, lens_dirt_line, "lens_dirt_intensity", 0.0, 1.0, 0.01)
 
-	_connect_button_row(_ssao_btn_map, "ssao")
-	_connect_button_row(_ssi_btn_map, "ssi")
-	_connect_button_row(_ssr_btn_map, "ssr")
-	_connect_button_row(_sdfgi_btn_map, "sdfgi")
-	_connect_button_row(_fog_btn_map, "volumetric_fog")
-	_connect_button_row(_glow_btn_map, "glow")
-	_connect_button_row(_clouds_btn_map, "clouds")
+	for row: Array in _get_effect_row_bindings():
+		var mapping: Dictionary[String, Button] = row[0]
+		var config_key: String = row[1]
+		_connect_button_row(mapping, config_key)
 
 
 ## Connects button presses in [param mapping] to [param config_key].
@@ -424,7 +405,8 @@ func _commit_dof_value(amt: float) -> void:
 ## Validates and commits manual DoF text input.
 func _commit_dof_line() -> void:
 	var trimmed: String = dof_line.text.strip_edges()
-	var fallback: String = str(dof_line.get_meta("pre_focus_text", ""))
+	var raw_meta: Variant = dof_line.get_meta("pre_focus_text", "")
+	var fallback: String = raw_meta if raw_meta is String else ""
 	if trimmed.is_empty() or not trimmed.is_valid_float():
 		dof_line.text = fallback
 		return
@@ -478,7 +460,8 @@ func _commit_effect_line(
 	slider: HSlider, line: LineEdit, key: String, min_v: float, max_v: float, step_val: float
 ) -> void:
 	var trimmed: String = line.text.strip_edges()
-	var fallback: String = str(line.get_meta("pre_focus_text", ""))
+	var raw_meta: Variant = line.get_meta("pre_focus_text", "")
+	var fallback: String = raw_meta if raw_meta is String else ""
 	if trimmed.is_empty() or not trimmed.is_valid_float():
 		line.text = fallback
 		return
@@ -496,7 +479,8 @@ func _commit_effect_line(
 func _sync_button_row(
 	mapping: Dictionary[String, Button], config_key: String, default_val: String
 ) -> void:
-	var saved: String = str(GlobalSettings.get_setting("Settings", config_key, default_val))
+	var raw_saved: Variant = GlobalSettings.get_setting("Settings", config_key, default_val)
+	var saved: String = raw_saved if raw_saved is String else default_val
 	var resolved: String = saved if VALID_EFFECT_TIERS.has(saved) else default_val
 	_set_group_button_silent(mapping, resolved)
 

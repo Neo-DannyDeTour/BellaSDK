@@ -32,6 +32,22 @@ func _ready() -> void:
 	visible = true
 
 
+## Disconnects global [Events] signals when exiting the scene tree.
+func _exit_tree() -> void:
+	if not is_instance_valid(Events):
+		return
+	if Events.colorblind_mode_changed.is_connected(_on_external_colorblind_changed):
+		Events.colorblind_mode_changed.disconnect(_on_external_colorblind_changed)
+	if Events.high_contrast_toggled.is_connected(_on_external_high_contrast_changed):
+		Events.high_contrast_toggled.disconnect(_on_external_high_contrast_changed)
+	if Events.photosensitivity_mode_toggled.is_connected(_on_external_photosensitivity_changed):
+		Events.photosensitivity_mode_toggled.disconnect(_on_external_photosensitivity_changed)
+	if Events.vision_assist_toggled.is_connected(_on_external_vision_assist_changed):
+		Events.vision_assist_toggled.disconnect(_on_external_vision_assist_changed)
+	if Events.font_scale_changed.is_connected(_on_font_scale_changed):
+		Events.font_scale_changed.disconnect(_on_font_scale_changed)
+
+
 ## Resolves section node references via Scene Unique Names or NodeQuery.
 func _resolve_section_references() -> void:
 	print("AccessibilityPanel: Resolving section node references.")

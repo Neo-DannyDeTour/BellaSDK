@@ -71,6 +71,17 @@ func _ready() -> void:
 
 ## Disconnects global signals when exiting the scene tree.
 func _exit_tree() -> void:
+	if is_instance_valid(Events):
+		if Events.player_damaged.is_connected(_on_player_damaged):
+			Events.player_damaged.disconnect(_on_player_damaged)
+		if Events.player_healed.is_connected(_on_player_healed):
+			Events.player_healed.disconnect(_on_player_healed)
+		if Events.ui_visibility_toggle_requested.is_connected(_toggle_ui_elements):
+			Events.ui_visibility_toggle_requested.disconnect(_toggle_ui_elements)
+		if Events.metrics_panel_toggle_requested.is_connected(_toggle_metrics_panel):
+			Events.metrics_panel_toggle_requested.disconnect(_toggle_metrics_panel)
+		if Events.render_diagnostics_toggle_requested.is_connected(_toggle_diagnostics_panel):
+			Events.render_diagnostics_toggle_requested.disconnect(_toggle_diagnostics_panel)
 	if (
 		is_instance_valid(GestureInputManager)
 		and GestureInputManager.action_triggered.is_connected(_on_gesture_action_triggered)

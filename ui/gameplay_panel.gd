@@ -140,9 +140,8 @@ func _on_godmode_toggled(button_pressed: bool) -> void:
 	print("GameplayPanel: Godmode changed -> ", button_pressed)
 	if not is_debug_allowed:
 		return
-	var events: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events):
-		events.set("is_godmode", button_pressed)
+	if is_instance_valid(Events):
+		Events.set("is_godmode", button_pressed)
 
 
 ## Handles tutorial visibility changes.
@@ -155,9 +154,8 @@ func _on_tutorials_toggled(button_pressed: bool) -> void:
 func _on_item_prompts_toggled(button_pressed: bool) -> void:
 	print("GameplayPanel: Item prompts changed -> ", button_pressed)
 	GlobalSettings.save_setting("Gameplay", "show_item_prompts", button_pressed)
-	var events: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events) and events.has_signal("item_prompts_toggled"):
-		events.emit_signal("item_prompts_toggled", button_pressed)
+	if is_instance_valid(Events) and Events.has_signal(&"item_prompts_toggled"):
+		Events.item_prompts_toggled.emit(button_pressed)
 
 
 ## Handles camera headbob toggle state changes.
@@ -176,9 +174,6 @@ func _on_crosshair_toggled(button_pressed: bool) -> void:
 func _on_reduce_motion_toggled(button_pressed: bool) -> void:
 	print("GameplayPanel: Reduce motion changed -> ", button_pressed)
 	GlobalSettings.save_setting("Accessibility", "reduce_motion", button_pressed)
-	var events: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events) and events.has_signal("reduce_motion_toggled"):
-		events.emit_signal("reduce_motion_toggled", button_pressed)
 
 
 ## Handles localization language selection.

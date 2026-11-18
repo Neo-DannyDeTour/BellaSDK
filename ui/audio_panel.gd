@@ -84,6 +84,29 @@ func _ready() -> void:
 	_load_subtitle_mirrors()
 
 
+## Disconnects global [Events] signals when removed from the scene tree.
+func _exit_tree() -> void:
+	if not is_instance_valid(Events):
+		return
+	if (
+		Events.has_signal(&"subtitles_toggled")
+		and Events.subtitles_toggled.is_connected(_on_external_subtitles_toggled)
+	):
+		Events.subtitles_toggled.disconnect(_on_external_subtitles_toggled)
+	if (
+		Events.has_signal(&"subtitle_size_changed")
+		and Events.subtitle_size_changed.is_connected(_on_external_subtitle_size_changed)
+	):
+		Events.subtitle_size_changed.disconnect(_on_external_subtitle_size_changed)
+	if (
+		Events.has_signal(&"subtitle_bg_opacity_changed")
+		and Events.subtitle_bg_opacity_changed.is_connected(
+			_on_external_subtitle_bg_opacity_changed
+		)
+	):
+		Events.subtitle_bg_opacity_changed.disconnect(_on_external_subtitle_bg_opacity_changed)
+
+
 ## Populates audio output profile choices.
 func _populate_dropdowns() -> void:
 	print("UI: Populating Audio OptionButtons.")
@@ -121,9 +144,8 @@ func _connect_subtitle_signals() -> void:
 			func(toggled_on: bool) -> void:
 				print("AudioPanel: Subtitles toggled -> ", toggled_on)
 				GlobalSettings.save_setting("Accessibility", "subtitles_enabled", toggled_on)
-				var ev: Node = get_node_or_null("/root/Events")
-				if is_instance_valid(ev) and ev.has_signal("subtitles_toggled"):
-					ev.emit_signal("subtitles_toggled", toggled_on)
+				if is_instance_valid(Events) and Events.has_signal(&"subtitles_toggled"):
+					Events.subtitles_toggled.emit(toggled_on)
 				if toggled_on:
 					_request_preview_subtitle()
 		)
@@ -137,9 +159,8 @@ func _connect_subtitle_signals() -> void:
 		"Accessibility",
 		true,
 		func(val: float) -> void:
-			var ev: Node = get_node_or_null("/root/Events")
-			if is_instance_valid(ev) and ev.has_signal("subtitle_size_changed"):
-				ev.emit_signal("subtitle_size_changed", val)
+			if is_instance_valid(Events) and Events.has_signal(&"subtitle_size_changed"):
+				Events.subtitle_size_changed.emit(val)
 			_request_preview_subtitle()
 	)
 
@@ -153,62 +174,64 @@ func _connect_subtitle_signals() -> void:
 		true,
 		func(val: float) -> void:
 			var alpha: float = clampf(val / 100.0, 0.0, 1.0)
-			var ev: Node = get_node_or_null("/root/Events")
-			if is_instance_valid(ev) and ev.has_signal("subtitle_bg_opacity_changed"):
-				ev.emit_signal("subtitle_bg_opacity_changed", alpha)
+			if is_instance_valid(Events) and Events.has_signal(&"subtitle_bg_opacity_changed"):
+				Events.subtitle_bg_opacity_changed.emit(alpha)
 			_request_preview_subtitle()
 	)
 
-	var events: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events):
-		if events.has_signal("subtitles_toggled"):
-			events.connect(
-				"subtitles_toggled",
-				func(enabled: bool) -> void:
-					if (
-						is_instance_valid(enable_subs_toggle)
-						and enable_subs_toggle.button_pressed != enabled
-					):
-						enable_subs_toggle.set_pressed_no_signal(enabled)
+	if is_instance_valid(Events):
+		if (
+			Events.has_signal(&"subtitles_toggled")
+			and not Events.subtitles_toggled.is_connected(_on_external_subtitles_toggled)
+		):
+			Events.subtitles_toggled.connect(_on_external_subtitles_toggled)
+		if (
+			Events.has_signal(&"subtitle_size_changed")
+			and not Events.subtitle_size_changed.is_connected(_on_external_subtitle_size_changed)
+		):
+			Events.subtitle_size_changed.connect(_on_external_subtitle_size_changed)
+		if (
+			Events.has_signal(&"subtitle_bg_opacity_changed")
+			and not Events.subtitle_bg_opacity_changed.is_connected(
+				_on_external_subtitle_bg_opacity_changed
 			)
-		if events.has_signal("subtitle_size_changed"):
-			events.connect(
-				"subtitle_size_changed",
-				func(val: float) -> void:
-					if (
-						is_instance_valid(sub_size_slider)
-						and not is_equal_approx(sub_size_slider.value, val)
-					):
-						sub_size_slider.set_value_no_signal(val)
-						if is_instance_valid(sub_size_input):
-							sub_size_input.text = str(int(val))
-			)
-		if events.has_signal("subtitle_bg_opacity_changed"):
-			events.connect(
-				"subtitle_bg_opacity_changed",
-				func(alpha: float) -> void:
-					var perc: float = alpha * 100.0
-					if (
-						is_instance_valid(sub_bg_opacity_slider)
-						and not is_equal_approx(sub_bg_opacity_slider.value, perc)
-					):
-						sub_bg_opacity_slider.set_value_no_signal(perc)
-						if is_instance_valid(sub_bg_opacity_input):
-							sub_bg_opacity_input.text = str(int(perc))
-			)
+		):
+			Events.subtitle_bg_opacity_changed.connect(_on_external_subtitle_bg_opacity_changed)
+
+
+## Synchronizes subtitles toggle state from external [Events] broadcasts.
+func _on_external_subtitles_toggled(enabled: bool) -> void:
+	if is_instance_valid(enable_subs_toggle) and enable_subs_toggle.button_pressed != enabled:
+		enable_subs_toggle.set_pressed_no_signal(enabled)
+
+
+## Synchronizes subtitle font size slider from external [Events] broadcasts.
+func _on_external_subtitle_size_changed(val: float) -> void:
+	if is_instance_valid(sub_size_slider) and not is_equal_approx(sub_size_slider.value, val):
+		sub_size_slider.set_value_no_signal(val)
+		if is_instance_valid(sub_size_input):
+			sub_size_input.text = str(int(val))
+
+
+## Synchronizes subtitle background opacity slider from external [Events] broadcasts.
+func _on_external_subtitle_bg_opacity_changed(alpha: float) -> void:
+	var perc: float = alpha * 100.0
+	if (
+		is_instance_valid(sub_bg_opacity_slider)
+		and not is_equal_approx(sub_bg_opacity_slider.value, perc)
+	):
+		sub_bg_opacity_slider.set_value_no_signal(perc)
+		if is_instance_valid(sub_bg_opacity_input):
+			sub_bg_opacity_input.text = str(int(perc))
 
 
 ## Requests a dialogue text preview on screen.
 func _request_preview_subtitle() -> void:
 	if is_instance_valid(enable_subs_toggle) and not enable_subs_toggle.button_pressed:
 		return
-	var events: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events) and events.has_signal("subtitle_requested"):
-		events.emit_signal(
-			"subtitle_requested",
-			"Narrator",
-			"This is a preview of dialogue text with current settings.",
-			2.5
+	if is_instance_valid(Events) and Events.has_signal(&"subtitle_requested"):
+		Events.subtitle_requested.emit(
+			"Narrator", "This is a preview of dialogue text with current settings.", 2.5
 		)
 
 

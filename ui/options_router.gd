@@ -3,14 +3,13 @@ class_name OptionsRouter
 extends Control
 
 ## Emitted when the player clicks the master back button to exit the options menu.
-@warning_ignore("unused_signal")
 signal back_requested
 
 ## Visual layer bitmask assigned to diorama preview geometry (3D Render Layer 11).
 const PREVIEW_LAYER_MASK: int = 1 << 10
 
 ## Visual layer bitmask assigned to volumetric fog volumes (3D Render Layer 10).
-const VOLUMETRIC_LAYER_MASK: int = 1 << 9
+const VOLUMETRIC_LAYER_MASK: int = CollisionLayers.RENDER_MASK_VOLUMETRICS
 
 ## Preloaded 3D diorama scene instantiated inside the isolated preview SubViewport.
 const SETTINGS_LEVEL_SCENE: PackedScene = preload("res://player/settings_level.tscn")
@@ -275,8 +274,8 @@ func _neutralize_diorama_hotspots() -> void:
 	for b_node: Node in bodies:
 		var c_obj: CollisionObject3D = b_node as CollisionObject3D
 		if is_instance_valid(c_obj):
-			c_obj.collision_layer = 0
-			c_obj.collision_mask = 0
+			c_obj.collision_layer = CollisionLayers.MASK_NONE
+			c_obj.collision_mask = CollisionLayers.MASK_NONE
 			c_obj.process_mode = Node.PROCESS_MODE_DISABLED
 
 	_assign_visual_layer_recursive(diorama_viewport, 11)

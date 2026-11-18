@@ -146,14 +146,51 @@ func _ready() -> void:
 	_initialize_overlays()
 	_connect_signals()
 	set_process(false)
+	set_physics_process(false)
 
 
 ## Disconnects global event bus signals and kills active tweens on tree exit.
 func _exit_tree() -> void:
-	if is_instance_valid(speed_lines_tween):
-		speed_lines_tween.kill()
-	if is_instance_valid(_condensation_tween):
-		_condensation_tween.kill()
+	Utilities.safe_kill_tween(pain_tween)
+	Utilities.safe_kill_tween(heal_tween)
+	Utilities.safe_kill_tween(glitch_tween)
+	Utilities.safe_kill_tween(electro_tween)
+	Utilities.safe_kill_tween(fisheye_tween)
+	Utilities.safe_kill_tween(_rain_fade_tween)
+	Utilities.safe_kill_tween(wolf_vision_tween)
+	Utilities.safe_kill_tween(speed_lines_tween)
+	Utilities.safe_kill_tween(fade_tween)
+	Utilities.safe_kill_tween(_condensation_tween)
+
+	if not is_instance_valid(Events):
+		return
+	if Events.player_crouch_changed.is_connected(_on_player_crouched):
+		Events.player_crouch_changed.disconnect(_on_player_crouched)
+	if Events.player_electrocuted.is_connected(_on_player_electrocuted):
+		Events.player_electrocuted.disconnect(_on_player_electrocuted)
+	if Events.has_signal(&"electricity_vignette_changed"):
+		if Events.electricity_vignette_changed.is_connected(_on_electricity_vignette_changed):
+			Events.electricity_vignette_changed.disconnect(_on_electricity_vignette_changed)
+	if Events.player_zoomed.is_connected(_on_player_zoomed):
+		Events.player_zoomed.disconnect(_on_player_zoomed)
+	if Events.underwater_vfx_toggled.is_connected(_on_underwater_vfx_toggled):
+		Events.underwater_vfx_toggled.disconnect(_on_underwater_vfx_toggled)
+	if Events.waterfall_vfx_toggled.is_connected(_on_waterfall_vfx_toggled):
+		Events.waterfall_vfx_toggled.disconnect(_on_waterfall_vfx_toggled)
+	if Events.rain_vfx_toggled.is_connected(_on_rain_vfx_toggled):
+		Events.rain_vfx_toggled.disconnect(_on_rain_vfx_toggled)
+	if Events.has_signal(&"screen_blackout_instant_requested"):
+		if Events.screen_blackout_instant_requested.is_connected(set_screen_black_instant):
+			Events.screen_blackout_instant_requested.disconnect(set_screen_black_instant)
+	if Events.has_signal(&"screen_wake_up_requested"):
+		if Events.screen_wake_up_requested.is_connected(start_wake_up):
+			Events.screen_wake_up_requested.disconnect(start_wake_up)
+	if Events.has_signal(&"screen_fade_requested"):
+		if Events.screen_fade_requested.is_connected(_on_screen_fade_requested):
+			Events.screen_fade_requested.disconnect(_on_screen_fade_requested)
+	if Events.has_signal(&"wolf_vision_toggled"):
+		if Events.wolf_vision_toggled.is_connected(_on_wolf_vision_toggled):
+			Events.wolf_vision_toggled.disconnect(_on_wolf_vision_toggled)
 	if Events.has_signal(&"wolf_wall_run_vfx_toggled"):
 		if Events.wolf_wall_run_vfx_toggled.is_connected(_on_wolf_wall_run_vfx_toggled):
 			Events.wolf_wall_run_vfx_toggled.disconnect(_on_wolf_wall_run_vfx_toggled)
@@ -199,13 +236,12 @@ func trigger_pain_effect() -> void:
 	move_child(pain_overlay, get_child_count() - 1)
 	pain_overlay.show()
 
-	if pain_tween and pain_tween.is_valid():
-		pain_tween.kill()
-
 	pain_overlay.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	pain_overlay.color = Color(1.0, 0.0, 0.0, 0.45)
 
-	pain_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	pain_tween = Utilities.reset_tween_ext(self, pain_tween, Tween.TRANS_SINE, Tween.EASE_OUT)
+	if pain_tween == null:
+		return
 	pain_tween.tween_property(pain_overlay, "modulate:a", 0.0, 0.35)
 	pain_tween.finished.connect(pain_overlay.hide)
 
@@ -218,10 +254,9 @@ func trigger_heal_effect() -> void:
 
 	heal_vignette.show()
 
-	if heal_tween and heal_tween.is_valid():
-		heal_tween.kill()
-
-	heal_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	heal_tween = Utilities.reset_tween_ext(self, heal_tween, Tween.TRANS_SINE, Tween.EASE_OUT)
+	if heal_tween == null:
+		return
 
 	if heal_vignette.material is ShaderMaterial:
 		heal_tween.tween_method(
@@ -329,10 +364,9 @@ func start_wake_up(
 		_fade_material.set_shader_parameter(&"blur_amount", max_blur)
 		_fade_material.set_shader_parameter(&"blink_openness", 0.0)
 
-	if fade_tween and fade_tween.is_valid():
-		fade_tween.kill()
-
-	fade_tween = create_tween()
+	fade_tween = Utilities.reset_tween(self, fade_tween)
+	if fade_tween == null:
+		return
 
 	# Phase 1: Dissolve black overlay and open eyelids while blur stays active
 	(
@@ -504,11 +538,11 @@ func _connect_signals() -> void:
 	if not Events.rain_vfx_toggled.is_connected(_on_rain_vfx_toggled):
 		Events.rain_vfx_toggled.connect(_on_rain_vfx_toggled)
 	if Events.has_signal(&"screen_blackout_instant_requested"):
-		Events.screen_blackout_instant_requested.connect(set_screen_black_instant)
+		Utilities.safe_connect(Events.screen_blackout_instant_requested, set_screen_black_instant)
 	if Events.has_signal(&"screen_wake_up_requested"):
-		Events.screen_wake_up_requested.connect(start_wake_up)
+		Utilities.safe_connect(Events.screen_wake_up_requested, start_wake_up)
 	if Events.has_signal(&"screen_fade_requested"):
-		Events.screen_fade_requested.connect(_on_screen_fade_requested)
+		Utilities.safe_connect(Events.screen_fade_requested, _on_screen_fade_requested)
 	if Events.has_signal(&"wolf_vision_toggled"):
 		if not Events.wolf_vision_toggled.is_connected(_on_wolf_vision_toggled):
 			Events.wolf_vision_toggled.connect(_on_wolf_vision_toggled)
@@ -544,9 +578,11 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 	)
 
 	fisheye_zoom.show()
-	if is_instance_valid(fisheye_tween) and fisheye_tween.is_valid():
-		fisheye_tween.kill()
-	fisheye_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	fisheye_tween = Utilities.reset_tween_ext(
+		self, fisheye_tween, Tween.TRANS_CUBIC, Tween.EASE_OUT
+	)
+	if fisheye_tween == null:
+		return
 	fisheye_tween.tween_method(
 		func(val: float) -> void:
 			mat.set_shader_parameter(&"effect_strength", val)
@@ -574,37 +610,37 @@ func _on_player_electrocuted() -> void:
 
 	if is_instance_valid(glitch_overlay) and glitch_overlay.material is ShaderMaterial:
 		glitch_overlay.show()
-		if glitch_tween and glitch_tween.is_valid():
-			glitch_tween.kill()
-
-		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-		glitch_tween.tween_method(
-			func(val: float) -> void:
-				var mat: ShaderMaterial = glitch_overlay.material as ShaderMaterial
-				mat.set_shader_parameter(&"intensity", val)
-				glitch_overlay.queue_redraw(),
-			0.6,
-			0.0,
-			0.4
+		glitch_tween = Utilities.reset_tween_ext(
+			self, glitch_tween, Tween.TRANS_BOUNCE, Tween.EASE_OUT
 		)
-		glitch_tween.finished.connect(glitch_overlay.hide)
+		if glitch_tween != null:
+			glitch_tween.tween_method(
+				func(val: float) -> void:
+					var mat: ShaderMaterial = glitch_overlay.material as ShaderMaterial
+					mat.set_shader_parameter(&"intensity", val)
+					glitch_overlay.queue_redraw(),
+				0.6,
+				0.0,
+				0.4
+			)
+			glitch_tween.finished.connect(glitch_overlay.hide)
 
 	if is_instance_valid(electricity_vignette) and electricity_vignette.material is ShaderMaterial:
 		electricity_vignette.show()
-		if electro_tween and electro_tween.is_valid():
-			electro_tween.kill()
-
-		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		electro_tween.tween_method(
-			func(val: float) -> void:
-				var mat: ShaderMaterial = electricity_vignette.material as ShaderMaterial
-				mat.set_shader_parameter(&"intensity", val)
-				electricity_vignette.queue_redraw(),
-			1.0,
-			0.0,
-			0.5
+		electro_tween = Utilities.reset_tween_ext(
+			self, electro_tween, Tween.TRANS_SINE, Tween.EASE_OUT
 		)
-		electro_tween.finished.connect(electricity_vignette.hide)
+		if electro_tween != null:
+			electro_tween.tween_method(
+				func(val: float) -> void:
+					var mat: ShaderMaterial = electricity_vignette.material as ShaderMaterial
+					mat.set_shader_parameter(&"intensity", val)
+					electricity_vignette.queue_redraw(),
+				1.0,
+				0.0,
+				0.5
+			)
+			electro_tween.finished.connect(electricity_vignette.hide)
 
 
 ## Modulates rain droplet intensity and storm wash based on camera pitch and storm strength.
@@ -657,17 +693,16 @@ func _on_waterfall_vfx_toggled(is_active: bool, _wash_intensity: float, _clear_p
 ## Handles screen rain droplet volume transitions and starts drying timer on exit.
 func _on_rain_vfx_toggled(intensity: float) -> void:
 	print("ScreenEffectsManager: Rain VFX toggled -> Target intensity: ", intensity)
-	if _rain_fade_tween and _rain_fade_tween.is_valid():
-		_rain_fade_tween.kill()
-
-	if is_instance_valid(_rain_fade_tween) and _rain_fade_tween.is_valid():
-		_rain_fade_tween.kill()
+	Utilities.safe_kill_tween(_rain_fade_tween)
 
 	if intensity > 0.0:
 		_target_rain_intensity = intensity
 	else:
-		_rain_fade_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		_rain_fade_tween.tween_property(self, "_target_rain_intensity", 0.0, 2.8)
+		_rain_fade_tween = Utilities.reset_tween_ext(
+			self, _rain_fade_tween, Tween.TRANS_SINE, Tween.EASE_OUT
+		)
+		if _rain_fade_tween != null:
+			_rain_fade_tween.tween_property(self, "_target_rain_intensity", 0.0, 2.8)
 	set_process(true)
 
 
@@ -681,9 +716,6 @@ func _on_wolf_vision_toggled(is_active: bool) -> void:
 		wolf_vision_overlay.visible = is_active
 		return
 
-	if wolf_vision_tween and wolf_vision_tween.is_valid():
-		wolf_vision_tween.kill()
-
 	var mat: ShaderMaterial = wolf_vision_overlay.material as ShaderMaterial
 	var current_strength: float = type_convert(
 		mat.get_shader_parameter(&"effect_strength"), TYPE_FLOAT
@@ -691,9 +723,11 @@ func _on_wolf_vision_toggled(is_active: bool) -> void:
 	var target_strength: float = 1.0 if is_active else 0.0
 
 	wolf_vision_overlay.show()
-	if is_instance_valid(wolf_vision_tween) and wolf_vision_tween.is_valid():
-		wolf_vision_tween.kill()
-	wolf_vision_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	wolf_vision_tween = Utilities.reset_tween_ext(
+		self, wolf_vision_tween, Tween.TRANS_CUBIC, Tween.EASE_OUT
+	)
+	if wolf_vision_tween == null:
+		return
 	wolf_vision_tween.tween_method(
 		func(val: float) -> void:
 			mat.set_shader_parameter(&"effect_strength", val)
@@ -721,9 +755,6 @@ func _on_wolf_wall_run_vfx_toggled(is_active: bool) -> void:
 		speed_lines_overlay.visible = is_active
 		return
 
-	if speed_lines_tween and speed_lines_tween.is_valid():
-		speed_lines_tween.kill()
-
 	var mat: ShaderMaterial = speed_lines_overlay.material as ShaderMaterial
 	var current_strength: float = type_convert(
 		mat.get_shader_parameter(PARAM_SPEED_LINES_ALPHA), TYPE_FLOAT
@@ -731,9 +762,11 @@ func _on_wolf_wall_run_vfx_toggled(is_active: bool) -> void:
 	var target_strength: float = 1.0 if is_active else 0.0
 
 	speed_lines_overlay.show()
-	if is_instance_valid(speed_lines_tween) and speed_lines_tween.is_valid():
-		speed_lines_tween.kill()
-	speed_lines_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	speed_lines_tween = Utilities.reset_tween_ext(
+		self, speed_lines_tween, Tween.TRANS_CUBIC, Tween.EASE_OUT
+	)
+	if speed_lines_tween == null:
+		return
 	speed_lines_tween.tween_method(
 		func(val: float) -> void:
 			mat.set_shader_parameter(PARAM_SPEED_LINES_ALPHA, val)
@@ -797,7 +830,9 @@ func _on_screen_fade_requested(
 		_fade_material.set_shader_parameter(&"blur_amount", 0.0)
 		_fade_material.set_shader_parameter(&"blink_openness", 1.0)
 
-		fade_tween = create_tween()
+		fade_tween = Utilities.reset_tween(self, fade_tween)
+		if fade_tween == null:
+			return
 		(
 			fade_tween
 			. tween_method(_set_fade_amount, 0.0, 1.0, fade_in_duration)
@@ -836,7 +871,9 @@ func _on_screen_fade_requested(
 	else:
 		fade_overlay.color = fade_color
 		fade_overlay.modulate.a = 0.0
-		fade_tween = create_tween()
+		fade_tween = Utilities.reset_tween(self, fade_tween)
+		if fade_tween == null:
+			return
 		fade_tween.tween_property(fade_overlay, "modulate:a", 1.0, fade_in_duration)
 		fade_tween.tween_interval(hold_duration)
 		fade_tween.tween_property(fade_overlay, "modulate:a", 0.0, fade_out_duration)
@@ -893,13 +930,13 @@ func _on_smoke_hazard_changed(is_inside: bool, density: float) -> void:
 		condensation_overlay.show()
 		if was_outside:
 			print("ScreenEffectsManager: Triggering full-lens glasses condensation flash.")
-			if is_instance_valid(_condensation_tween):
-				_condensation_tween.kill()
-
 			_set_full_lens_fog(1.0)
 			_set_edge_condensation(maxf(_current_edge_condensation, 0.72))
 
-			_condensation_tween = create_tween().set_parallel(true)
+			_condensation_tween = Utilities.reset_tween(self, _condensation_tween)
+			if _condensation_tween == null:
+				return
+			_condensation_tween.set_parallel(true)
 			(
 				_condensation_tween
 				. tween_method(_set_full_lens_fog, 1.0, 0.0, 1.0)
@@ -918,10 +955,10 @@ func _on_smoke_hazard_changed(is_inside: bool, density: float) -> void:
 		_active_smoke_count = maxi(0, _active_smoke_count - 1)
 		if _active_smoke_count == 0:
 			print("ScreenEffectsManager: Evaporating glasses condensation on smoke exit.")
-			if is_instance_valid(_condensation_tween):
-				_condensation_tween.kill()
-
-			_condensation_tween = create_tween().set_parallel(true)
+			_condensation_tween = Utilities.reset_tween(self, _condensation_tween)
+			if _condensation_tween == null:
+				return
+			_condensation_tween.set_parallel(true)
 			(
 				_condensation_tween
 				. tween_method(_set_full_lens_fog, _current_full_fog, 0.0, 0.8)

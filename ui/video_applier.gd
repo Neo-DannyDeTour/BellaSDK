@@ -173,7 +173,7 @@ static func apply_gameplay_pipeline(
 	print("VideoApplier: Atomically committing full gameplay graphics pipeline.")
 
 	var aniso_key: String = _get_str(config, "anisotropy", VideoConfig.DEFAULT_ANISOTROPY)
-	var aniso_lvl: int = VideoConfig.ANISOTROPY_LEVELS.get(aniso_key, 2)
+	var aniso_lvl: int = _get_int(VideoConfig.ANISOTROPY_LEVELS, aniso_key, 2)
 	apply_anisotropy(aniso_lvl)
 
 	_apply_server_filter_qualities(config, false)
@@ -327,9 +327,10 @@ static func apply_viewport_pipeline(
 ## Configures global SSAO, SSIL, shadow filter, and volumetric fog on [RenderingServer].
 static func _apply_server_filter_qualities(config: Dictionary, is_diorama: bool) -> void:
 	var filter_key: String = _get_str(config, "shadow_filter", VideoConfig.DEFAULT_SHADOW_FILTER)
-	var filter_q: RenderingServer.ShadowQuality = VideoConfig.SHADOW_FILTER_MODES.get(
-		filter_key, RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM
+	var filter_q_raw: int = _get_int(
+		VideoConfig.SHADOW_FILTER_MODES, filter_key, RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM
 	)
+	var filter_q: RenderingServer.ShadowQuality = filter_q_raw as RenderingServer.ShadowQuality
 	RenderingServer.positional_soft_shadow_filter_set_quality(filter_q)
 	RenderingServer.directional_soft_shadow_filter_set_quality(filter_q)
 
@@ -400,7 +401,7 @@ static func _apply_gameplay_viewport_properties(
 	var tex_filter_key: String = _get_str(
 		config, "texture_filter", VideoConfig.DEFAULT_TEXTURE_FILTER
 	)
-	var filter_mode: int = VideoConfig.TEXTURE_FILTER_MODES.get(tex_filter_key, 2)
+	var filter_mode: int = _get_int(VideoConfig.TEXTURE_FILTER_MODES, tex_filter_key, 2)
 	main_viewport.canvas_item_default_texture_filter = (
 		filter_mode as Viewport.DefaultCanvasItemTextureFilter
 	)
@@ -434,7 +435,8 @@ static func _apply_gameplay_viewport_properties(
 	)
 
 	var vrs_key: String = _get_str(config, "vrs_mode", VideoConfig.DEFAULT_VRS_MODE)
-	var vrs_mode: Viewport.VRSMode = VideoConfig.VRS_MODES.get(vrs_key, Viewport.VRS_DISABLED)
+	var vrs_raw: int = _get_int(VideoConfig.VRS_MODES, vrs_key, Viewport.VRS_DISABLED)
+	var vrs_mode: Viewport.VRSMode = vrs_raw as Viewport.VRSMode
 	if not is_vrs_supported():
 		vrs_mode = Viewport.VRS_DISABLED
 

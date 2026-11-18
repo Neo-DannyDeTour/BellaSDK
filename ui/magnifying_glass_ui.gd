@@ -4,6 +4,15 @@
 class_name MagnifyingGlassUI
 extends CanvasLayer
 
+## Shader uniform key for normalized mouse UV coordinates.
+const PARAM_MOUSE_UV: StringName = &"mouse_uv"
+## Shader uniform key for viewport aspect ratio.
+const PARAM_ASPECT_RATIO: StringName = &"aspect_ratio"
+## Shader uniform key for zoom magnification factor.
+const PARAM_ZOOM: StringName = &"zoom"
+## Shader uniform key for glass radius in UV space.
+const PARAM_GLASS_RADIUS_UV: StringName = &"glass_radius_uv"
+
 @export_category("Zoom Settings")
 ## Minimum allowed zoom multiplier.
 @export var min_zoom: float = 1.5
@@ -35,15 +44,33 @@ var _current_radius: float = 0.15
 
 ## Initializes UI visibility and binds signal listeners to [Events].
 func _ready() -> void:
+	set_process(false)
 	if is_instance_valid(glass_rect):
 		glass_rect.hide()
 
-	if Events.has_signal("note_opened"):
-		Events.note_opened.connect(_on_note_opened)
-	if Events.has_signal("note_closed"):
-		Events.note_closed.connect(_on_note_closed)
+	if is_instance_valid(Events):
+		if (
+			Events.has_signal(&"note_opened")
+			and not Events.note_opened.is_connected(_on_note_opened)
+		):
+			Events.note_opened.connect(_on_note_opened)
+		if (
+			Events.has_signal(&"note_closed")
+			and not Events.note_closed.is_connected(_on_note_closed)
+		):
+			Events.note_closed.connect(_on_note_closed)
 
 	print("MagnifyingGlassUI: Initialized and connected to Events bus.")
+
+
+## Disconnects global [Events] signals when removed from the scene tree.
+func _exit_tree() -> void:
+	if not is_instance_valid(Events):
+		return
+	if Events.has_signal(&"note_opened") and Events.note_opened.is_connected(_on_note_opened):
+		Events.note_opened.disconnect(_on_note_opened)
+	if Events.has_signal(&"note_closed") and Events.note_closed.is_connected(_on_note_closed):
+		Events.note_closed.disconnect(_on_note_closed)
 
 
 ## Listens for unhandled keyboard and mouse wheel inputs to control glass zoom.
@@ -89,8 +116,8 @@ func _process(_delta: float) -> void:
 	var mouse_uv: Vector2 = mouse_pos / screen_size
 	var aspect: float = screen_size.x / screen_size.y
 
-	shader_mat.set_shader_parameter("mouse_uv", mouse_uv)
-	shader_mat.set_shader_parameter("aspect_ratio", aspect)
+	shader_mat.set_shader_parameter(PARAM_MOUSE_UV, mouse_uv)
+	shader_mat.set_shader_parameter(PARAM_ASPECT_RATIO, aspect)
 
 
 ## Callback triggered when a note or readable item is opened.
@@ -111,6 +138,7 @@ func _on_note_closed() -> void:
 ## Toggles visibility and active state of the 2D magnifying shader.
 func _toggle_glass() -> void:
 	_is_active = not _is_active
+	set_process(_is_active)
 
 	if _is_active:
 		if is_instance_valid(glass_rect):
@@ -142,6 +170,6 @@ func _update_shader_params() -> void:
 		glass_rect.material if glass_rect.material is ShaderMaterial else null
 	)
 	if shader_mat != null:
-		shader_mat.set_shader_parameter("zoom", _current_zoom)
-		shader_mat.set_shader_parameter("glass_radius_uv", _current_radius)
+		shader_mat.set_shader_parameter(PARAM_ZOOM, _current_zoom)
+		shader_mat.set_shader_parameter(PARAM_GLASS_RADIUS_UV, _current_radius)
 		print("MagnifyingGlassUI: Shader parameters updated in UI.")

@@ -38,6 +38,21 @@ const SHADER_VHS: Shader = preload("res://vfx/chapter_text_vhs.gdshader")
 ## Light sweep specular reflection [Shader] resource.
 const SHADER_LIGHT_SWEEP: Shader = preload("res://vfx/chapter_text_light_sweep.gdshader")
 
+## Shader uniform key for animation progress.
+const PARAM_PROGRESS: StringName = &"progress"
+
+## Shader uniform key for bokeh blur radius.
+const PARAM_BLUR_AMOUNT: StringName = &"blur_amount"
+
+## Shader uniform key for bokeh fade opacity.
+const PARAM_FADE_AMOUNT: StringName = &"fade_amount"
+
+## Tween property path for bokeh blur radius.
+const TWEEN_BLUR_AMOUNT: NodePath = ^"shader_parameter/blur_amount"
+
+## Tween property path for bokeh fade opacity.
+const TWEEN_FADE_AMOUNT: NodePath = ^"shader_parameter/fade_amount"
+
 ## Animation styles routed directly to post-processing shader pipelines.
 const SHADER_ANIM_STYLES: Array[Events.ChapterAnimStyle] = [
 	Events.ChapterAnimStyle.GLITCH,
@@ -114,6 +129,14 @@ func _ready() -> void:
 ## Ensures the [SubViewport] is disabled if removed mid-animation.
 func _exit_tree() -> void:
 	print("ChapterDisplay: _exit_tree() called. Halting active tweens and viewport.")
+	if is_instance_valid(Events):
+		if Events.chapter_triggered.is_connected(_on_chapter_triggered):
+			Events.chapter_triggered.disconnect(_on_chapter_triggered)
+		if (
+			Events.has_signal(&"wake_up_text_requested")
+			and Events.wake_up_text_requested.is_connected(_on_wake_up_text_requested)
+		):
+			Events.wake_up_text_requested.disconnect(_on_wake_up_text_requested)
 	if is_instance_valid(_chapter_tween) and _chapter_tween.is_valid():
 		_chapter_tween.kill()
 	if is_instance_valid(_sub_viewport):
@@ -443,11 +466,11 @@ func _play_cached_shader(
 	effect_container.modulate.a = 1.0
 	effect_container.visible = true
 
-	mat.set_shader_parameter("progress", 0.0)
+	mat.set_shader_parameter(PARAM_PROGRESS, 0.0)
 	effect_container.material = mat
 
 	_chapter_tween.tween_method(
-		func(val: float) -> void: mat.set_shader_parameter("progress", val), 0.0, 1.0, duration
+		func(val: float) -> void: mat.set_shader_parameter(PARAM_PROGRESS, val), 0.0, 1.0, duration
 	)
 
 
@@ -466,14 +489,14 @@ func _play_blur(chapter_name: String, duration: float) -> void:
 	var transition_time: float = duration * 0.25
 	var hold_time: float = duration * 0.5
 
-	mat.set_shader_parameter("blur_amount", max_blur)
-	mat.set_shader_parameter("fade_amount", 0.0)
+	mat.set_shader_parameter(PARAM_BLUR_AMOUNT, max_blur)
+	mat.set_shader_parameter(PARAM_FADE_AMOUNT, 0.0)
 
-	_chapter_tween.tween_property(mat, "shader_parameter/fade_amount", 1.0, transition_time * 0.4)
+	_chapter_tween.tween_property(mat, TWEEN_FADE_AMOUNT, 1.0, transition_time * 0.4)
 	(
 		_chapter_tween
 		. parallel()
-		. tween_property(mat, "shader_parameter/blur_amount", 0.0, transition_time)
+		. tween_property(mat, TWEEN_BLUR_AMOUNT, 0.0, transition_time)
 		. set_trans(Tween.TRANS_QUAD)
 		. set_ease(Tween.EASE_OUT)
 	)
@@ -482,14 +505,14 @@ func _play_blur(chapter_name: String, duration: float) -> void:
 
 	(
 		_chapter_tween
-		. tween_property(mat, "shader_parameter/blur_amount", max_blur, transition_time)
+		. tween_property(mat, TWEEN_BLUR_AMOUNT, max_blur, transition_time)
 		. set_trans(Tween.TRANS_QUAD)
 		. set_ease(Tween.EASE_IN)
 	)
 	(
 		_chapter_tween
 		. parallel()
-		. tween_property(mat, "shader_parameter/fade_amount", 0.0, transition_time * 0.5)
+		. tween_property(mat, TWEEN_FADE_AMOUNT, 0.0, transition_time * 0.5)
 		. set_delay(transition_time * 0.5)
 	)
 

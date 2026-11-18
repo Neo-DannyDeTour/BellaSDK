@@ -169,11 +169,11 @@ func _ready() -> void:
 		camera_vp = get_node_or_null("CCTVViewport") as SubViewport
 
 	if is_instance_valid(interact_comp) and interact_comp.has_signal(&"interacted"):
-		var interact_signal: Signal = (
-			interact_comp.get(&"interacted") if interact_comp.get(&"interacted") is Signal else null
-		)
-		if not interact_signal.is_connected(_on_interacted):
-			interact_signal.connect(_on_interacted)
+		var raw_sig: Variant = interact_comp.get(&"interacted")
+		if raw_sig is Signal:
+			var interact_signal: Signal = raw_sig
+			if not interact_signal.is_connected(_on_interacted):
+				interact_signal.connect(_on_interacted)
 
 	screen_mat_override = screen_mesh.get_material_override() as StandardMaterial3D
 	if not is_instance_valid(screen_mat_override):
@@ -234,8 +234,10 @@ func _isolate_cctv_compositor() -> void:
 ## Excludes portal and volumetric layers from CCTV camera cull mask.
 func _configure_cctv_camera_cull_mask() -> void:
 	print("CCTV: Configuring camera cull mask for: ", cctv_camera.name)
-	# Layer 4 (Portals = 8) and Layer 10 (Volumetrics = 512): ~520
-	cctv_camera.cull_mask = cctv_camera.cull_mask & ~520
+	var excluded_mask: int = (
+		CollisionLayers.RENDER_MASK_PORTALS | CollisionLayers.RENDER_MASK_VOLUMETRICS
+	)
+	cctv_camera.cull_mask = cctv_camera.cull_mask & ~excluded_mask
 
 
 ## Manages camera rotation, FOV lerp, and throttles viewport updates.

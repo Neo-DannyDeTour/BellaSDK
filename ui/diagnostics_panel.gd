@@ -2,10 +2,6 @@
 class_name RenderDiagnosticsPanel
 extends PanelContainer
 
-@warning_ignore("unused_signal")
-## Emitted when diagnostic metrics refresh. Passes snapshot [Dictionary].
-signal metrics_updated(data: Dictionary)
-
 ## Tab mode selection for diagnostic inspection.
 enum DiagnosticTab {
 	PIPELINE,
@@ -1149,8 +1145,8 @@ func _format_clouds_summary_banner(records: Array[Dictionary]) -> String:
 
 ## Formats a single cloud compute record into a detailed workload breakdown line.
 func _format_cloud_record_workload(rec: Dictionary) -> String:
-	var name_str: String = str(rec.get("name", "Clouds"))
-	var scene_str: String = str(rec.get("owner_scene", ""))
+	var name_str: String = _dict_str(rec, "name", "Clouds")
+	var scene_str: String = _dict_str(rec, "owner_scene", "")
 	var owner_tag: String = (
 		("%s [%s]" % [name_str, scene_str]) if not scene_str.is_empty() else name_str
 	)
@@ -1474,8 +1470,7 @@ func _audit_spike_root_causes(
 	var max_mesh_show: int = mini(3, branch_mesh_items.size())
 	for i: int in range(max_mesh_show):
 		var m_item: Dictionary = branch_mesh_items[i]
-		var raw_lbl: Variant = m_item.get("label", "")
-		var lbl_str: String = raw_lbl if raw_lbl is String else str(raw_lbl)
+		var lbl_str: String = _dict_str(m_item, "label", "")
 		var raw_m: Variant = m_item.get("meshes", 0)
 		var m_count: int = raw_m if raw_m is int else 0
 		top_mesh_strs.append("%s (%d meshes)" % [lbl_str, m_count])
@@ -1535,8 +1530,7 @@ func _audit_spike_root_causes(
 		var max_show: int = mini(3, branch_proc_items.size())
 		for i: int in range(max_show):
 			var item: Dictionary = branch_proc_items[i]
-			var raw_lbl: Variant = item.get("label", "")
-			var lbl_str: String = raw_lbl if raw_lbl is String else str(raw_lbl)
+			var lbl_str: String = _dict_str(item, "label", "")
 			var raw_c: Variant = item.get("count", 0)
 			var node_count: int = raw_c if raw_c is int else 0
 			top_strs.append("%s (%d nodes)" % [lbl_str, node_count])
@@ -1625,17 +1619,18 @@ func _build_pipeline_report() -> String:
 		text += "[color=gray]  No SDFGI-enabled environments detected in tree.[/color]\n"
 	else:
 		for rec: Dictionary in sdfgi_records:
-			var name_str: String = str(rec.get("name", "Unknown"))
+			var name_str: String = _dict_str(rec, "name", "Unknown")
 			var is_act_val: Variant = rec.get("is_active", false)
 			var is_act: bool = is_act_val is bool and is_act_val
+			var reason_str: String = _dict_str(rec, "reason", "asleep")
 			var status_badge: String = (
 				"[color=green][ACTIVE COMPUTE][/color]"
 				if is_act
-				else ("[color=yellow][DORMANT: %s][/color]" % str(rec.get("reason", "asleep")))
+				else ("[color=yellow][DORMANT: %s][/color]" % reason_str)
 			)
 			var cascades_val: Variant = rec.get("cascades", 0)
 			var cascades: int = cascades_val if cascades_val is int else 0
-			var path_str: String = str(rec.get("path", ""))
+			var path_str: String = _dict_str(rec, "path", "")
 			text += (
 				"* %s -> %s | %d Cascades\n  └─ Path: [color=cyan]%s[/color]\n"
 				% [name_str, status_badge, cascades, path_str]
@@ -1646,17 +1641,18 @@ func _build_pipeline_report() -> String:
 		text += "[color=gray]  No Volumetric Fog environments detected in tree.[/color]\n"
 	else:
 		for rec: Dictionary in fog_records:
-			var name_str: String = str(rec.get("name", "Unknown"))
+			var name_str: String = _dict_str(rec, "name", "Unknown")
 			var is_act_val: Variant = rec.get("is_active", false)
 			var is_act: bool = is_act_val is bool and is_act_val
+			var reason_str: String = _dict_str(rec, "reason", "asleep")
 			var status_badge: String = (
 				"[color=green][ACTIVE COMPUTE][/color]"
 				if is_act
-				else ("[color=yellow][DORMANT: %s][/color]" % str(rec.get("reason", "asleep")))
+				else ("[color=yellow][DORMANT: %s][/color]" % reason_str)
 			)
 			var density_val: Variant = rec.get("density", 0.0)
 			var density: float = density_val if density_val is float else 0.0
-			var path_str: String = str(rec.get("path", ""))
+			var path_str: String = _dict_str(rec, "path", "")
 			text += (
 				"* %s -> %s | Density: %.4f\n  └─ Path: [color=cyan]%s[/color]\n"
 				% [name_str, status_badge, density, path_str]
@@ -1667,15 +1663,16 @@ func _build_pipeline_report() -> String:
 		text += "[color=gray]  No Volumetric Clouds effects detected in tree.[/color]\n"
 	else:
 		for rec: Dictionary in clouds_records:
-			var name_str: String = str(rec.get("name", "Unknown"))
+			var name_str: String = _dict_str(rec, "name", "Unknown")
 			var is_act_val: Variant = rec.get("is_active", false)
 			var is_act: bool = is_act_val is bool and is_act_val
+			var reason_str: String = _dict_str(rec, "reason", "asleep")
 			var status_badge: String = (
 				"[color=green][ACTIVE COMPUTE][/color]"
 				if is_act
-				else ("[color=yellow][DORMANT: %s][/color]" % str(rec.get("reason", "asleep")))
+				else ("[color=yellow][DORMANT: %s][/color]" % reason_str)
 			)
-			var path_str: String = str(rec.get("path", ""))
+			var path_str: String = _dict_str(rec, "path", "")
 			var workload_str: String = _format_cloud_record_workload(rec)
 			text += (
 				"* %s -> %s\n  ├─ Load: %s\n  └─ Path: [color=cyan]%s[/color]\n"
@@ -1683,6 +1680,12 @@ func _build_pipeline_report() -> String:
 			)
 
 	return text
+
+
+## Extracts a typed [String] value from [param rec] or returns [param fallback].
+func _dict_str(rec: Dictionary, key: String, fallback: String) -> String:
+	var raw_val: Variant = rec.get(key, fallback)
+	return raw_val if raw_val is String else fallback
 
 
 ## Recursively collects all [SubViewport] and [WorldEnvironment] nodes in a single pass.
