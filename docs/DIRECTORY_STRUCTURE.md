@@ -15,6 +15,7 @@ BellaSDK/
 ├── environment/     # World geometry, weather, soundscapes, signs, lighting
 ├── interactables/   # Doors, buttons, cables, sockets, valves, ragdolls, pickups
 ├── levels/          # Playable level scenes, chunks, testbeds, and blockouts
+├── npcs/            # Half-Life-style animated NPCs, look-at rigs, and character actors
 ├── player/          # First-person controller, cameras, and player systems
 ├── props/           # Modular props (gates, crates, etc.)
 ├── scenes/          # Standalone preview and showcase scenes

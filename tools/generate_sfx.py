@@ -179,6 +179,58 @@ def generate_with_elevenlabs(
     return 0
 
 
+def generate_tts_with_elevenlabs(
+    text: str,
+    voice_id: str,
+    output_path: Path,
+    api_key: str,
+    stability: float,
+    mono: bool,
+    trim_silence: bool,
+    normalize: bool,
+) -> int:
+    """Generate a voice line via ElevenLabs Text-to-Speech and export normalized 16-bit PCM WAV."""
+    import requests
+
+    print(f"[ElevenLabs] Generating TTS line: '{text}' (voice={voice_id}, stability={stability})...")
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+    headers = {
+        "xi-api-key": api_key,
+        "Content-Type": "application/json",
+        "Accept": "audio/mpeg",
+    }
+    payload = {
+        "text": text,
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": {"stability": stability, "similarity_boost": 0.8, "style": 0.35},
+    }
+
+    response = requests.post(url, headers=headers, json=payload, timeout=60)
+    if response.status_code != 200:
+        print(f"[ElevenLabs] TTS API Error ({response.status_code}): {response.text}", file=sys.stderr)
+        return 1
+
+    temp_mp3 = output_path.with_suffix(".temp.mp3")
+    temp_mp3.write_bytes(response.content)
+    rc = postprocess_audio(
+        input_path=temp_mp3,
+        output_path=output_path,
+        sample_rate=44100,
+        mono=mono,
+        trim_silence=trim_silence,
+        normalize=normalize,
+    )
+    if temp_mp3.exists():
+        temp_mp3.unlink()
+    if rc != 0:
+        return rc
+
+    final_dur = _probe_duration(output_path)
+    print(f"SAVED: {output_path}")
+    print(f"SPEC: 44100 Hz, {'mono' if mono else 'stereo'} PCM_16, {final_dur:.2f}s")
+    return 0
+
+
 def generate_with_audioldm(
     prompt: str,
     output_path: Path,
@@ -272,7 +324,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Generate SFX and soundscapes via ElevenLabs or local AudioLDM2"
     )
-    parser.add_argument("--prompt", "-p", required=True, type=str, help="Acoustic description prompt")
+    parser.add_argument("--prompt", "-p", default="", type=str, help="Acoustic description prompt")
     parser.add_argument("--output", "-o", required=True, type=str, help="Destination .wav path (supports res://)")
     parser.add_argument("--duration", "-d", type=float, default=2.0, help="Duration seconds (0.5-30.0)")
     parser.add_argument(
@@ -304,6 +356,9 @@ def main() -> int:
         default=0.0,
         help="Crossfade overlap seconds to make seamless loop (e.g. 0.35)",
     )
+    parser.add_argument("--tts-text", type=str, default="", help="Spoken line (ElevenLabs TTS mode)")
+    parser.add_argument("--voice-id", type=str, default="", help="ElevenLabs voice ID for TTS mode")
+    parser.add_argument("--stability", type=float, default=0.5, help="TTS voice stability (0-1)")
 
     args = parser.parse_args()
     duration = max(0.5, min(30.0, float(args.duration)))
@@ -311,6 +366,25 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     eleven_key = args.api_key or os.environ.get("ELEVENLABS_API_KEY", "").strip()
+
+    if args.tts_text:
+        if not eleven_key or not args.voice_id:
+            print("Error: TTS mode needs ELEVENLABS_API_KEY and --voice-id.", file=sys.stderr)
+            return 1
+        return generate_tts_with_elevenlabs(
+            text=args.tts_text,
+            voice_id=args.voice_id,
+            output_path=output_path,
+            api_key=eleven_key,
+            stability=float(args.stability),
+            mono=args.mono,
+            trim_silence=not args.no_trim_silence,
+            normalize=not args.no_normalize,
+        )
+    if not args.prompt:
+        print("Error: --prompt is required unless --tts-text is set.", file=sys.stderr)
+        return 1
+
     use_elevenlabs = args.backend == "elevenlabs" or (args.backend == "auto" and bool(eleven_key))
 
     if use_elevenlabs:
