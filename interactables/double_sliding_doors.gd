@@ -27,7 +27,7 @@ var last_click_time: int = 0
 var current_state: DoubleSlidingDoors.State = DoubleSlidingDoors.State.CLOSED
 
 ## Active [Tween] instances indexed by target door node.
-var active_tweens: Dictionary = {}
+var active_tweens: Dictionary[Node3D, Tween] = {}
 
 ## Static physical body representing left door panel.
 @onready var left_door: StaticBody3D = $DoorLeft
@@ -163,12 +163,8 @@ func reset_doors() -> void:
 ## Tweens target door node position smoothly toward destination vector.
 func animate_door(door: Node3D, target: Vector3) -> void:
 	print("DoubleSlidingDoors: Animating door -> ", door.name)
-	if active_tweens.has(door):
-		var existing_tween: Tween = active_tweens[door] if active_tweens[door] is Tween else null
-		if is_instance_valid(existing_tween) and existing_tween.is_valid():
-			existing_tween.kill()
-
-	var tween: Tween = create_tween()
+	var existing_tween: Tween = active_tweens.get(door, null)
+	var tween: Tween = Utilities.reset_tween(self, existing_tween)
 	active_tweens[door] = tween
 
 	tween.tween_property(door, ^"position", target, speed).set_trans(Tween.TRANS_SINE).set_ease(

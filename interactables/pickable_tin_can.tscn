@@ -1,0 +1,74 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://dwnwbf2uqyokh" path="res://interactables/pickable_tin_can.gd" id="2_script"]
+[ext_resource type="ArrayMesh" uid="uid://by1l3755h061i" path="res://assets/models/props/tin_can/tin_can.obj" id="3_can_mesh"]
+[ext_resource type="Shader" uid="uid://ditewntk56uyf" path="res://shaders/props/tin_can.gdshader" id="4_can_shader"]
+[ext_resource type="Texture2D" uid="uid://di4wtjdk5ljnb" path="res://assets/models/props/tin_can/tin_can_albedo.png" id="5_can_albedo"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tin"]
+friction = 0.45
+bounce = 0.3
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_can"]
+height = 0.11
+radius = 0.04
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_can"]
+render_priority = 0
+shader = ExtResource("4_can_shader")
+shader_parameter/albedo_texture = ExtResource("5_can_albedo")
+shader_parameter/roughness = 0.65
+shader_parameter/metallic = 0.45
+shader_parameter/interior_darken = 0.45
+
+[node name="PickableTinCan" node_paths=PackedStringArray("mesh") groups=["magnetizable"] instance=ExtResource("1_base")]
+mass = 0.12
+physics_material_override = SubResource("PhysicsMaterial_tin")
+script = ExtResource("2_script")
+mesh = NodePath("tin_can")
+float_force = 2.2
+water_drag = 4.0
+water_angular_drag = 4.0
+hold_at_chest = true
+custom_hold_distance = 0.45
+hold_vertical_offset = -0.1
+held_transparency = 0.25
+projectile_damage = 0
+lock_on_player_stand = false
+
+[node name="HighlightComponent" parent="." index="1" node_paths=PackedStringArray("target_meshes", "visibility_notifier")]
+target_meshes = [NodePath("../tin_can")]
+visibility_notifier = NodePath("../VisibilityNotifier")
+
+[node name="MeshInstance3D" parent="." index="2"]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3"]
+shape = SubResource("CylinderShape3D_can")
+
+[node name="Label3D" parent="." index="4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+
+[node name="PromptIcon" parent="." index="5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+
+[node name="Marker3D" parent="ProbeContainer" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.03, -0.02, 0.03)
+
+[node name="Marker3D2" parent="ProbeContainer" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.03, -0.02, 0.03)
+
+[node name="Marker3D3" parent="ProbeContainer" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.03, -0.02, -0.03)
+
+[node name="Marker3D4" parent="ProbeContainer" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.03, -0.02, -0.03)
+
+[node name="tin_can" type="MeshInstance3D" parent="." index="7"]
+layers = 4
+mesh = ExtResource("3_can_mesh")
+surface_material_override/0 = SubResource("ShaderMaterial_can")
+
+[node name="VisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="." index="8"]
+aabb = AABB(-0.05, -0.06, -0.05, 0.1, 0.12, 0.1)

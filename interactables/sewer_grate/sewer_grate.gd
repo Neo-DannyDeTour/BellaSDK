@@ -5,19 +5,15 @@ extends Node3D
 ## providing [method set_open] for hinged swinging and [method detach_leaf] for physics breakaway.
 
 ## Emitted when both grate leaves finish swinging open or closed.
-@warning_ignore("unused_signal")
 signal grate_state_changed(is_open: bool)
 
 ## Emitted when both leaves finish swinging into the opened position.
-@warning_ignore("unused_signal")
 signal opened
 
 ## Emitted when both leaves finish swinging into the closed position.
-@warning_ignore("unused_signal")
 signal closed
 
 ## Emitted when a leaf is blasted or broken off its hinges.
-@warning_ignore("unused_signal")
 signal leaf_detached(is_left: bool, body: RigidBody3D)
 
 ## Bitmask matching interactive visual render pass.

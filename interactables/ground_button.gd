@@ -36,6 +36,7 @@ var debug_line: MeshInstance3D
 ## Configures editor processing and connects interaction area signals if in-game.
 func _ready() -> void:
 	set_process(Engine.is_editor_hint())
+	set_physics_process(false)
 
 	if not Engine.is_editor_hint():
 		var area: Area3D = $Area3D

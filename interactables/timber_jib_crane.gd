@@ -292,7 +292,7 @@ var _overlapping_jib_players: Array[CharacterBody3D] = []
 var _cached_camera: Camera3D = null
 
 ## Reusable dictionary passed to [PlayerStateMachine] when mounting the base or jib.
-var _mount_msg: Dictionary = {}
+var _mount_msg: Dictionary[StringName, Variant] = {}
 
 # --------------------------------------
 # ONREADY NODE REFERENCES

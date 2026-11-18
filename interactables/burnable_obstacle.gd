@@ -3,6 +3,11 @@
 class_name BurnableObstacle
 extends StaticBody3D
 
+## Shader uniform [StringName] for burn expansion radius.
+const PARAM_RADIUS: StringName = &"radius"
+## Shader uniform [StringName] for UV hit origin.
+const PARAM_HIT_UV: StringName = &"hit_uv"
+
 ## Total duration in seconds for the obstacle to completely burn away.
 @export var burn_duration: float = 2.0
 
@@ -21,10 +26,14 @@ extends StaticBody3D
 
 ## Prevents multiple burn events once the obstacle catches fire.
 var _is_burning: bool = false
+## Active tween animating the radial burn shader.
+var _burn_tween: Tween = null
 
 
 ## Initializes collision areas, material states, and dimensions.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("BurnableObstacle: Initializing burnable obstacle.")
 	_resolve_node_references()
 	_update_obstacle_size()
@@ -68,7 +77,7 @@ func _initialize_material_state() -> void:
 			MaterialCache.get_variant(mat, variant_key) as ShaderMaterial
 		)
 		if is_instance_valid(unique_mat):
-			unique_mat.set_shader_parameter("radius", 0.0)
+			unique_mat.set_shader_parameter(PARAM_RADIUS, 0.0)
 			mesh_instance.set_surface_override_material(0, unique_mat)
 
 
@@ -128,7 +137,7 @@ func _start_burn(torch: Node3D, hit_global_pos: Vector3) -> void:
 			func() -> void:
 				if is_instance_valid(torch):
 					print("BurnableObstacle: Destroying torch source.")
-					torch.queue_free()
+					torch.call_deferred(&"queue_free")
 		)
 
 	if not is_instance_valid(mesh_instance):
@@ -143,24 +152,23 @@ func _start_burn(torch: Node3D, hit_global_pos: Vector3) -> void:
 	var mat: Material = mesh_instance.get_surface_override_material(0)
 	if mat is ShaderMaterial:
 		var shader_mat: ShaderMaterial = mat if mat is ShaderMaterial else null
-		shader_mat.set_shader_parameter("hit_uv", hit_uv)
+		shader_mat.set_shader_parameter(PARAM_HIT_UV, hit_uv)
 
-		var tween: Tween = create_tween()
-		tween.tween_method(_update_radius.bind(shader_mat), 0.0, 2.5, burn_duration)
-		tween.finished.connect(_on_burn_finished)
+		_burn_tween = Utilities.reset_tween(self, _burn_tween)
+		_burn_tween.tween_method(_update_radius.bind(shader_mat), 0.0, 2.5, burn_duration)
+		_burn_tween.finished.connect(_on_burn_finished)
 
 
 ## Tween callback continuously updating shader burn expansion radius.
 func _update_radius(value: float, mat: ShaderMaterial) -> void:
-	# print("BurnableObstacle: Updating burn radius: ", value)
-	mat.set_shader_parameter("radius", value)
+	mat.set_shader_parameter(PARAM_RADIUS, value)
 
 
 ## Disables solid collision midway through the burn sequence.
 func _disable_solid_collision() -> void:
 	print("BurnableObstacle: _disable_solid_collision() called.")
 	if is_instance_valid(collision_shape):
-		collision_shape.set_deferred("disabled", true)
+		collision_shape.set_deferred(&"disabled", true)
 	collision_layer = CollisionLayers.MASK_NONE
 	collision_mask = CollisionLayers.MASK_NONE
 

@@ -5,9 +5,14 @@ extends RigidBody3D
 ## Default heat accumulation threshold required to ignite this body.
 const DEFAULT_IGNITION_THRESHOLD: float = 100.0
 ## Physics collision layer mask for Interactive objects (Layer 3).
-const INTERACTIVE_PHYSICS_LAYER: int = 4
+const INTERACTIVE_PHYSICS_LAYER: int = CollisionLayers.MASK_INTERACTIVE
 ## Physics mask checking Player, Interactive, Debris, and Enemies (2-5).
-const PROPAGATION_PHYSICS_MASK: int = 30
+const PROPAGATION_PHYSICS_MASK: int = (
+	CollisionLayers.MASK_PLAYER
+	| CollisionLayers.MASK_INTERACTIVE
+	| CollisionLayers.MASK_DEBRIS
+	| CollisionLayers.MASK_ENEMIES
+)
 
 ## Emitted when [member temperature] hits threshold and the object begins burning.
 signal ignited
@@ -55,6 +60,8 @@ var _neighboring_targets: Array[CombustibleObject] = []
 
 ## Initializes health, sets physics layers, and builds heat detection area.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	_health = max_health
 	collision_layer = INTERACTIVE_PHYSICS_LAYER
 	_setup_propagation_area()
@@ -76,6 +83,7 @@ func ignite() -> void:
 	print("[CombustibleObject] Ignited: ", name)
 	_is_on_fire = true
 	temperature = ignition_threshold
+	set_physics_process(true)
 	_spawn_fire_effect()
 	ignited.emit()
 
@@ -145,7 +153,7 @@ func _spawn_fire_effect() -> void:
 func _setup_propagation_area() -> void:
 	_propagation_area = Area3D.new()
 	_propagation_area.name = "PropagationArea"
-	_propagation_area.collision_layer = 0
+	_propagation_area.collision_layer = CollisionLayers.MASK_NONE
 	_propagation_area.collision_mask = PROPAGATION_PHYSICS_MASK
 
 	var col_shape: CollisionShape3D = CollisionShape3D.new()

@@ -25,12 +25,16 @@ func _ready() -> void:
 			collision_node.shape = collision_node.shape.duplicate()
 			collision_node.shape.resource_local_to_scene = true
 	build_cable()
+	if not Engine.is_editor_hint():
+		set_process(false)
 
 
 ## Rebuilds cable geometry in editor when modified.
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		build_cable()
+	if not Engine.is_editor_hint():
+		set_process(false)
 
 
 ## Computes cable transform, height, and collision to bridge endpoints.
@@ -50,7 +54,7 @@ func build_cable() -> void:
 	var end_idx: int = path_node.curve.get_point_count() - 1
 	var end_pos: Vector3 = path_node.to_global(path_node.curve.get_point_position(end_idx))
 
-	var distance: float = start_pos.distance_to(end_pos)
+	var distance: float = sqrt(start_pos.distance_squared_to(end_pos))
 	var center: Vector3 = MathUtils.get_midpoint(start_pos, end_pos)
 	var direction: Vector3 = (end_pos - start_pos).normalized()
 

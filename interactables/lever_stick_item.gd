@@ -23,7 +23,7 @@ func _ready() -> void:
 	super._ready()
 	print("LeverStickItem: _ready() initialized.")
 
-	collision_layer = CollisionLayers.LAYER_DEBRIS_IDX
+	collision_layer = CollisionLayers.MASK_DEBRIS
 	collision_mask = CollisionLayers.MASK_ENVIRONMENT
 
 	if not is_instance_valid(mount_detector):
@@ -47,7 +47,7 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	super.pick_up(target, player_node)
 
 	if is_instance_valid(mount_detector):
-		mount_detector.set_deferred("monitoring", true)
+		mount_detector.set_deferred(&"monitoring", true)
 
 
 ## Drops stick to the ground and disables detector.
@@ -56,7 +56,7 @@ func drop() -> void:
 	super.drop()
 
 	if is_instance_valid(mount_detector):
-		mount_detector.set_deferred("monitoring", false)
+		mount_detector.set_deferred(&"monitoring", false)
 
 
 ## Throws stick with impulse and disables detector.
@@ -66,7 +66,7 @@ func throw(impulse_vector: Vector3) -> void:
 	super.throw(impulse_vector)
 
 	if is_instance_valid(mount_detector):
-		mount_detector.set_deferred("monitoring", false)
+		mount_detector.set_deferred(&"monitoring", false)
 
 
 ## Creates a runtime collision detector if absent.
@@ -108,11 +108,8 @@ func _on_detector_area_entered(area: Area3D) -> void:
 	print("LeverStickItem: Mount detector area entered by: ", area.name)
 	if not is_held or _is_collected:
 		return
-	var lever: WallLever = (
-		NodeQuery.find_ancestor_of_type(area, WallLever)
-		if NodeQuery.find_ancestor_of_type(area, WallLever) is WallLever
-		else null
-	)
+	var found_lever: Node = NodeQuery.find_ancestor_of_type(area, WallLever)
+	var lever: WallLever = found_lever as WallLever
 	if is_instance_valid(lever):
 		_try_mount_on_lever(lever)
 
@@ -128,17 +125,14 @@ func _try_mount_on_lever(lever: WallLever) -> void:
 	is_held = false
 
 	if is_instance_valid(mount_detector):
-		mount_detector.set_deferred("monitoring", false)
+		mount_detector.set_deferred(&"monitoring", false)
 
 	if is_instance_valid(holder):
-		var p_interact: Node = (
-			holder.get("interaction_component")
-			if holder.get("interaction_component") is Node
-			else null
-		)
-		if is_instance_valid(p_interact) and p_interact.has_method("force_clear_hands"):
-			p_interact.call("force_clear_hands")
+		var interact_prop: Variant = holder.get("interaction_component")
+		var p_interact: Node = interact_prop if interact_prop is Node else null
+		if is_instance_valid(p_interact) and p_interact.has_method(&"force_clear_hands"):
+			p_interact.call(&"force_clear_hands")
 
 	lever.install_stick()
 	mounted_on_lever.emit(lever)
-	queue_free()
+	call_deferred(&"queue_free")

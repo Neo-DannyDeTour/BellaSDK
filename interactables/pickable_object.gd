@@ -222,9 +222,19 @@ func _ready() -> void:
 	_init_cached_strings()
 	_cached_exclude_rids = [get_rid()]
 
+	set_process(false)
 	_update_process_state()
 	set_model_transparency(self, held_transparency)
 	_revert_warmup_deferred()
+
+
+## Disconnects global event bus listeners on tree exit.
+func _exit_tree() -> void:
+	if is_instance_valid(Events):
+		if Events.noclip_toggled.is_connected(_on_noclip_toggled):
+			Events.noclip_toggled.disconnect(_on_noclip_toggled)
+		if Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled):
+			Events.item_prompts_toggled.disconnect(_on_item_prompts_toggled)
 
 
 ## Caches clean mesh name and interact key text for zero allocations.
@@ -387,7 +397,7 @@ func drop() -> void:
 		var flat_cam_forward: Vector3 = Vector3(cam_forward.x, 0.0, cam_forward.z)
 		var push_dir: Vector3 = flat_cam_forward.normalized()
 
-		var clear_impulse_mag: float = maxf(mass * 1.5, 5.0)
+		var clear_impulse_mag: float = _get_drop_impulse_magnitude()
 		var toss_dir: Vector3 = push_dir
 		toss_dir.y = 0.2
 		apply_central_impulse(toss_dir.normalized() * clear_impulse_mag)
@@ -551,8 +561,10 @@ func _ensure_throw_clearance() -> void:
 			_cached_exclude_rids
 		)
 		if not hit.is_empty():
-			var hit_pos: Vector3 = hit.get("position", global_position)
-			var hit_norm: Vector3 = hit.get("normal", Vector3.UP)
+			var raw_pos: Variant = hit.get("position")
+			var hit_pos: Vector3 = raw_pos if raw_pos is Vector3 else global_position
+			var raw_norm: Variant = hit.get("normal")
+			var hit_norm: Vector3 = raw_norm if raw_norm is Vector3 else Vector3.UP
 			global_position = hit_pos + hit_norm * (extent + 0.05)
 
 
@@ -746,7 +758,8 @@ func _process_standard_hold(_delta: float) -> void:
 			_cached_exclude_rids
 		)
 		if not floor_hit.is_empty():
-			var hit_pos: Vector3 = floor_hit.get("position", Vector3.ZERO)
+			var raw_floor_pos: Variant = floor_hit.get("position")
+			var hit_pos: Vector3 = raw_floor_pos if raw_floor_pos is Vector3 else Vector3.ZERO
 			var ground_y: float = hit_pos.y
 			target_pos.y = ground_y + bottom_extent + heavy_floor_clearance
 		else:
@@ -898,9 +911,15 @@ func _on_body_entered(body: Node) -> void:
 
 	var impact_speed: float = _last_velocity.length()
 	if impact_speed >= damage_velocity_threshold:
-		if body.has_method("take_damage"):
+		var health_comp: HealthComponent = (
+			NodeQuery.find_first_child_of_type(body, HealthComponent) as HealthComponent
+		)
+		if is_instance_valid(health_comp):
 			print("PickableObject: Impact! Dealing ", projectile_damage, " damage.")
-			body.call("take_damage", projectile_damage)
+			health_comp.take_damage(projectile_damage)
+		elif body.has_method(&"take_damage"):
+			print("PickableObject: Impact! Dealing ", projectile_damage, " damage.")
+			body.call(&"take_damage", projectile_damage)
 
 
 ## Returns cached player [Camera3D] from the current active viewport.
@@ -918,3 +937,8 @@ func _resolve_visual_mesh() -> Node3D:
 	if found_mesh is Node3D:
 		mesh = found_mesh as Node3D
 	return mesh
+
+
+## Computes forward impulse magnitude applied when dropping this object.
+func _get_drop_impulse_magnitude() -> float:
+	return maxf(mass * 1.5, 5.0)

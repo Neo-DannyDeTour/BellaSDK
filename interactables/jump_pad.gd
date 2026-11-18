@@ -88,6 +88,8 @@ func _ready() -> void:
 	Utilities.safe_connect(body_entered, _on_body_entered)
 
 	if not Engine.is_editor_hint():
+		set_process(false)
+		set_physics_process(false)
 		var n: Node = get_node_or_null("BallVisual")
 		if is_instance_valid(n):
 			n.queue_free()
@@ -295,7 +297,7 @@ func _get_or_create_internal_node(node_name: String, node_factory: Callable) -> 
 	if not is_instance_valid(n):
 		var created: Variant = node_factory.call()
 		if created is Node:
-			n = created
+			n = created as Node
 			n.name = node_name
 			add_child(n, false, Node.INTERNAL_MODE_BACK)
 	return n
@@ -360,9 +362,7 @@ func _create_default_nodes() -> void:
 			apex_box.material = a_mat
 			apex.mesh = apex_box
 
-	var target: Marker3D = (
-		get_node_or_null("Target") if get_node_or_null("Target") is Marker3D else null
-	)
+	var target: Marker3D = get_node_or_null("Target") as Marker3D
 	if not is_instance_valid(target):
 		target = Marker3D.new()
 		target.name = "Target"

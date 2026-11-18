@@ -4,10 +4,6 @@ extends RigidBody3D
 ## Low-poly Half-Life 2 style gas stove physics prop ([RigidBody3D]).
 ## Uses pre-baked GLB mesh and overrides material with procedural [ShaderMaterial].
 
-## Emitted when the stove takes a hard physics impact.
-@warning_ignore("unused_signal")
-signal stove_impacted(impulse_sq: float)
-
 ## Bounding dimensions in meters matching HL2 stove proportions.
 const STOVE_SIZE: Vector3 = Vector3(0.85, 0.78, 0.55)
 ## Default mass in kilograms.

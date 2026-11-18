@@ -4,15 +4,12 @@ extends Node3D
 ## Controls [MeshInstance3D] lid rotation and [HighlightComponent] integration.
 
 ## Emitted when the dumpster lid finishes swinging open or closed.
-@warning_ignore("unused_signal")
 signal state_changed(is_open: bool)
 
 ## Emitted when the dumpster lid finishes swinging into the opened position.
-@warning_ignore("unused_signal")
 signal opened
 
 ## Emitted when the dumpster lid finishes swinging into the closed position.
-@warning_ignore("unused_signal")
 signal closed
 
 ## Relative node path to the hinged lid mesh instance.
@@ -138,7 +135,7 @@ func is_character_standing_inside() -> bool:
 				return true
 		elif "crouching" in character:
 			var cr_val: Variant = character.get("crouching")
-			if cr_val != true:
+			if not (cr_val is bool and cr_val):
 				return true
 		else:
 			return true

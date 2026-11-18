@@ -2,6 +2,9 @@
 class_name Portal
 extends Area3D
 
+## Shader uniform [StringName] for linked portal viewport texture.
+const PARAM_VIEWPORT_TEXTURE: StringName = &"viewport_texture"
+
 @export_group("Portal Settings")
 ## The destination portal this [Portal] connects to.
 @export var linked_portal: Portal
@@ -52,9 +55,17 @@ var _last_cam_transform: Transform3D = Transform3D()
 var _skip_frame: bool = false
 
 
-## Restores original camera environment on exit tree.
+## Restores original camera environment and disconnects global signals on exit tree.
 func _exit_tree() -> void:
 	print("Portal: Restoring camera environment on exit: ", name)
+	if (
+		is_instance_valid(Events)
+		and Events.player_camera_registered.is_connected(_on_player_camera_registered)
+	):
+		Events.player_camera_registered.disconnect(_on_player_camera_registered)
+	var vp: Viewport = get_viewport()
+	if is_instance_valid(vp) and vp.size_changed.is_connected(_on_viewport_size_changed):
+		vp.size_changed.disconnect(_on_viewport_size_changed)
 	if is_instance_valid(portal_camera) and is_instance_valid(_original_camera_environment):
 		portal_camera.environment = _original_camera_environment
 
@@ -180,10 +191,10 @@ func _update_mesh_texture() -> void:
 	var mat: Material = portal_mesh.get_surface_override_material(0)
 	if mat is ShaderMaterial:
 		var shader_mat: ShaderMaterial = mat as ShaderMaterial
-		if shader_mat.get_shader_parameter("viewport_texture") == null:
+		if shader_mat.get_shader_parameter(PARAM_VIEWPORT_TEXTURE) == null:
 			print("Portal: Updating mesh texture binding for: ", name)
 			var target_texture: ViewportTexture = target_vp.get_texture()
-			shader_mat.set_shader_parameter("viewport_texture", target_texture)
+			shader_mat.set_shader_parameter(PARAM_VIEWPORT_TEXTURE, target_texture)
 
 
 ## Automatically connects to primary player camera if unassigned.

@@ -191,9 +191,6 @@ func open_commentary() -> void:
 		print("DeveloperCommentary: Emitting subtitle for length: ", audio_duration)
 		Events.subtitle_requested.emit(commentary_title, commentary_content, audio_duration)
 
-	if active_player and active_player.has_user_signal("toggled_interface"):
-		active_player.emit_signal("toggled_interface", true)
-
 
 ## Stops audio, hides the UI, and resets visual states to idle.
 func close_commentary() -> void:
@@ -221,9 +218,6 @@ func close_commentary() -> void:
 
 	print("DeveloperCommentary: Emitting subtitle_canceled signal.")
 	Events.subtitle_canceled.emit()
-
-	if active_player and active_player.has_user_signal("toggled_interface"):
-		active_player.emit_signal("toggled_interface", false)
 
 	active_player = null
 
@@ -273,10 +267,9 @@ func _on_unfocused() -> void:
 
 ## Begins the looping tween animation for hovering.
 func _start_jump_loop() -> void:
-	if _focus_tween and _focus_tween.is_valid():
-		_focus_tween.kill()
-
-	_focus_tween = create_tween()
+	_focus_tween = Utilities.reset_tween(self, _focus_tween)
+	if not is_instance_valid(_focus_tween):
+		return
 	# Tell the tween to loop infinitely
 	_focus_tween.set_loops()
 
@@ -302,11 +295,9 @@ func _start_jump_loop() -> void:
 
 ## Cancels active tweens and gracefully returns the sprite to its baseline position.
 func _stop_and_reset_jump() -> void:
-	if _focus_tween and _focus_tween.is_valid():
-		_focus_tween.kill()
-
-	# Create a fresh tween just to smooth out the return to default
-	_focus_tween = create_tween()
+	_focus_tween = Utilities.reset_tween(self, _focus_tween)
+	if not is_instance_valid(_focus_tween):
+		return
 	_focus_tween.set_parallel(true)
 
 	(

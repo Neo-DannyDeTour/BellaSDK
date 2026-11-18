@@ -192,7 +192,7 @@ var _conduit_uvs: PackedVector2Array = PackedVector2Array()
 var _conduit_indices: PackedInt32Array = PackedInt32Array()
 
 ## Pre-allocated mesh surface arrays for the tentacle skin surface.
-var _conduit_arrays: Array = []
+var _conduit_arrays: Array[Variant] = []
 
 ## Pre-allocated vertex buffer for paired underside suction cups.
 var _sucker_verts: PackedVector3Array = PackedVector3Array()
@@ -207,7 +207,7 @@ var _sucker_uvs: PackedVector2Array = PackedVector2Array()
 var _sucker_indices: PackedInt32Array = PackedInt32Array()
 
 ## Pre-allocated mesh surface arrays for the suction cups surface.
-var _sucker_arrays: Array = []
+var _sucker_arrays: Array[Variant] = []
 
 ## Wet fleshy pink material shared by tentacle and nozzle suction cups.
 var _sucker_material: StandardMaterial3D = null
@@ -585,11 +585,13 @@ func _update_tentacle_visuals() -> void:
 	var p0: Vector3 = tentacle_pivot.global_position
 	var p3: Vector3 = _current_target_pos
 
-	var raw_dist: float = p0.distance_to(p3)
-	if raw_dist > max_reach:
+	var raw_dist_sq: float = p0.distance_squared_to(p3)
+	var raw_dist: float = max_reach
+	if raw_dist_sq > max_reach * max_reach:
 		var direction: Vector3 = p0.direction_to(p3)
 		p3 = p0 + (direction * max_reach)
-		raw_dist = max_reach
+	else:
+		raw_dist = sqrt(raw_dist_sq)
 
 	# Resting S-curve control points matching reference art (sweeps right then left then up)
 	var p1_rest: Vector3 = p0 + (right_dir * 0.24) + (up_dir * 0.22) + (fwd_dir * 0.18)

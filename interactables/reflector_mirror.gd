@@ -61,6 +61,8 @@ var interact_comp: InteractComponent = get_node_or_null("InteractComponent") as 
 
 ## Initializes mirror group memberships and binds interaction events.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	#print("ReflectorMirror: Initializing mirror stand and groups.")
 	add_to_group(&"mirror")
 	_mark_children_as_mirrors(self)
@@ -80,6 +82,8 @@ func _physics_process(delta: float) -> void:
 		_handle_rotation_input(delta)
 		_update_controlled_player_transform()
 		_check_auto_release()
+	elif _reattach_cooldown_timer <= 0.0:
+		set_physics_process(false)
 
 
 ## Captures input to steer mirror head and handles clean detachment.
@@ -207,6 +211,7 @@ func _on_interacted(character: CharacterBody3D) -> void:
 func _take_control(character: CharacterBody3D) -> void:
 	print("ReflectorMirror: Player took control: ", character.name)
 	is_controlled = true
+	set_physics_process(true)
 	_control_timer = 0.0
 	_pending_mouse_rotation = 0.0
 	controlling_player = character
@@ -214,12 +219,9 @@ func _take_control(character: CharacterBody3D) -> void:
 	if controlling_player.has_method(&"set_machine_lock"):
 		controlling_player.call(&"set_machine_lock", true)
 
-	if is_instance_valid(_stance_tween):
-		_stance_tween.kill()
-
 	if is_instance_valid(stance_marker):
 		_is_aligning = true
-		_stance_tween = create_tween()
+		_stance_tween = Utilities.reset_tween(self, _stance_tween)
 		_stance_tween.set_trans(Tween.TRANS_CUBIC)
 		_stance_tween.set_ease(Tween.EASE_OUT)
 		_stance_tween.tween_property(

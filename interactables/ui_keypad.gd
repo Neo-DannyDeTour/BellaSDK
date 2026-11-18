@@ -4,16 +4,13 @@ extends Control
 
 ## Emitted when the player submits a non-empty numeric sequence.
 ## [param code] The submitted sequence string.
-@warning_ignore("unused_signal")
 signal code_entered(code: String)
 
 ## Emitted whenever any keypad button is pressed.
 ## [param button_name] The identifier of the clicked button node.
-@warning_ignore("unused_signal")
 signal button_clicked(button_name: String)
 
 ## Emitted when visual state changes, signaling the parent SubViewport to redraw.
-@warning_ignore("unused_signal")
 signal display_updated
 
 ## The currently entered numeric code.

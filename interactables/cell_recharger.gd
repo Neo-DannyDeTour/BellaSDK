@@ -96,6 +96,8 @@ var _claw_finger_r: Node3D = null
 # --------------------------------------
 ## Sets up dock connections, claw rig, materials, and top energy bar state.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("CellRecharger: Initializing station: ", name)
 	_cache_nodes()
 	_apply_horror_materials()
@@ -171,7 +173,7 @@ func dock_cell(cell: EnergyCell) -> void:
 		cell.drop()
 
 	cell.is_locked = true
-	cell.freeze = true
+	cell.set_deferred(&"freeze", true)
 	cell.linear_velocity = Vector3.ZERO
 	cell.angular_velocity = Vector3.ZERO
 
@@ -521,7 +523,7 @@ func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
 	print("Searching for held EnergyCell on character: ", character.name)
 	var held_prop: Variant = character.get("held_object")
 	if is_instance_valid(held_prop) and held_prop is EnergyCell:
-		var cell: EnergyCell = held_prop
+		var cell: EnergyCell = held_prop as EnergyCell
 		return cell
 
 	var tree: SceneTree = get_tree()
@@ -531,7 +533,7 @@ func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
 	var pickables: Array[Node] = NodeQuery.find_children_in_group(tree.root, &"pickable_objects")
 	for node: Node in pickables:
 		if node is EnergyCell:
-			var cell: EnergyCell = node
+			var cell: EnergyCell = node as EnergyCell
 			if cell.holder == character:
 				return cell
 

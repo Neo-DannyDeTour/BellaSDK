@@ -135,10 +135,7 @@ func _on_interact(_player: CharacterBody3D) -> void:
 	if is_instance_valid(highlight_component):
 		highlight_component.suppress(true)
 
-	if press_tween and press_tween.is_valid():
-		press_tween.kill()
-
-	press_tween = create_tween()
+	press_tween = Utilities.reset_tween(self, press_tween)
 
 	var base_y: float = pressable_part.position.y
 
@@ -172,7 +169,7 @@ func _on_interact(_player: CharacterBody3D) -> void:
 	# 2. Global Event Bus Trigger (Cross-Scene Decoupling)
 	if global_event_name != "":
 		print("Button executing: Broadcasting global event -> ", global_event_name)
-		if is_instance_valid(Events) and Events.has_signal("level_event_triggered"):
+		if is_instance_valid(Events):
 			Events.level_event_triggered.emit(global_event_name, is_turning_on)
 
 	await get_tree().create_timer(1.0).timeout

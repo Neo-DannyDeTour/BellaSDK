@@ -152,7 +152,8 @@ func _process_standard_hold(_delta: float) -> void:
 			_cached_exclude_rids
 		)
 		if not floor_hit.is_empty():
-			var hit_pos: Vector3 = floor_hit.get("position", Vector3.ZERO)
+			var raw_hit_pos: Variant = floor_hit.get("position", Vector3.ZERO)
+			var hit_pos: Vector3 = raw_hit_pos if raw_hit_pos is Vector3 else Vector3.ZERO
 			var ground_y: float = hit_pos.y
 			target_pos.y = ground_y + bottom_extent + heavy_floor_clearance
 		else:

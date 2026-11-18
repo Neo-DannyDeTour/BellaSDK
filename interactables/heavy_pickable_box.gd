@@ -122,7 +122,7 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 
 	if interact_comp:
 		if "monitorable" in interact_comp:
-			interact_comp.set_deferred("monitorable", false)
+			interact_comp.set_deferred(&"monitorable", false)
 		else:
 			interact_comp.process_mode = Node.PROCESS_MODE_DISABLED
 
@@ -164,6 +164,7 @@ func _finish_pickup() -> void:
 	notify_holder_stun(holder, false)
 	notify_holder_heavy_carry(holder, true, mass)
 	notify_holder_heavy_lifting(holder, true)
+	set_physics_process(true)
 
 
 ## Pushes box along floor geometry without heap allocations.
@@ -235,8 +236,8 @@ func _physics_process(delta: float) -> void:
 
 			var push_vec: Vector3 = Vector3(push_dir.x * overlap, 0.0, push_dir.y * overlap)
 
-			if holder.has_method("move_and_collide"):
-				holder.call("move_and_collide", push_vec)
+			if holder.has_method(&"move_and_collide"):
+				holder.call(&"move_and_collide", push_vec)
 			else:
 				holder.global_position += push_vec
 
@@ -293,7 +294,7 @@ func _finish_drop(previous_holder: Node3D) -> void:
 
 	if is_instance_valid(interact_comp):
 		if "monitorable" in interact_comp:
-			interact_comp.set_deferred("monitorable", true)
+			interact_comp.set_deferred(&"monitorable", true)
 		else:
 			interact_comp.process_mode = Node.PROCESS_MODE_INHERIT
 

@@ -159,15 +159,16 @@ func _ready() -> void:
 		has_been_installed = true
 
 	if Engine.is_editor_hint():
+		set_process(false)
 		return
 
 	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method("get_setting"):
 		var raw_prompts: Variant = GlobalSettings.get_setting("Gameplay", "show_item_prompts", true)
 		_show_text_prompts = raw_prompts == true
 
-	if is_instance_valid(Events) and Events.has_signal("item_prompts_toggled"):
-		if not Events.is_connected("item_prompts_toggled", _on_item_prompts_toggled):
-			Events.connect("item_prompts_toggled", _on_item_prompts_toggled)
+	if is_instance_valid(Events):
+		if not Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled):
+			Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
 
 	var raw_wheel: Variant = get_node_or_null("Valve")
 	wheel = raw_wheel if raw_wheel is Node3D else null
@@ -194,6 +195,18 @@ func _ready() -> void:
 			and not interact_comp.is_connected(&"unfocused", _on_interact_component_unfocused)
 		):
 			interact_comp.connect(&"unfocused", _on_interact_component_unfocused)
+
+	set_physics_process(false)
+	set_process(not is_installed)
+
+
+## Disconnects global event bus listeners on tree exit.
+func _exit_tree() -> void:
+	if (
+		is_instance_valid(Events)
+		and Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled)
+	):
+		Events.item_prompts_toggled.disconnect(_on_item_prompts_toggled)
 
 
 ## Manages per-frame installation detection, player interaction inputs, rotation, and audio state.
@@ -233,10 +246,15 @@ func _process(delta: float) -> void:
 
 	if is_locked or not is_installed:
 		_manage_audio(false)
+		if is_locked:
+			set_process(false)
 		return
 
 	var is_moving: bool = _process_valve_progress(delta, key_is_down, true_just_pressed)
 	_manage_audio(is_moving)
+
+	if not is_focused and not is_moving and not _is_auto_turning and _detach_tap_timer <= 0.0:
+		set_process(false)
 
 
 ## Resolves active turn behavior mode based on override or GlobalSettings.
@@ -581,6 +599,7 @@ func _detach_valve() -> void:
 
 	if is_instance_valid(wheel):
 		wheel.hide()
+	set_process(true)
 
 
 ## Handles the interaction component focus event to display and vocalize prompt labels.
@@ -589,6 +608,7 @@ func _on_interact_component_focused() -> void:
 	if is_locked:
 		return
 	is_focused = true
+	set_process(true)
 	_update_valve_label()
 	if is_instance_valid(label) and _show_text_prompts:
 		label.show()
@@ -617,12 +637,11 @@ func _update_valve_label() -> void:
 	var icon_tex: Texture2D = null
 
 	if is_installed:
-		var events: Array = InputMap.action_get_events("interact")
+		var events: Array[InputEvent] = InputMap.action_get_events("interact")
 		var key_name: String = "???"
 
 		if not events.is_empty():
-			var raw_ev: Variant = events[0]
-			var primary_ev: InputEvent = raw_ev if raw_ev is InputEvent else null
+			var primary_ev: InputEvent = events[0]
 			if is_instance_valid(primary_ev):
 				key_name = InputHelper.sanitize_key_name(primary_ev.as_text())
 				icon_tex = InputHelper.get_event_icon(primary_ev)
@@ -670,6 +689,6 @@ func _update_valve_label() -> void:
 		label.text = prompt_text
 		label.position.x = 0.0
 
-	if Events.has_signal("object_focused") and not speech_text.is_empty():
+	if is_instance_valid(Events) and not speech_text.is_empty():
 		print("Valve: Broadcasting object_focused prompt to TTSandy.")
-		Events.emit_signal("object_focused", speech_text, self)
+		Events.object_focused.emit(speech_text, self)

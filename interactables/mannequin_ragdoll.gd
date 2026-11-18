@@ -36,6 +36,8 @@ const MAX_SPACE_POLL_ATTEMPTS: int = 10
 @export var total_mass: float = 62.0
 ## Optional [HealthComponent] tracking structural hit points alongside ragdoll physics.
 @export var health_component: HealthComponent
+## Optional per-bone capsule collider radius overrides in meters for variant silhouettes.
+@export var bone_radius_overrides: Dictionary[StringName, float] = {}
 
 ## Tracks whether [PhysicalBoneSimulator3D] ragdoll simulation is currently active.
 var is_ragdoll_active: bool = false
@@ -230,10 +232,15 @@ func _build_physical_bones() -> void:
 	]
 
 	for spec: BoneSpec in specs:
+		var bone_radius: float = spec.radius
+		if bone_radius_overrides.has(spec.name):
+			var override_radius: float = bone_radius_overrides[spec.name]
+			if override_radius > 0.0:
+				bone_radius = override_radius
 		_create_bone_collider(
 			spec.name,
 			spec.length,
-			spec.radius,
+			bone_radius,
 			spec.mass_share,
 			spec.is_hinge,
 			spec.swing_deg,

@@ -4,15 +4,12 @@
 extends AnimatableBody3D
 
 ## Emitted when gate begins a state transition; [param open] is the new target state.
-@warning_ignore("unused_signal")
 signal state_changed(open: bool)
 
 ## Emitted when gate finishes opening transition and reaches fully collapsed state.
-@warning_ignore("unused_signal")
 signal opened
 
 ## Emitted when gate finishes closing transition and reaches fully expanded state.
-@warning_ignore("unused_signal")
 signal closed
 
 ## Blend shape name baked by Blender generator.

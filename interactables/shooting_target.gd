@@ -35,6 +35,8 @@ var _default_collision_mask: int
 
 ## Initializes collision layers, assigns factions, and connects death signals.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("ShootingTarget: Initializing target dummy: ", name)
 	_default_collision_layer = collision_layer
 	_default_collision_mask = collision_mask
@@ -88,11 +90,10 @@ func _play_jiggle_animation() -> void:
 	if icon_sprite == null or (hide_in_game and not Engine.is_editor_hint()):
 		return
 
-	if _jiggle_tween and _jiggle_tween.is_valid():
-		_jiggle_tween.kill()
-
 	icon_sprite.position = Vector3.ZERO
-	_jiggle_tween = create_tween()
+	_jiggle_tween = Utilities.reset_tween(self, _jiggle_tween)
+	if _jiggle_tween == null:
+		return
 
 	for i: int in range(4):
 		var rand_x: float = randf_range(-0.15, 0.15)

@@ -40,7 +40,9 @@ var _hit_limit_a: bool = false
 var _hit_limit_b: bool = false
 
 
+## Removes editor icon at runtime, calibrates rope length, and gates physics ticks.
 func _ready() -> void:
+	set_process(false)
 	# 1. Purge the editor icon immediately at runtime (Zero overhead!)
 	if not Engine.is_editor_hint():
 		if is_instance_valid(_editor_icon):
@@ -48,8 +50,12 @@ func _ready() -> void:
 
 	if is_instance_valid(cart_a) and is_instance_valid(cart_b):
 		calibrate_rope_length()
+		set_physics_process(true)
+	else:
+		set_physics_process(false)
 
 
+## Applies spring pulley constraint and optional travel limits each physics tick.
 func _physics_process(_delta: float) -> void:
 	if not is_instance_valid(cart_a) or not is_instance_valid(cart_b):
 		return

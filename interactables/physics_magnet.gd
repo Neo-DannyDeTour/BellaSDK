@@ -41,12 +41,10 @@ enum MagnetMode {
 @export var visual_mesh: MeshInstance3D
 
 ## Sprite displayed exclusively within the editor.
-@onready var _editor_icon: Sprite3D = (
-	get_node_or_null("%EditorIcon") if get_node_or_null("%EditorIcon") is Sprite3D else null
-)
+@onready var _editor_icon: Sprite3D = get_node_or_null("%EditorIcon") as Sprite3D
 
 ## Cached active bodies currently inside the magnetic area.
-var _active_bodies: Dictionary = {}
+var _active_bodies: Dictionary[RigidBody3D, bool] = {}
 
 
 ## Configures masks, signal hooks, and initial visual dimensions.
@@ -59,9 +57,8 @@ func _ready() -> void:
 		body_exited.connect(_on_body_exited)
 		set_physics_process(false)
 
-	collision_layer = 0
-	# Layer 1 (Environment) + Layer 3 (Interactive)
-	collision_mask = 5
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_SOLID_WORLD
 	_update_size()
 	_update_visibility()
 
@@ -74,16 +71,21 @@ func _on_body_entered(body: Node3D) -> void:
 	if not body.is_in_group(allowed_group):
 		return
 
-	print("PhysicsMagnet: Body entered magnet range: ", body.name)
-	_active_bodies[body] = true
+	var rb: RigidBody3D = body as RigidBody3D
+	print("PhysicsMagnet: Body entered magnet range: ", rb.name)
+	_active_bodies[rb] = true
 	set_physics_process(true)
 
 
 ## Unregisters exiting rigid body and disables processing when empty.
 func _on_body_exited(body: Node3D) -> void:
-	if _active_bodies.has(body):
-		print("PhysicsMagnet: Body exited magnet range: ", body.name)
-		_active_bodies.erase(body)
+	if not body is RigidBody3D:
+		return
+
+	var rb: RigidBody3D = body as RigidBody3D
+	if _active_bodies.has(rb):
+		print("PhysicsMagnet: Body exited magnet range: ", rb.name)
+		_active_bodies.erase(rb)
 
 		if _active_bodies.is_empty():
 			set_physics_process(false)

@@ -1,3 +1,4 @@
+## Slide-track stick rider carrying the [Player] along a [Path3D].
 class_name PathStick
 extends PathFollow3D
 
@@ -30,11 +31,14 @@ var is_active: bool = false
 # --------------------------------------
 # BUILT-IN METHODS
 # --------------------------------------
+## Disables looping and physics processing until interaction starts.
 func _ready() -> void:
 	loop = false
+	set_process(false)
 	set_physics_process(false)
 
 
+## Advances stick progress along the path while active.
 func _physics_process(delta: float) -> void:
 	if not is_active:
 		return
@@ -49,6 +53,15 @@ func _physics_process(delta: float) -> void:
 # --------------------------------------
 # INTERACTION & LOGIC
 # --------------------------------------
+## Releases the player manually when jumping off during a path slide.
+func release_player() -> void:
+	current_player = null
+	is_active = false
+	set_physics_process(false)
+	_process_return()
+
+
+## Starts path slide when a [Player] interacts with the stick.
 func _on_interact_component_interacted(character: CharacterBody3D) -> void:
 	print("PathStick: _on_interact_component_interacted() called. Triggering path stick action.")
 	if is_active or not character is Player:
@@ -58,12 +71,13 @@ func _on_interact_component_interacted(character: CharacterBody3D) -> void:
 	current_player = character as Player
 	current_speed = move_speed
 
-	if current_player.has_method("enter_path_slide"):
+	if current_player.has_method(&"enter_path_slide"):
 		current_player.enter_path_slide(self)
 
 	set_physics_process(true)
 
 
+## Handles reaching the end of the track, launching or dropping the player.
 func _handle_endpoint() -> void:
 	is_active = false
 	set_physics_process(false)
@@ -88,14 +102,7 @@ func _handle_endpoint() -> void:
 			_process_return()
 
 
-# Called by StatePathSlide when the player jumps off manually
-func release_player() -> void:
-	current_player = null
-	is_active = false
-	set_physics_process(false)
-	_process_return()
-
-
+## Resets stick progress to the start when configured for immediate return.
 func _process_return() -> void:
 	if return_immediately:
 		progress_ratio = 0.0

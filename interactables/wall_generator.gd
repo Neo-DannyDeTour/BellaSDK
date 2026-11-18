@@ -116,6 +116,8 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
+	set_process(false)
+	set_physics_process(false)
 	print("WallGenerator: Initializing generator: ", name)
 	_cache_nodes()
 	_apply_horror_materials()
@@ -182,12 +184,12 @@ func insert_cell(cell: EnergyCell) -> void:
 		cell.drop()
 
 	cell.is_locked = true
-	cell.freeze = true
+	cell.set_deferred(&"freeze", true)
 	cell.linear_velocity = Vector3.ZERO
 	cell.angular_velocity = Vector3.ZERO
 
 	if is_instance_valid(socket_area):
-		socket_area.set_deferred("monitoring", false)
+		socket_area.set_deferred(&"monitoring", false)
 
 	var base_basis: Basis = (
 		socket_marker.global_transform.basis.orthonormalized()
@@ -534,7 +536,7 @@ func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
 	print("Searching for held EnergyCell on character: ", character.name)
 	var held_prop: Variant = character.get("held_object")
 	if is_instance_valid(held_prop) and held_prop is EnergyCell:
-		var held_cell: EnergyCell = held_prop
+		var held_cell: EnergyCell = held_prop as EnergyCell
 		return held_cell
 
 	var tree: SceneTree = get_tree()
@@ -543,7 +545,7 @@ func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
 
 	for node: Node in NodeQuery.find_children_in_group(tree.root, &"pickable_objects"):
 		if node is EnergyCell:
-			var cell: EnergyCell = node
+			var cell: EnergyCell = node as EnergyCell
 			if cell.holder == character:
 				return cell
 

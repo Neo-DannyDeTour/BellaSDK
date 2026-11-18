@@ -14,7 +14,7 @@ shader_parameter/max_intensity = 1.0
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_plushie"]
-size = Vector3(0.22, 0.25, 0.35)
+size = Vector3(0.245, 0.25, 0.356)
 
 [node name="PickableKirovPlushie" node_paths=PackedStringArray("mesh") instance=ExtResource("1_base")]
 mass = 0.4
@@ -56,4 +56,4 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.125, -0.12)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.125, -0.12)
 
 [node name="kirov_plushie" parent="." index="7" instance=ExtResource("3_kirov")]
-transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0, 0.125, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)

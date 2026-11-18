@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://b5qf204vll0yr" path="res://interactables/mannequin_ragdoll.gd" id="1_ragdoll"]
+[ext_resource type="PackedScene" uid="uid://wglyo73y7ur1" path="res://assets/models/bimbo_mannequin/bimbo_mannequin.glb" id="2_model"]
+
+[node name="BimboMannequin" type="Node3D"]
+script = ExtResource("1_ragdoll")
+start_active = true
+bone_radius_overrides = Dictionary[StringName, float]({
+&"Chest": 0.165,
+&"Pelvis": 0.15,
+&"UpperLeg.L": 0.092,
+&"UpperLeg.R": 0.092,
+&"Waist": 0.088
+})
+
+[node name="MannequinModel" parent="." instance=ExtResource("2_model")]

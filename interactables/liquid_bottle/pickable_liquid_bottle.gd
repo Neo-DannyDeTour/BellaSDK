@@ -97,6 +97,7 @@ func _ready() -> void:
 
 ## Disconnects visibility gating signals when exiting the scene tree.
 func _exit_tree() -> void:
+	super._exit_tree()
 	if is_instance_valid(_liquid_notifier) and _liquid_notifier.is_inside_tree():
 		if _liquid_notifier.screen_entered.is_connected(_on_liquid_screen_entered):
 			_liquid_notifier.screen_entered.disconnect(_on_liquid_screen_entered)

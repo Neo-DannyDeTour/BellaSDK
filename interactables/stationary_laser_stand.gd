@@ -85,6 +85,24 @@ var _scorch_emission: GradientTexture2D
 ## Generated [GradientTexture2D] used for fading trail scorch decals.
 var _trail_texture: GradientTexture2D
 
+## Visibility notifier gating raycast and beam updates while off-screen.
+var _screen_notifier: VisibleOnScreenNotifier3D = null
+
+## Reusable beam point buffer cleared each physics tick.
+var _beam_points: PackedVector3Array = PackedVector3Array()
+
+## Reusable beam normal buffer cleared each physics tick.
+var _beam_normals: PackedVector3Array = PackedVector3Array()
+
+## Reusable surface-hit flag buffer cleared each physics tick.
+var _surface_hits: Array[bool] = []
+
+## Reusable RID exclusion list cleared each physics tick.
+var _exclude_rids: Array[RID] = []
+
+## Active fade tweens keyed by recycled trail [Decal] instance.
+var _trail_tweens: Dictionary[Decal, Tween] = {}
+
 ## Template particle system used for beam core energy effects.
 @onready
 var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles") as GPUParticles3D
@@ -124,6 +142,7 @@ var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles
 
 ## Initializes object pools, textures, and binds interaction signals.
 func _ready() -> void:
+	set_process(false)
 	print("StationaryLaserStand: Initializing pools and resources.")
 	_scorch_albedo = _create_scorch_albedo_texture()
 	_scorch_emission = _create_scorch_emission_texture()
@@ -143,6 +162,8 @@ func _ready() -> void:
 		_setup_default_trail_pool()
 
 	_preallocate_beam_pools()
+	_setup_screen_notifier()
+	_update_physics_state()
 
 
 ## Instantiates default [ObjectPool] for scorch trail decals if unset.
@@ -288,7 +309,9 @@ func _create_trail_texture() -> GradientTexture2D:
 ## Evaluates player input, rotates turret, and updates laser bounces.
 func _physics_process(delta: float) -> void:
 	if _reattach_cooldown_timer > 0.0:
-		_reattach_cooldown_timer -= delta
+		_reattach_cooldown_timer = maxf(0.0, _reattach_cooldown_timer - delta)
+		if _reattach_cooldown_timer <= 0.0:
+			_update_physics_state()
 
 	if is_controlled:
 		_control_timer += delta
@@ -365,14 +388,14 @@ func _process_laser(delta: float) -> void:
 	var bounces: int = 0
 	var hit_target: Node3D = null
 
-	var beam_points: PackedVector3Array = PackedVector3Array()
-	var beam_normals: PackedVector3Array = PackedVector3Array()
-	var surface_hits: Array[bool] = []
+	_beam_points.clear()
+	_beam_normals.clear()
+	_surface_hits.clear()
+	_exclude_rids.clear()
 
-	beam_points.append(current_origin)
-	beam_normals.append(-current_direction)
-
-	var exclude_rids: Array[RID] = [get_rid()]
+	_beam_points.append(current_origin)
+	_beam_normals.append(-current_direction)
+	_exclude_rids.append(get_rid())
 
 	while bounces <= max_bounces:
 		var target_pos: Vector3 = current_origin + (current_direction * max_distance)
@@ -383,13 +406,13 @@ func _process_laser(delta: float) -> void:
 			| CollisionLayers.MASK_ENEMIES
 		)
 		var result: Dictionary = NodeQuery.cast_ray(
-			space_state, current_origin, target_pos, query_mask, exclude_rids
+			space_state, current_origin, target_pos, query_mask, _exclude_rids
 		)
 
 		if result.is_empty():
-			beam_points.append(target_pos)
-			beam_normals.append(-current_direction)
-			surface_hits.append(false)
+			_beam_points.append(target_pos)
+			_beam_normals.append(-current_direction)
+			_surface_hits.append(false)
 			_damage_accumulator = 0.0
 			break
 
@@ -397,8 +420,8 @@ func _process_laser(delta: float) -> void:
 		var normal: Vector3 = result[&"normal"]
 		var collider: Object = result[&"collider"]
 
-		beam_points.append(hit_point)
-		beam_normals.append(normal)
+		_beam_points.append(hit_point)
+		_beam_normals.append(normal)
 
 		if collider is Node:
 			var hit_node: Node = collider as Node
@@ -415,13 +438,13 @@ func _process_laser(delta: float) -> void:
 
 				current_direction = emit_normal
 				bounces += 1
-				exclude_rids.clear()
+				_exclude_rids.clear()
 				if mirror.has_method(&"get_all_rids"):
-					exclude_rids.append_array(mirror.get_all_rids())
+					_exclude_rids.append_array(mirror.get_all_rids())
 				elif collider is CollisionObject3D:
-					exclude_rids.append((collider as CollisionObject3D).get_rid())
+					_exclude_rids.append((collider as CollisionObject3D).get_rid())
 
-				surface_hits.append(false)
+				_surface_hits.append(false)
 				continue
 
 			_apply_beam_damage(hit_node, delta)
@@ -436,11 +459,11 @@ func _process_laser(delta: float) -> void:
 			if is_instance_valid(candidate_target) and candidate_target.has_method(&"power_on"):
 				hit_target = candidate_target as Node3D
 
-		surface_hits.append(true)
+		_surface_hits.append(true)
 		break
 
 	_update_power_target(hit_target)
-	_update_beam_visuals(beam_points, beam_normals, surface_hits)
+	_update_beam_visuals(_beam_points, _beam_normals, _surface_hits)
 
 
 ## Applies continuous beam damage to struck actor or [HealthComponent].
@@ -453,11 +476,14 @@ func _apply_beam_damage(target: Node, delta: float) -> void:
 	_damage_accumulator -= float(damage_amount)
 	#print("StationaryLaserStand: Applying ", damage_amount, " damage to: ", target.name)
 
-	var health_comp: Node = target.get_node_or_null("HealthComponent")
-	if not is_instance_valid(health_comp):
-		health_comp = target.find_child("HealthComponent", true, false)
-	if not is_instance_valid(health_comp) and target.get_parent():
-		health_comp = target.get_parent().get_node_or_null("HealthComponent")
+	var health_comp: HealthComponent = (
+		NodeQuery.find_first_child_of_type(target, HealthComponent) as HealthComponent
+	)
+	if not is_instance_valid(health_comp) and is_instance_valid(target.get_parent()):
+		health_comp = (
+			NodeQuery.find_first_child_of_type(target.get_parent(), HealthComponent)
+			as HealthComponent
+		)
 
 	if is_instance_valid(health_comp):
 		if health_comp.has_method(&"take_damage"):
@@ -530,27 +556,30 @@ func _take_control(p: Player) -> void:
 	controlling_player = p
 
 	controlling_player.set_machine_lock(true)
-
-	if is_instance_valid(_stance_tween):
-		_stance_tween.kill()
+	_update_physics_state()
 
 	if is_instance_valid(stance_marker):
-		_is_aligning = true
-		_stance_tween = create_tween()
-		_stance_tween.set_trans(Tween.TRANS_CUBIC)
-		_stance_tween.set_ease(Tween.EASE_OUT)
-		_stance_tween.tween_property(
-			controlling_player,
-			"global_position",
-			stance_marker.global_position,
-			ALIGN_TWEEN_DURATION_SEC
+		_stance_tween = Utilities.reset_tween_ext(
+			self, _stance_tween, Tween.TRANS_CUBIC, Tween.EASE_OUT
 		)
-		_stance_tween.tween_callback(
-			func() -> void:
-				_is_aligning = false
-				print("StationaryLaserStand: Player aligned to stance marker.")
-		)
+		if _stance_tween != null:
+			_is_aligning = true
+			_stance_tween.tween_property(
+				controlling_player,
+				"global_position",
+				stance_marker.global_position,
+				ALIGN_TWEEN_DURATION_SEC
+			)
+			_stance_tween.tween_callback(
+				func() -> void:
+					_is_aligning = false
+					print("StationaryLaserStand: Player aligned to stance marker.")
+			)
+		else:
+			_is_aligning = false
 	else:
+		if is_instance_valid(_stance_tween):
+			_stance_tween.kill()
 		_is_aligning = false
 
 
@@ -570,6 +599,7 @@ func _release_control() -> void:
 		controlling_player.set_machine_lock(false)
 
 	controlling_player = null
+	_update_physics_state()
 
 
 ## Updates segment meshes, particles, and scorch decals from pools.
@@ -589,7 +619,8 @@ func _update_beam_visuals(
 			if is_active:
 				var start: Vector3 = points[i]
 				var end: Vector3 = points[i + 1]
-				var distance: float = start.distance_to(end)
+				var dist_sq: float = start.distance_squared_to(end)
+				var distance: float = sqrt(dist_sq) if dist_sq > 0.0 else 0.0
 				beam.global_position = start.lerp(end, 0.5)
 
 				if not start.is_equal_approx(end):
@@ -609,7 +640,8 @@ func _update_beam_visuals(
 			if is_active:
 				var start: Vector3 = points[i]
 				var end: Vector3 = points[i + 1]
-				var distance: float = start.distance_to(end)
+				var dist_sq: float = start.distance_squared_to(end)
+				var distance: float = sqrt(dist_sq) if dist_sq > 0.0 else 0.0
 				bp.global_position = start.lerp(end, 0.5)
 
 				if not start.is_equal_approx(end):
@@ -683,15 +715,19 @@ func _leave_trail_mark(pos: Vector3, xform: Transform3D) -> void:
 		d.visible = true
 		d.albedo_mix = 1.0
 
-		var tween: Tween = create_tween()
-		tween.tween_property(d, "albedo_mix", 0.0, 1.0)
-		tween.tween_callback(
-			func() -> void:
-				if is_instance_valid(d):
-					d.visible = false
-					if is_instance_valid(trail_pool) and trail_pool.has_method(&"recycle"):
-						trail_pool.recycle(d)
-		)
+		var prev_tween: Tween = _trail_tweens.get(d, null)
+		var tween: Tween = Utilities.reset_tween(d, prev_tween)
+		if tween != null:
+			_trail_tweens[d] = tween
+			tween.tween_property(d, "albedo_mix", 0.0, 1.0)
+			tween.tween_callback(
+				func() -> void:
+					_trail_tweens.erase(d)
+					if is_instance_valid(d):
+						d.visible = false
+						if is_instance_valid(trail_pool) and trail_pool.has_method(&"recycle"):
+							trail_pool.recycle(d)
+			)
 
 
 ## Checks for standard player detachment inputs to release control.
@@ -704,3 +740,21 @@ func _handle_detachment_input() -> void:
 	):
 		print("StationaryLaserStand: Detachment requested.")
 		_release_control()
+
+
+## Creates a [VisibleOnScreenNotifier3D] covering the laser's reach to gate off-screen ticks.
+func _setup_screen_notifier() -> void:
+	_screen_notifier = VisibleOnScreenNotifier3D.new()
+	_screen_notifier.aabb = AABB(
+		Vector3(-max_distance, -4.0, -max_distance),
+		Vector3(max_distance * 2.0, 8.0, max_distance * 2.0)
+	)
+	add_child(_screen_notifier)
+	_screen_notifier.screen_entered.connect(_update_physics_state)
+	_screen_notifier.screen_exited.connect(_update_physics_state)
+
+
+## Enables physics ticks only when controlled, cooling down, or visible on screen.
+func _update_physics_state() -> void:
+	var on_screen: bool = is_instance_valid(_screen_notifier) and _screen_notifier.is_on_screen()
+	set_physics_process(is_controlled or _reattach_cooldown_timer > 0.0 or on_screen)

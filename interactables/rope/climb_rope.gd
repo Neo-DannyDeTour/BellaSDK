@@ -243,7 +243,7 @@ var _overlapping_players: Array[CharacterBody3D] = []
 var _cached_camera: Camera3D = null
 
 ## Reusable transition dictionary passed to the player's state machine on mount.
-var _mount_msg: Dictionary = {}
+var _mount_msg: Dictionary[StringName, Variant] = {}
 
 # --------------------------------------
 # ONREADY NODE REFERENCES
@@ -726,7 +726,7 @@ func _rebuild_rope() -> void:
 
 	if is_instance_valid(_grab_body):
 		_grab_body.collision_layer = PHYS_LAYER_INTERACTIVE
-		_grab_body.collision_mask = 0
+		_grab_body.collision_mask = CollisionLayers.MASK_NONE
 	if is_instance_valid(_grab_collision):
 		var grab_cyl: CylinderShape3D = _grab_collision.shape as CylinderShape3D
 		if not is_instance_valid(grab_cyl):
@@ -737,7 +737,7 @@ func _rebuild_rope() -> void:
 		_grab_collision.position = Vector3(0.0, -length * 0.5, 0.0)
 
 	if is_instance_valid(_proximity_area):
-		_proximity_area.collision_layer = 0
+		_proximity_area.collision_layer = CollisionLayers.MASK_NONE
 		_proximity_area.collision_mask = PHYS_MASK_PLAYER
 		_proximity_area.monitorable = false
 	if is_instance_valid(_proximity_collision):

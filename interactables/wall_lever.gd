@@ -208,7 +208,7 @@ func _drop_stick() -> void:
 		if stick_node is RigidBody3D:
 			var rb: RigidBody3D = stick_node if stick_node is RigidBody3D else null
 			rb.freeze = false
-			rb.collision_layer = CollisionLayers.LAYER_DEBRIS_IDX
+			rb.collision_layer = CollisionLayers.MASK_DEBRIS
 			rb.collision_mask = CollisionLayers.MASK_ENVIRONMENT
 			var forward_dir: Vector3 = -global_transform.basis.z
 			rb.apply_central_impulse((forward_dir * 0.4) + (Vector3.DOWN * 0.2))

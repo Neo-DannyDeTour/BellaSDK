@@ -24,7 +24,12 @@ signal body_entered_tube(body: Node3D)
 signal body_exited_tube(body: Node3D)
 
 ## Collision mask targeting layers 2 (Player), 3 (Interactive), 4 (Debris), 5 (Enemies).
-const DEFAULT_MASK: int = 30
+const DEFAULT_MASK: int = (
+	CollisionLayers.MASK_PLAYER
+	| CollisionLayers.MASK_INTERACTIVE
+	| CollisionLayers.MASK_DEBRIS
+	| CollisionLayers.MASK_ENEMIES
+)
 
 ## Outer radius of the cylindrical tube in meters.
 @export var outer_radius: float = 0.6:
@@ -61,13 +66,13 @@ const DEFAULT_MASK: int = 30
 			tube_mesh.material = tube_material
 
 ## Procedural polygon extrusion node generating the tube mesh.
-@onready var tube_mesh: CSGPolygon3D = get_node_or_null("TubeMesh")
+@onready var tube_mesh: CSGPolygon3D = get_node_or_null("TubeMesh") as CSGPolygon3D
 
 ## Suction trigger area positioned at the start of the curve.
-@onready var intake_area: Area3D = get_node_or_null("IntakeArea")
+@onready var intake_area: Area3D = get_node_or_null("IntakeArea") as Area3D
 
 ## Orientation marker placed at the path endpoint.
-@onready var exit_marker: Marker3D = get_node_or_null("ExitMarker")
+@onready var exit_marker: Marker3D = get_node_or_null("ExitMarker") as Marker3D
 
 ## Active list of all bodies currently traveling through the tube.
 var _active_riders: Array[PneumaticTubeRider] = []
@@ -75,12 +80,14 @@ var _active_riders: Array[PneumaticTubeRider] = []
 
 ## Initializes path duplication, sets collision masks, and builds geometry.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("PneumaticTube: Initializing tube instance.")
 	if curve != null and not Engine.is_editor_hint():
 		curve = curve.duplicate()
 
 	if intake_area != null:
-		intake_area.collision_layer = 0
+		intake_area.collision_layer = CollisionLayers.MASK_NONE
 		intake_area.collision_mask = DEFAULT_MASK
 		if not intake_area.body_entered.is_connected(_on_intake_body_entered):
 			intake_area.body_entered.connect(_on_intake_body_entered)
@@ -90,7 +97,8 @@ func _ready() -> void:
 
 ## Updates spatial rider positions along the curve each physics tick.
 func _physics_process(delta: float) -> void:
-	if Engine.is_editor_hint() or curve == null:
+	if Engine.is_editor_hint() or curve == null or _active_riders.is_empty():
+		set_physics_process(false)
 		return
 
 	var total_len: float = curve.get_baked_length()
@@ -119,6 +127,8 @@ func _physics_process(delta: float) -> void:
 			remaining.push_back(rider)
 
 	_active_riders = remaining
+	if _active_riders.is_empty():
+		set_physics_process(false)
 
 
 ## Rebuilds the hollow CSG polygon along the [Curve3D] path.
@@ -198,7 +208,7 @@ func capture_body(body: Node3D) -> void:
 	elif body is RigidBody3D:
 		var rb: RigidBody3D = body if body is RigidBody3D else null
 		rider.was_frozen = rb.freeze
-		rb.freeze = true
+		rb.set_deferred(&"freeze", true)
 		rb.linear_velocity = Vector3.ZERO
 		rb.angular_velocity = Vector3.ZERO
 	elif body is CharacterBody3D:
@@ -208,6 +218,8 @@ func capture_body(body: Node3D) -> void:
 
 	body.global_position = to_global(curve.sample_baked(0.0))
 	_active_riders.push_back(rider)
+	if not Engine.is_editor_hint():
+		set_physics_process(true)
 	body_entered_tube.emit(body)
 
 

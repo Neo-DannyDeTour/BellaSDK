@@ -141,11 +141,15 @@ func _ready() -> void:
 		interact_comp.unfocused.connect(_on_unfocused)
 		interact_comp.interacted.connect(_on_interacted)
 
+	set_physics_process(false)
+	_update_process_state()
+
 
 ## Updates install timers and handles double tap detach input.
 ## [param delta]: Frame delta time.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
+		set_process(false)
 		return
 
 	if install_cooldown > 0.0:
@@ -154,7 +158,7 @@ func _process(delta: float) -> void:
 	if not is_installed:
 		_check_for_installation()
 
-	var just_pressed: bool = is_focused and GestureInputManager.is_action_just_pressed("interact")
+	var just_pressed: bool = is_focused and GestureInputManager.is_action_just_pressed(&"interact")
 	if is_installed and can_be_detached and just_pressed:
 		var current_time: float = Time.get_ticks_msec() / 1000.0
 		if current_time - last_interact_time <= DOUBLE_TAP_DELAY:
@@ -163,6 +167,17 @@ func _process(delta: float) -> void:
 			last_interact_time = 0.0
 		else:
 			last_interact_time = current_time
+
+	if is_installed and not is_focused and install_cooldown <= 0.0:
+		set_process(false)
+
+
+## Gates [_process] to active only when awaiting installation, focused, or cooling down.
+func _update_process_state() -> void:
+	if Engine.is_editor_hint():
+		set_process(false)
+		return
+	set_process(not is_installed or is_focused or install_cooldown > 0.0)
 
 
 ## Re-generates physical collision shapes for individual wheel handles.
@@ -401,6 +416,7 @@ func _install_stick(held_item: Node3D, int_comp: Node, scanner: Node) -> void:
 		restored_handle.show()
 
 	_update_stick_collisions()
+	_update_process_state()
 	print("PushWheel: Stick Auto-Installed! Wheel is now functional.")
 
 
@@ -445,7 +461,7 @@ func _detach_stick() -> void:
 	if is_instance_valid(scanner):
 		var raw_scanner_hold: Variant = scanner.get("hold_position")
 		if raw_scanner_hold is Marker3D:
-			hold_pos = raw_scanner_hold
+			hold_pos = raw_scanner_hold as Marker3D
 
 	if is_instance_valid(int_comp) and "held_item" in int_comp:
 		int_comp.set("held_item", spawned_stick)
@@ -472,6 +488,7 @@ func _detach_stick() -> void:
 		restored_handle.hide()
 
 	_update_stick_collisions()
+	_update_process_state()
 	print("PushWheel: Stick detached and returned to player hands.")
 
 
@@ -480,12 +497,14 @@ func _on_focused() -> void:
 	if is_locked:
 		return
 	is_focused = true
+	_update_process_state()
 	print("PushWheel: Focused by player.")
 
 
 ## Handles focus exit event from interaction system.
 func _on_unfocused() -> void:
 	is_focused = false
+	_update_process_state()
 	print("PushWheel: Unfocused by player.")
 
 

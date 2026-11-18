@@ -47,6 +47,8 @@ var original_player: CharacterBody3D = null
 
 ## Configures default inactive camera state and connects interaction signal.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("PlayerDrone: Initializing drone unit: ", name)
 	camera.current = false
 	drone_hud.hide()
@@ -65,6 +67,7 @@ func _on_drone_interacted(character: CharacterBody3D) -> void:
 func possess_drone() -> void:
 	print("PlayerDrone: Possessing. Activating camera and HUD.")
 	is_possessed = true
+	set_physics_process(true)
 	camera.current = true
 	drone_hud.show()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -77,6 +80,7 @@ func possess_drone() -> void:
 func exit_drone() -> void:
 	print("PlayerDrone: Exiting. Restoring player control.")
 	is_possessed = false
+	set_physics_process(false)
 	camera.current = false
 	drone_hud.hide()
 

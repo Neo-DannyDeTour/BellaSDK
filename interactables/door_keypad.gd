@@ -6,7 +6,6 @@ class_name DoorKeypad
 extends StaticBody3D
 
 ## Emitted when [member valid_code] is accepted and targets trigger.
-@warning_ignore("unused_signal")
 signal code_accepted
 
 ## Transmitter node powering connected target mechanisms upon puzzle solve.

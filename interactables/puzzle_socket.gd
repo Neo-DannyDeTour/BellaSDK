@@ -83,6 +83,8 @@ var _show_text_prompts: bool = true
 
 ## Initializes component listeners and prompt settings.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("PuzzleSocket: Initializing _ready() lifecycle.")
 	_sync_transmitter()
 
@@ -134,7 +136,7 @@ func _ready() -> void:
 		)
 		_show_text_prompts = raw_setting if raw_setting is bool else true
 
-	if is_instance_valid(Events) and Events.has_signal(&"item_prompts_toggled"):
+	if is_instance_valid(Events):
 		if not Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled):
 			Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
 
@@ -148,6 +150,15 @@ func _ready() -> void:
 			socket_interact_comp.unfocused.connect(_on_socket_unfocused)
 	else:
 		print("PuzzleSocket: No InteractComponent attached to ", name)
+
+
+## Disconnects global event bus listeners on tree exit.
+func _exit_tree() -> void:
+	if (
+		is_instance_valid(Events)
+		and Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled)
+	):
+		Events.item_prompts_toggled.disconnect(_on_item_prompts_toggled)
 
 
 ## Safely propagates target array to transmitter.
@@ -237,9 +248,8 @@ func _on_socket_interacted(character: CharacterBody3D) -> void:
 	unplug()
 
 	if is_instance_valid(released_plug) and released_plug.has_method("pick_up"):
-		var player_hand_marker: Marker3D = (
-			character.get("hold_position") if character.get("hold_position") is Marker3D else null
-		)
+		var raw_hold: Variant = character.get("hold_position")
+		var player_hand_marker: Marker3D = raw_hold if raw_hold is Marker3D else null
 
 		if is_instance_valid(player_hand_marker):
 			character.set("held_object", released_plug)
@@ -355,8 +365,8 @@ func unplug() -> void:
 	get_tree().create_timer(1.0, false).timeout.connect(func() -> void: is_cooling_down = false)
 
 	if current_plug is RigidBody3D:
-		var rb_plug: RigidBody3D = current_plug if current_plug is RigidBody3D else null
-		rb_plug.freeze = false
+		var rb_plug: RigidBody3D = current_plug as RigidBody3D
+		rb_plug.set_deferred(&"freeze", false)
 		if "is_locked" in rb_plug:
 			rb_plug.set("is_locked", false)
 
@@ -411,11 +421,7 @@ func _on_socket_focused() -> void:
 	else:
 		label.hide()
 
-	if (
-		is_instance_valid(Events)
-		and Events.has_signal("object_focused")
-		and not speech_text.is_empty()
-	):
+	if is_instance_valid(Events) and not speech_text.is_empty():
 		print("Socket: Broadcasting object_focused prompt to TTSandy.")
 		Events.object_focused.emit(speech_text, self)
 
@@ -479,14 +485,13 @@ func _snap_and_freeze_plug(plug: Node3D) -> void:
 
 	var target_transform: Transform3D = snap_position.global_transform
 
-	if "snap_marker" in plug and is_instance_valid(plug.get("snap_marker")):
-		var marker: Marker3D = (
-			plug.get("snap_marker") if plug.get("snap_marker") is Marker3D else null
-		)
+	var raw_marker: Variant = plug.get("snap_marker")
+	if raw_marker is Marker3D and is_instance_valid(raw_marker):
+		var marker: Marker3D = raw_marker as Marker3D
 		target_transform = (target_transform * marker.transform.affine_inverse())
 
 	if plug is RigidBody3D:
-		var rb_plug: RigidBody3D = plug if plug is RigidBody3D else null
+		var rb_plug: RigidBody3D = plug as RigidBody3D
 		rb_plug.linear_velocity = Vector3.ZERO
 		rb_plug.angular_velocity = Vector3.ZERO
 

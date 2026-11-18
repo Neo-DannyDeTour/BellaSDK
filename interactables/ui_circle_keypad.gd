@@ -3,23 +3,27 @@ class_name UICircleTimingKeypad
 extends Control
 
 ## Emitted when puzzle is fully cleared.
-@warning_ignore("unused_signal")
 signal code_entered(code: String)
 
 ## Emitted on key press during minigame.
-@warning_ignore("unused_signal")
 signal button_clicked(button_name: String)
 
 ## Emitted to trigger viewport redraw.
-@warning_ignore("unused_signal")
 signal display_updated
 
 ## Emitted on failure lockout with damage payload.
-@warning_ignore("unused_signal")
 signal puzzle_failed(damage: int)
 
 ## Kenney input prompt icon directory.
 const ICON_BASE_PATH: String = "res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/"
+
+## Preloaded key prompt textures keyed by uppercase WASD character.
+const KEY_ICONS: Dictionary[String, Texture2D] = {
+	"W": preload("res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/keyboard_w.png"),
+	"A": preload("res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/keyboard_a.png"),
+	"S": preload("res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/keyboard_s.png"),
+	"D": preload("res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/keyboard_d.png"),
+}
 
 ## Target stages required to solve puzzle.
 @export var required_stages: int = 3
@@ -173,19 +177,8 @@ func _pick_random_challenge() -> void:
 	active_key = key_candidates.pick_random()
 	print("UICircleTimingKeypad: Target: ", target_radius, " Key: ", active_key)
 
-	var key_char: String = active_key.to_lower()
-	var candidates: Array[String] = [
-		ICON_BASE_PATH + "keyboard_%s.png" % key_char,
-		ICON_BASE_PATH + "keyboard_%s_outline.png" % key_char,
-		ICON_BASE_PATH + "Keyboard/keyboard_%s.png" % key_char,
-		ICON_BASE_PATH + "Keyboard/keyboard_%s_outline.png" % key_char
-	]
-
-	var found_tex: Texture2D = null
-	for path: String in candidates:
-		if ResourceLoader.exists(path):
-			found_tex = load(path) as Texture2D
-			break
+	var raw_tex: Variant = KEY_ICONS.get(active_key)
+	var found_tex: Texture2D = raw_tex as Texture2D if raw_tex is Texture2D else null
 
 	if found_tex != null:
 		prompt_icon.texture = found_tex
@@ -242,8 +235,15 @@ func _complete_puzzle() -> void:
 
 	if is_flawless and perfect_heal_amount > 0:
 		print("UICircleTimingKeypad: Flawless run! Healing player: ", perfect_heal_amount)
-		if is_instance_valid(linked_player) and linked_player.has_method("heal"):
-			linked_player.call("heal", perfect_heal_amount)
+		if is_instance_valid(linked_player):
+			var health_comp: HealthComponent = (
+				NodeQuery.find_first_child_of_type(linked_player, HealthComponent)
+				as HealthComponent
+			)
+			if is_instance_valid(health_comp):
+				health_comp.heal(perfect_heal_amount)
+			elif linked_player.has_method(&"heal"):
+				linked_player.call(&"heal", perfect_heal_amount)
 		status_label.text = "PERFECT OVERRIDE! (+%d HP)" % perfect_heal_amount
 		status_label.add_theme_color_override("font_color", Color.CYAN)
 	else:
@@ -270,9 +270,17 @@ func _handle_failure() -> void:
 		set_process(false)
 		display_result(false)
 
-		if is_instance_valid(linked_player) and linked_player.has_method("take_damage"):
-			print("UICircleTimingKeypad: Applying overload damage: ", fail_damage)
-			linked_player.call("take_damage", fail_damage)
+		if is_instance_valid(linked_player):
+			var health_comp: HealthComponent = (
+				NodeQuery.find_first_child_of_type(linked_player, HealthComponent)
+				as HealthComponent
+			)
+			if is_instance_valid(health_comp):
+				print("UICircleTimingKeypad: Applying overload damage: ", fail_damage)
+				health_comp.take_damage(fail_damage)
+			elif linked_player.has_method(&"take_damage"):
+				print("UICircleTimingKeypad: Applying overload damage: ", fail_damage)
+				linked_player.call(&"take_damage", fail_damage)
 
 		puzzle_failed.emit(fail_damage)
 		get_tree().create_timer(1.6).timeout.connect(start_puzzle)

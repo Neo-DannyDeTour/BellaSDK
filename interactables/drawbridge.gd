@@ -70,18 +70,12 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		_setup_bridge_markers()
 
-	var anchor: CollisionObject3D = (
-		get_node_or_null("HingeAnchor")
-		if get_node_or_null("HingeAnchor") is CollisionObject3D
-		else null
-	)
+	var anchor: CollisionObject3D = get_node_or_null("HingeAnchor") as CollisionObject3D
 	if is_instance_valid(anchor):
-		anchor.collision_layer = 0
-		anchor.collision_mask = 0
+		anchor.collision_layer = CollisionLayers.MASK_NONE
+		anchor.collision_mask = CollisionLayers.MASK_NONE
 
-	var debug_pin: Node3D = (
-		get_node_or_null("DebugPin") if get_node_or_null("DebugPin") is Node3D else null
-	)
+	var debug_pin: Node3D = get_node_or_null("DebugPin") as Node3D
 	if is_instance_valid(debug_pin) and not Engine.is_editor_hint():
 		debug_pin.hide()
 
@@ -163,9 +157,7 @@ func _draw_debug_pin() -> void:
 	if not is_node_ready():
 		return
 
-	var existing_pin: Node3D = (
-		get_node_or_null("DebugPin") if get_node_or_null("DebugPin") is Node3D else null
-	)
+	var existing_pin: Node3D = get_node_or_null("DebugPin") as Node3D
 
 	if not show_debug_pin:
 		if is_instance_valid(existing_pin):
@@ -215,8 +207,8 @@ func drop_bridge() -> void:
 
 	bridge_fallen = true
 	if is_instance_valid(bridge):
-		bridge.set_deferred("freeze", false)
-		bridge.set_deferred("sleeping", false)
+		bridge.set_deferred(&"freeze", false)
+		bridge.set_deferred(&"sleeping", false)
 		bridge.apply_central_impulse(Vector3.DOWN * 0.1)
 
 
@@ -228,4 +220,4 @@ func _on_ground_lock_trigger_body_entered(body: Node3D) -> void:
 	if body == bridge and bridge_fallen:
 		print("Drawbridge: Ground impact detected. Freezing bridge.")
 		if is_instance_valid(bridge):
-			bridge.set_deferred("freeze", true)
+			bridge.set_deferred(&"freeze", true)

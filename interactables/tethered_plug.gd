@@ -40,6 +40,12 @@ var _original_linear_damp: float = 0.0
 ## Cached base rotational angular damping value.
 var _original_angular_damp: float = 0.0
 
+## Cached base physics material restored when trailing mode ends.
+var _original_physics_material: PhysicsMaterial = null
+
+## Cached zero-friction physics material used while trailing behind the player.
+var _trailing_physics_material: PhysicsMaterial = null
+
 
 ## Caches initial physics values, groups, and warms up shaders.
 func _ready() -> void:
@@ -49,7 +55,11 @@ func _ready() -> void:
 	_original_angular_damp = angular_damp
 
 	if is_instance_valid(physics_material_override):
+		_original_physics_material = physics_material_override
 		_original_friction = physics_material_override.friction
+		_trailing_physics_material = PhysicsMaterial.new()
+		_trailing_physics_material.friction = 0.0
+		_trailing_physics_material.bounce = physics_material_override.bounce
 
 	add_to_group(&"plug")
 
@@ -179,14 +189,15 @@ func set_trailing_mode(is_trailing: bool) -> void:
 		linear_damp = 0.0
 		angular_damp = 0.0
 
-		if is_instance_valid(physics_material_override):
-			physics_material_override = (physics_material_override.duplicate() as PhysicsMaterial)
-			physics_material_override.friction = 0.0
+		if is_instance_valid(_trailing_physics_material):
+			physics_material_override = _trailing_physics_material
 	else:
 		mass = _original_mass
 		gravity_scale = 1.0
 		linear_damp = _original_linear_damp
 		angular_damp = _original_angular_damp
 
-		if is_instance_valid(physics_material_override):
+		if is_instance_valid(_original_physics_material):
+			physics_material_override = _original_physics_material
+		elif is_instance_valid(physics_material_override):
 			physics_material_override.friction = _original_friction

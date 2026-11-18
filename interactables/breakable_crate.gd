@@ -6,7 +6,6 @@ class_name BreakableCrate
 extends PickableObject
 
 ## Emitted once when the crate health depletes and chunks spawn.
-@warning_ignore("unused_signal")
 signal broken(world_position: Vector3)
 
 ## Shader uniform name driving per-instance debris alpha fade.
@@ -265,8 +264,7 @@ func _trigger_break(hit_position: Vector3, impulse: Vector3) -> void:
 		body.apply_impulse(blast_impulse, hit_position - body.global_position)
 		body.apply_torque_impulse(radial_dir.cross(Vector3.UP) * DEBRIS_TORQUE_STRENGTH)
 
-	Utilities.safe_kill_tween(_fade_tween)
-	_fade_tween = create_tween()
+	_fade_tween = Utilities.reset_tween(self, _fade_tween)
 	_fade_tween.tween_interval(DEBRIS_LIFETIME)
 	_fade_tween.tween_method(_set_debris_fade, 1.0, 0.0, DEBRIS_FADE_DURATION)
 	_fade_tween.tween_callback(_on_fade_finished)
