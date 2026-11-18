@@ -7,7 +7,6 @@
 extends RigidBody3D
 
 ## Emitted when the shelf breaks into debris planks. [param origin] is the world position.
-@warning_ignore("unused_signal")
 signal broken(origin: Vector3)
 
 ## Per-instance shader uniform driving plank fade-out.
@@ -108,8 +107,8 @@ func _execute_break_deferred(hit_pos: Vector3, impulse: Vector3) -> void:
 		return
 	broken.emit(global_position)
 	freeze = true
-	collision_layer = 0
-	collision_mask = 0
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_NONE
 	_intact_visuals.visible = false
 	for child: Node in get_children():
 		var col: CollisionShape3D = child as CollisionShape3D
@@ -134,9 +133,7 @@ func _execute_break_deferred(hit_pos: Vector3, impulse: Vector3) -> void:
 		var dist_sq: float = maxf(offset.length_squared(), 0.04)
 		var dir: Vector3 = offset.normalized() if dist_sq > 0.0001 else Vector3.UP
 		gib.apply_central_impulse(dir * (burst_impulse / dist_sq) + impulse * 0.25)
-	if _fade_tween != null and _fade_tween.is_valid():
-		_fade_tween.kill()
-	_fade_tween = create_tween()
+	_fade_tween = Utilities.reset_tween(self, _fade_tween)
 	_fade_tween.tween_interval(FADE_DELAY_SEC)
 	_fade_tween.tween_method(_set_gibs_alpha, 1.0, 0.0, FADE_DURATION_SEC)
 	_fade_tween.tween_callback(_cleanup_gibs)

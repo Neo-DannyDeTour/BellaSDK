@@ -1,0 +1,42 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" uid="uid://bctaoaxqy6uto" path="res://assets/models/sawhorse/sawhorse.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/sawhorse/sawhorse.tres" id="2_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_top"]
+size = Vector3(1.04, 0.13, 0.09)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leg"]
+size = Vector3(0.09, 0.74, 0.04)
+
+[node name="Sawhorse" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="Sawhorse" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="CollisionTopRail" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.715, 0)
+shape = SubResource("BoxShape3D_top")
+
+[node name="CollisionLegFL" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.995327, 0.096561, 0, -0.092679, 0.955312, -0.280695, -0.027104, 0.279384, 0.959797, -0.3775, 0.371, -0.1465)
+shape = SubResource("BoxShape3D_leg")
+
+[node name="CollisionLegBL" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.995327, 0.096561, 0, -0.092679, 0.955312, 0.280695, 0.027104, -0.279384, 0.959797, -0.3775, 0.371, 0.1465)
+shape = SubResource("BoxShape3D_leg")
+
+[node name="CollisionLegFR" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.995327, -0.096561, 0, 0.092679, 0.955312, -0.280695, 0.027104, 0.279384, 0.959797, 0.3775, 0.371, -0.1465)
+shape = SubResource("BoxShape3D_leg")
+
+[node name="CollisionLegBR" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.995327, -0.096561, 0, 0.092679, 0.955312, 0.280695, -0.027104, -0.279384, 0.959797, 0.3775, 0.371, 0.1465)
+shape = SubResource("BoxShape3D_leg")
+
+[editable path="Model"]

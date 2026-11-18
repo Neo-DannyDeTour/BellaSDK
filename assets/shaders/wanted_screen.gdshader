@@ -4,7 +4,7 @@ render_mode cull_back, diffuse_burley, specular_schlick_ggx;
 instance uniform float alert_active : hint_range(0.0, 1.0) = 0.0;
 
 uniform sampler2D mugshot_tex : source_color, filter_nearest, repeat_disable;
-uniform vec2 led_resolution = vec2(96.0, 72.0);
+uniform vec2 led_resolution = vec2(72.0, 108.0);
 uniform vec3 warning_bg_color : source_color = vec3(0.96, 0.74, 0.02);
 uniform vec3 warning_fg_color : source_color = vec3(0.06, 0.05, 0.03);
 uniform vec3 alert_tint_color : source_color = vec3(1.0, 0.85, 0.65);
@@ -28,7 +28,7 @@ float sd_box(vec2 p, vec2 b) {
 }
 
 vec3 sample_warning_graphic(vec2 uv) {
-	vec2 centered = (uv - vec2(0.5)) * vec2(1.333, 1.0);
+	vec2 centered = (uv - vec2(0.5)) * vec2(1.0, 1.476);
 	vec2 tri_p = vec2(centered.x, -centered.y + 0.03);
 	float tri_outer = sd_triangle(tri_p, 0.28);
 	float tri_inner = sd_triangle(tri_p, 0.22);

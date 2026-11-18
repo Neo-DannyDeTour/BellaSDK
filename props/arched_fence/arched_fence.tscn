@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" uid="uid://c4fh0wu4badb8" path="res://assets/models/props/arched_fence/arched_fence.glb" id="1_glb"]
+[ext_resource type="Script" path="res://props/arched_fence/arched_fence.gd" id="2_script"]
+[ext_resource type="Material" path="res://props/arched_fence/arched_fence_mat.tres" id="3_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_col"]
+size = Vector3(2, 3, 0.06)
+
+[node name="ArchedFence" type="StaticBody3D" node_paths=PackedStringArray("mesh_instance")]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("2_script")
+mesh_instance = NodePath("Model/FenceMesh")
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="FenceMesh" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("3_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("BoxShape3D_col")
+
+[editable path="Model"]
