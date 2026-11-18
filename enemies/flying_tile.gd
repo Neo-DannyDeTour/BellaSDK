@@ -51,6 +51,8 @@ var _target_player: Node3D = null
 
 ## Caches starting height and connects area and body entry signals.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	_start_y = global_position.y
 
 	_activation_area.body_entered.connect(_on_activation_area_body_entered)
@@ -96,6 +98,7 @@ func _on_activation_area_body_entered(body: Node3D) -> void:
 	if _current_state == FlyingTile.State.IDLE and body.is_in_group(&"player"):
 		_target_player = body
 		_current_state = FlyingTile.State.RISING
+		set_physics_process(true)
 		print("Player entered activation sphere. Tile rising.")
 
 
@@ -118,8 +121,9 @@ func _on_body_entered(body: Node3D) -> void:
 	if _current_state != FlyingTile.State.ATTACKING:
 		return
 
-	var health_node: Node = body.get_node_or_null("HealthComponent")
-	var health_comp: HealthComponent = health_node if health_node is HealthComponent else null
+	var health_comp: HealthComponent = (
+		NodeQuery.find_first_child_of_type(body, HealthComponent) as HealthComponent
+	)
 
 	if health_comp:
 		print("FlyingTile: Direct hit! Calling HealthComponent.take_damage(100)")
@@ -136,4 +140,5 @@ func _on_body_entered(body: Node3D) -> void:
 ## Cleans up the node instance from memory.
 func _destroy_tile(reason: String) -> void:
 	print("Tile destroyed. Reason: ", reason)
-	queue_free()
+	set_physics_process(false)
+	call_deferred(&"queue_free")

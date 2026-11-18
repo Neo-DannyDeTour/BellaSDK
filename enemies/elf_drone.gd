@@ -3,10 +3,6 @@
 class_name ElfDrone
 extends CharacterBody3D
 
-## Emitted on healing pulse, passing [param target] and [param amount] healed.
-@warning_ignore("unused_signal")
-signal healing_pulsed(target: Node3D, amount: int)
-
 ## Emitted when reaching [member target_waypoint] to wait for player entity.
 signal reached_waypoint
 
@@ -37,7 +33,7 @@ enum TaskState {
 @export var target_waypoint: Waypoint3D
 
 ## Swarm controller to merge into upon finishing sequence.
-@export var flock_controller: DroneSwarmController
+@export var flock_controller: Node3D
 
 ## Maximum wander radius in meters for autonomous area exploration.
 @export var explore_radius: float = 30.0
@@ -108,6 +104,9 @@ var omni_light: OmniLight3D
 ## Active target [Node3D] being healed by the drone.
 var current_healing_target: Node3D = null
 
+## Cached collision result reused during forward obstacle sweeps.
+var _sweep_collision: KinematicCollision3D = KinematicCollision3D.new()
+
 
 ## Initializes node references, visual elements, and starting task.
 func _ready() -> void:
@@ -133,22 +132,30 @@ func _ready() -> void:
 	if is_instance_valid(beam_particles):
 		beam_particles.emitting = false
 
-	if not Engine.is_editor_hint():
-		if task_state == TaskState.EXPLORE:
-			_pick_new_explore_target()
-		elif task_state == TaskState.FLY_TO_WAYPOINT and target_waypoint != null:
-			navigate_to_waypoint(target_waypoint)
+	set_process(false)
+	if Engine.is_editor_hint():
+		set_physics_process(false)
+		return
+
+	if task_state == TaskState.EXPLORE:
+		_pick_new_explore_target()
+	elif task_state == TaskState.FLY_TO_WAYPOINT and target_waypoint != null:
+		navigate_to_waypoint(target_waypoint)
+	_update_physics_state()
 
 
 ## Executes task state routines and updates physics velocity.
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
+		set_physics_process(false)
 		return
 
 	match task_state:
 		TaskState.IDLE:
 			velocity = velocity.move_toward(Vector3.ZERO, acceleration * delta)
 			move_and_slide()
+			if velocity.is_zero_approx() and not is_instance_valid(current_healing_target):
+				set_physics_process(false)
 		TaskState.EXPLORE:
 			_process_explore(delta)
 			_apply_movement(delta)
@@ -213,12 +220,11 @@ func _process_fly_to_waypoint() -> void:
 func _sweep_for_obstacles(move_heading: Vector3) -> bool:
 	if move_heading.is_zero_approx():
 		return false
-	var kin_col: KinematicCollision3D = KinematicCollision3D.new()
-	if test_move(global_transform, move_heading * 0.45, kin_col):
-		var collider: Object = kin_col.get_collider()
+	if test_move(global_transform, move_heading * 0.45, _sweep_collision):
+		var collider: Object = _sweep_collision.get_collider()
 		var col_node: Node = collider as Node
 		if col_node != null and not col_node.is_in_group(&"player"):
-			var hit_norm: Vector3 = kin_col.get_normal()
+			var hit_norm: Vector3 = _sweep_collision.get_normal()
 			if hit_norm.dot(move_heading) < -obstacle_impact_threshold:
 				_start_bashing_from_collision(col_node, hit_norm)
 				return true
@@ -289,7 +295,8 @@ func _process_join_flock() -> void:
 	if dist_sq <= 6.25:
 		print("ElfDrone: Swarm reached. Adopting into controller.")
 		task_state = TaskState.FOLLOW_SWARM
-		flock_controller.adopt_drone(self)
+		if flock_controller.has_method(&"adopt_drone"):
+			flock_controller.call(&"adopt_drone", self)
 		joined_flock.emit()
 
 
@@ -364,6 +371,7 @@ func navigate_to_waypoint(waypoint: Variant = null) -> void:
 
 	if is_instance_valid(target_waypoint):
 		task_state = TaskState.FLY_TO_WAYPOINT
+		_update_physics_state()
 	else:
 		print("ElfDrone: No valid Waypoint3D specified or assigned.")
 
@@ -379,6 +387,7 @@ func start_bashing_obstacle(target_obstacle: Variant = null) -> void:
 	bash_time = 0.0
 	bash_check_timer = 0.0
 	task_state = TaskState.BASH_OBSTACLE
+	_update_physics_state()
 
 
 ## Commands drone to begin freely roaming within exploration radius.
@@ -387,12 +396,14 @@ func start_exploring(_param: Variant = null) -> void:
 	explore_anchor = global_position
 	task_state = TaskState.EXPLORE
 	_pick_new_explore_target()
+	_update_physics_state()
 
 
 ## Commands drone to abandon waiting and merge into [member flock_controller].
 func join_flock(_param: Variant = null) -> void:
 	print("ElfDrone: Command 'join_flock' received.")
 	task_state = TaskState.JOIN_FLOCK
+	_update_physics_state()
 
 
 ## Queries scene tree nodes in group player to locate target entity.
@@ -407,6 +418,7 @@ func _find_player() -> Node3D:
 ## Updates target destination coordinate when managed by swarm.
 func set_target_position(new_pos: Vector3) -> void:
 	target_position = new_pos
+	_update_physics_state()
 
 
 ## Sets or clears [member current_healing_target] and visuals.
@@ -426,6 +438,7 @@ func set_healing_target(target: Node3D) -> void:
 	else:
 		if is_instance_valid(beam_particles):
 			beam_particles.emitting = true
+	_update_physics_state()
 
 
 ## Stretches and points [member healing_beam] toward target.
@@ -439,18 +452,32 @@ func _update_beam_transform() -> void:
 
 	var start_pt: Vector3 = global_position
 	var end_pt: Vector3 = current_healing_target.global_position
-	var dist: float = start_pt.distance_to(end_pt)
+	var dist_sq: float = start_pt.distance_squared_to(end_pt)
 
-	if dist <= 0.05 or dist > heal_range:
+	if dist_sq <= 0.0025 or dist_sq > (heal_range * heal_range):
 		healing_beam.visible = false
 		return
 
+	var dist: float = sqrt(dist_sq)
 	healing_beam.visible = true
 	healing_beam.global_position = (start_pt + end_pt) * 0.5
-	var dir: Vector3 = (end_pt - start_pt).normalized()
+	var dir: Vector3 = (end_pt - start_pt) / dist
 	var up_vec: Vector3 = Vector3.RIGHT if absf(dir.y) > 0.98 else Vector3.UP
 	healing_beam.look_at(end_pt, up_vec)
 	healing_beam.scale = Vector3(1.0, 1.0, dist)
+
+
+## Gates physics processing based on active task state or healing target.
+func _update_physics_state() -> void:
+	if Engine.is_editor_hint():
+		set_physics_process(false)
+		return
+	var active: bool = (
+		task_state != TaskState.IDLE
+		or not velocity.is_zero_approx()
+		or is_instance_valid(current_healing_target)
+	)
+	set_physics_process(active)
 
 
 ## Applies glow and emission colors to mesh and omni light.

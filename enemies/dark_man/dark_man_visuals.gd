@@ -68,7 +68,7 @@ func _ready() -> void:
 	_body_mesh.material_override = MAT_BODY
 	_axe_mesh.material_override = MAT_AXE
 
-	_axe_hitbox.collision_layer = 0
+	_axe_hitbox.collision_layer = CollisionLayers.MASK_NONE
 	_axe_hitbox.collision_mask = CollisionLayers.MASK_PLAYER
 	_axe_hitbox.set_deferred(&"monitoring", false)
 	_axe_hitbox.set_deferred(&"monitorable", false)

@@ -231,7 +231,7 @@ func _update_beam_geometry() -> void:
 	var current_length: float = max_laser_range
 	if laser_ray_cast.is_colliding():
 		var hit_pt: Vector3 = laser_ray_cast.get_collision_point()
-		current_length = swivel_pivot.global_position.distance_to(hit_pt)
+		current_length = sqrt(swivel_pivot.global_position.distance_squared_to(hit_pt))
 		laser_dot_mesh.visible = true
 		laser_dot_mesh.position = Vector3(0.0, 0.0, -current_length)
 	else:
@@ -301,11 +301,11 @@ func detonate() -> void:
 func _resolve_player_distance() -> float:
 	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
 	if is_instance_valid(player_node) and player_node is Node3D:
-		return global_position.distance_to((player_node as Node3D).global_position)
+		return sqrt(global_position.distance_squared_to((player_node as Node3D).global_position))
 
 	var active_cam: Camera3D = get_viewport().get_camera_3d()
 	if is_instance_valid(active_cam):
-		return global_position.distance_to(active_cam.global_position)
+		return sqrt(global_position.distance_squared_to(active_cam.global_position))
 
 	return blast_radius
 
@@ -355,27 +355,19 @@ func _process_damage_receiver(actor: Node, processed_list: Array[Node]) -> void:
 ## Queries direct space state ray to check environment wall occlusion.
 func _is_occluded_by_environment(target_pos: Vector3) -> bool:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		global_position, target_pos, CollisionLayers.MASK_ENVIRONMENT
+	var result: Dictionary = NodeQuery.cast_ray(
+		space_state, global_position, target_pos, CollisionLayers.MASK_ENVIRONMENT
 	)
-	var result: Dictionary = space_state.intersect_ray(query)
 	return not result.is_empty()
 
 
-## Recursively discovers an attached [HealthComponent] instance on an actor.
+## Discovers an attached [HealthComponent] instance on an actor via [NodeQuery].
 func _find_health_component(node: Node) -> HealthComponent:
 	if node is HealthComponent:
 		return node as HealthComponent
 
-	var direct_child: Node = node.get_node_or_null("HealthComponent")
-	if is_instance_valid(direct_child) and direct_child is HealthComponent:
-		return direct_child as HealthComponent
-
-	for child: Node in node.get_children():
-		if child is HealthComponent:
-			return child as HealthComponent
-
-	return null
+	var found: Node = NodeQuery.find_first_child_of_type(node, HealthComponent)
+	return found as HealthComponent if found is HealthComponent else null
 
 
 ## Computes scaled integer damage using 0m and 3m calibrated damage slope.
@@ -396,12 +388,9 @@ func _dispatch_screenshake(player_dist: float) -> void:
 	var shake_duration: float = lerpf(0.2, 0.55, shake_factor)
 
 	print("TripMine: Dispatching screenshake with intensity: ", shake_intensity)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal(&"screenshake_requested"):
-			events.emit_signal(&"screenshake_requested", shake_intensity, shake_duration)
-		if events.has_signal(&"shockwave_requested"):
-			events.emit_signal(&"shockwave_requested", global_position, blast_radius, 2.5)
+	if is_instance_valid(Events):
+		Events.screenshake_requested.emit(shake_intensity, shake_duration)
+		Events.shockwave_requested.emit(global_position, blast_radius, 2.5)
 
 
 ## Plays particle bursts, animates omni light flash, and hides mine meshes.

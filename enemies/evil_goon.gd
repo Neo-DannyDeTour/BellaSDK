@@ -55,22 +55,18 @@ func _ready() -> void:
 	)
 
 	if not is_instance_valid(health_component):
-		health_component = get_node_or_null("HealthComponent") as HealthComponent
-
-	if not is_instance_valid(health_component):
-		health_component = find_child("HealthComponent", false, false) as HealthComponent
+		var raw_hc: Node = NodeQuery.find_first_child_of_type(self, HealthComponent)
+		health_component = raw_hc if raw_hc is HealthComponent else null
 
 	assert(is_instance_valid(health_component), "EvilGoon: HealthComponent is mandatory.")
 	if is_instance_valid(health_component):
 		health_component.use_pooling = false
-		health_component.died.connect(_on_health_component_died)
+		Utilities.safe_connect(health_component.died, _on_health_component_died)
 		print("EvilGoon: Bound to HealthComponent with ", health_component.current_health, " HP.")
 
 	if not is_instance_valid(faction_component):
-		faction_component = get_node_or_null("FactionComponent") as FactionComponent
-
-	if not is_instance_valid(faction_component):
-		faction_component = find_child("FactionComponent", false, false) as FactionComponent
+		var raw_fc: Node = NodeQuery.find_first_child_of_type(self, FactionComponent)
+		faction_component = raw_fc if raw_fc is FactionComponent else null
 
 	assert(is_instance_valid(faction_component), "EvilGoon: FactionComponent is mandatory.")
 	if is_instance_valid(faction_component):

@@ -263,7 +263,7 @@ func poke_object(body: RigidBody3D) -> void:
 func grab_object(body: RigidBody3D) -> void:
 	print("TentacleEnemy: grab_object() grabbing prop: ", body.name)
 	held_object = body
-	held_object.freeze = true
+	held_object.set_deferred(&"freeze", true)
 
 	var rx: float = randf_range(-max_reach * 0.5, max_reach * 0.5)
 	var rz: float = randf_range(-max_reach * 0.5, max_reach * 0.5)
@@ -292,7 +292,7 @@ func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 		func() -> void:
 			if is_instance_valid(weapon):
 				held_object = weapon
-				held_object.freeze = true
+				held_object.set_deferred(&"freeze", true)
 			else:
 				_is_striking = false
 				_switch_state(TentacleEnemy.State.SPOTTED)
@@ -335,7 +335,7 @@ func throw_object_at_player() -> void:
 
 	var projectile: RigidBody3D = held_object
 	held_object = null
-	projectile.freeze = false
+	projectile.set_deferred(&"freeze", false)
 	projectile.linear_velocity = throw_dir * throw_force
 
 	_action_tween = Utilities.reset_tween(self, _action_tween)
@@ -362,7 +362,7 @@ func throw_object_at_player() -> void:
 func drop_object() -> void:
 	print("TentacleEnemy: drop_object() releasing held prop.")
 	if is_instance_valid(held_object):
-		held_object.freeze = false
+		held_object.set_deferred(&"freeze", false)
 		held_object = null
 
 
@@ -455,8 +455,9 @@ func _on_detection_area_body_exited(body: Node3D) -> void:
 ## Drops held prop and droops tentacle on defeat.
 func _on_died() -> void:
 	print("TentacleEnemy: _on_died() tentacle defeated.")
+	set_physics_process(false)
 	if is_instance_valid(held_object):
-		held_object.freeze = false
+		held_object.set_deferred(&"freeze", false)
 		held_object = null
 
 	_action_tween = Utilities.reset_tween(self, _action_tween)

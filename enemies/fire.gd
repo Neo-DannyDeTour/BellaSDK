@@ -16,6 +16,18 @@ const DEFAULT_PHYSICS_MASK: int = (
 	| CollisionLayers.MASK_DEBRIS
 	| CollisionLayers.MASK_ENEMIES
 )
+## Shader uniform key for fire height.
+const PARAM_FIRE_HEIGHT: StringName = &"fire_height"
+## Shader uniform key for fire width.
+const PARAM_FIRE_WIDTH: StringName = &"fire_width"
+## Shader uniform key for flame time scale.
+const PARAM_TIME_SCALE: StringName = &"time_scale"
+## Shader uniform key for radiant emission strength.
+const PARAM_EMISSION_STRENGTH: StringName = &"emission_strength"
+## Shader uniform key for wind direction.
+const PARAM_WIND_DIRECTION: StringName = &"wind_direction"
+## Shader uniform key for wind strength.
+const PARAM_WIND_STRENGTH: StringName = &"wind_strength"
 
 ## Emitted when [method ignite] enables fire rendering and burn monitoring.
 signal ignited
@@ -117,6 +129,8 @@ func _ready() -> void:
 	_update_particle_parameters()
 	_update_burn_shape()
 	_update_volume_mesh()
+	set_process(_is_burning and enable_flicker and not Engine.is_editor_hint())
+	set_physics_process(false)
 
 
 ## Updates dynamic light flicker per frame to maintain illumination.
@@ -156,6 +170,8 @@ func _apply_burn_tick() -> void:
 			_active_combustible_bodies.remove_at(i)
 			continue
 		_damage_target(target_body, burn_damage_per_tick)
+	if _active_combustible_bodies.is_empty():
+		set_physics_process(false)
 
 
 ## Inflicts fire damage on [param target] via methods or [HealthComponent].
@@ -177,9 +193,9 @@ func _resolve_health_component(target: Node3D) -> HealthComponent:
 	if not is_instance_valid(target):
 		return null
 	if "health_component" in target:
-		var comp: Variant = target.get("health_component")
+		var comp: Variant = target.get(&"health_component")
 		if comp is HealthComponent:
-			return comp
+			return comp as HealthComponent
 	var found_comp: Node = NodeQuery.find_first_child_of_type(target, HealthComponent)
 	if found_comp is HealthComponent:
 		return found_comp
@@ -213,6 +229,7 @@ func ignite() -> void:
 	print("[VolumetricFire] Igniting fire and enabling burn trigger.")
 	_is_burning = true
 	_tick_timer = 0.0
+	set_process(enable_flicker and not Engine.is_editor_hint())
 	if is_instance_valid(fire_light):
 		fire_light.visible = true
 	if is_instance_valid(mesh_instance):
@@ -231,6 +248,8 @@ func extinguish() -> void:
 	print("[VolumetricFire] Extinguishing fire and disabling burn trigger.")
 	_is_burning = false
 	_tick_timer = 0.0
+	set_process(false)
+	set_physics_process(false)
 	if is_instance_valid(fire_light):
 		fire_light.visible = false
 	if is_instance_valid(mesh_instance):
@@ -317,12 +336,12 @@ func _update_shader_parameters() -> void:
 	# print("[VolumetricFire] Updating shader parameters.")
 	if not is_instance_valid(_material):
 		return
-	_material.set_shader_parameter("fire_height", fire_height)
-	_material.set_shader_parameter("fire_width", fire_width)
-	_material.set_shader_parameter("time_scale", fire_speed)
-	_material.set_shader_parameter("emission_strength", emission_strength)
-	_material.set_shader_parameter("wind_direction", wind_direction)
-	_material.set_shader_parameter("wind_strength", wind_strength)
+	_material.set_shader_parameter(PARAM_FIRE_HEIGHT, fire_height)
+	_material.set_shader_parameter(PARAM_FIRE_WIDTH, fire_width)
+	_material.set_shader_parameter(PARAM_TIME_SCALE, fire_speed)
+	_material.set_shader_parameter(PARAM_EMISSION_STRENGTH, emission_strength)
+	_material.set_shader_parameter(PARAM_WIND_DIRECTION, wind_direction)
+	_material.set_shader_parameter(PARAM_WIND_STRENGTH, wind_strength)
 
 
 ## Adjusts ember particle trajectory and velocity based on wind forces.
@@ -409,6 +428,7 @@ func _on_burn_area_body_entered(body: Node3D) -> void:
 
 	if _can_take_damage(body) and not _active_combustible_bodies.has(body):
 		_active_combustible_bodies.append(body)
+		set_physics_process(true)
 		_damage_target(body, burn_damage_per_tick)
 
 	if is_combustible:
@@ -426,6 +446,8 @@ func _on_burn_area_body_exited(body: Node3D) -> void:
 		Events.fire_hazard_toggled.emit(false)
 
 	_active_combustible_bodies.erase(body)
+	if _active_combustible_bodies.is_empty():
+		set_physics_process(false)
 
 
 ## Caches shader material through [MaterialCache] to prevent GPU stalls.

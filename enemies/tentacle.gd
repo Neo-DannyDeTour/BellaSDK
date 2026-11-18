@@ -55,7 +55,7 @@ func _process(_delta: float) -> void:
 
 	for i: int in range(segment_count):
 		var t: float = (i + 1.0) / float(segment_count)
-		var current_pos: Vector3 = _get_quadratic_bezier(p0, p1, p2, t)
+		var current_pos: Vector3 = MathUtils.quadratic_bezier(p0, p1, p2, t)
 
 		_update_visual_segment(_segments[i], prev_pos, current_pos)
 		prev_pos = current_pos
@@ -87,16 +87,6 @@ func _spawn_visual_segments() -> void:
 		segment.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		add_child(segment)
 		_segments.append(segment)
-
-
-## Mathematical helper calculating a point along a curve via [MathUtils.quadratic_bezier].
-## [param p0] The starting point vector.
-## [param p1] The control point vector dictating the arc.
-## [param p2] The ending point vector.
-## [param t] The interpolation step from 0.0 to 1.0.
-## [return] The calculated point [Vector3].
-func _get_quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
-	return MathUtils.quadratic_bezier(p0, p1, p2, t)
 
 
 ## Transforms, rotates, and stretches an individual segment to connect two points.

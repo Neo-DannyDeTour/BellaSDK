@@ -44,12 +44,27 @@ var target_player: Node3D = null
 ## State timer driving phase transition durations.
 @onready var state_timer: Timer = $StateTimer
 
+## Pre-allocated sphere shape for vision cone queries.
+var _vision_shape: SphereShape3D = SphereShape3D.new()
+
+## Pre-allocated shape query parameters for vision cone detection.
+var _vision_query: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
+
+## Pre-allocated ray query parameters for line-of-sight checks.
+var _los_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.new()
+
 
 ## Orients targeting laser and binds state timer completion.
 func _ready() -> void:
 	print("GuardianPillar: Initializing defense turret.")
+	add_to_group(&"guardian_pillar")
 	laser_mesh.hide()
 	laser_mesh.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	_vision_shape.radius = vision_radius
+	_vision_query.shape = _vision_shape
+	_vision_query.collision_mask = CollisionLayers.MASK_PLAYER
+	_los_query.collision_mask = CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER
+	_los_query.exclude = [get_rid()]
 	Utilities.safe_connect(state_timer.timeout, _on_state_timer_timeout)
 
 
@@ -78,19 +93,14 @@ func _detect_player_in_cone() -> void:
 		return
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var shape: SphereShape3D = SphereShape3D.new()
-	shape.radius = vision_radius
+	_vision_shape.radius = vision_radius
+	_vision_query.transform = global_transform
 
-	var query: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
-	query.shape = shape
-	query.transform = global_transform
-	query.collision_mask = CollisionLayers.MASK_PLAYER
-
-	var results: Array[Dictionary] = space_state.intersect_shape(query)
+	var results: Array[Dictionary] = space_state.intersect_shape(_vision_query)
 
 	for result: Dictionary in results:
-		var collider: Object = result["collider"]
-		var player_node: Node3D = collider as Node3D
+		var raw_collider: Variant = result.get("collider")
+		var player_node: Node3D = raw_collider as Node3D if raw_collider is Node3D else null
 		if player_node != null and player_node.is_in_group(&"player"):
 			var dir_to_player: Vector3 = head.global_position.direction_to(
 				player_node.global_position
@@ -113,16 +123,14 @@ func _has_line_of_sight(target: Node3D) -> bool:
 
 	var smoke_mgr: Node = get_node_or_null("/root/SmokeManager")
 	if is_instance_valid(smoke_mgr) and smoke_mgr.has_method(&"is_line_of_sight_obscured"):
-		if smoke_mgr.call(&"is_line_of_sight_obscured", start_pos, end_pos):
+		if bool(smoke_mgr.call(&"is_line_of_sight_obscured", start_pos, end_pos)):
 			return false
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		start_pos, end_pos, CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER
-	)
-	query.exclude = [get_rid()]
+	_los_query.from = start_pos
+	_los_query.to = end_pos
 
-	var result: Dictionary = space_state.intersect_ray(query)
+	var result: Dictionary = space_state.intersect_ray(_los_query)
 	return not result.is_empty() and result.get("collider") == target
 
 
@@ -146,6 +154,12 @@ func _process_targeting() -> void:
 func _change_state(new_state: GuardianPillar.State) -> void:
 	current_state = new_state
 	print("GuardianPillar: State transitioned to ", GuardianPillar.State.keys()[current_state])
+	set_physics_process(
+		(
+			current_state == GuardianPillar.State.SCANNING
+			or current_state == GuardianPillar.State.TARGETING
+		)
+	)
 
 	match current_state:
 		GuardianPillar.State.SCANNING:

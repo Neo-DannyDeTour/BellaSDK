@@ -75,8 +75,8 @@ func _ready() -> void:
 	set_process(false)
 	set_physics_process(false)
 
-	collision_layer = 0
-	collision_mask = Types.MASK_PLAYER
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_PLAYER
 	monitorable = false
 	monitoring = false
 	visible = false
@@ -123,15 +123,14 @@ func activate(world_pos: Vector3, hazard_type: PuddleType) -> void:
 	visible = true
 	set_deferred(PROP_MONITORING, true)
 
+	_scale_tween = Utilities.reset_tween(self, _scale_tween)
 	if is_instance_valid(_scale_tween):
-		_scale_tween.kill()
-	_scale_tween = create_tween()
-	(
-		_scale_tween
-		. tween_property(self, "scale", Vector3.ONE, 0.18)
-		. set_trans(Tween.TRANS_BACK)
-		. set_ease(Tween.EASE_OUT)
-	)
+		(
+			_scale_tween
+			. tween_property(self, "scale", Vector3.ONE, 0.18)
+			. set_trans(Tween.TRANS_BACK)
+			. set_ease(Tween.EASE_OUT)
+		)
 
 	print("SquidPuddle: Activated puddle type ", _committed_type, " at ", world_pos)
 
@@ -151,13 +150,12 @@ func deactivate() -> void:
 		_remove_surface_effect(_committed_type)
 		_player_inside = false
 
+	_scale_tween = Utilities.reset_tween(self, _scale_tween)
 	if is_instance_valid(_scale_tween):
-		_scale_tween.kill()
-	_scale_tween = create_tween()
-	_scale_tween.tween_property(self, "scale", Vector3(0.05, 1.0, 0.05), 0.2).set_trans(
-		Tween.TRANS_SINE
-	)
-	_scale_tween.tween_callback(hide)
+		_scale_tween.tween_property(self, "scale", Vector3(0.05, 1.0, 0.05), 0.2).set_trans(
+			Tween.TRANS_SINE
+		)
+		_scale_tween.tween_callback(hide)
 	print("SquidPuddle: Deactivated puddle.")
 
 
@@ -171,7 +169,7 @@ func _build_puddle_nodes() -> void:
 	add_child(_collision_shape)
 
 	_mesh_instance = MeshInstance3D.new()
-	_mesh_instance.layers = 1
+	_mesh_instance.layers = CollisionLayers.RENDER_MASK_ENVIRONMENT
 	var cyl_mesh: CylinderMesh = CylinderMesh.new()
 	cyl_mesh.top_radius = PUDDLE_RADIUS
 	cyl_mesh.bottom_radius = PUDDLE_RADIUS * 1.05
@@ -189,16 +187,20 @@ func _build_puddle_nodes() -> void:
 	add_child(_mesh_instance)
 
 
+## Returns true if [param body] belongs to the player entity.
+func _is_player_body(body: Node3D) -> bool:
+	if body.is_in_group(GROUP_PLAYER):
+		return true
+	if body is CollisionObject3D:
+		return ((body as CollisionObject3D).collision_layer & CollisionLayers.MASK_PLAYER) != 0
+	return false
+
+
 ## Applies the configured surface penalty when the player steps into the puddle.
 func _on_body_entered(body: Node3D) -> void:
 	if not _is_active or _player_inside or not is_instance_valid(body):
 		return
-	var is_player: bool = body.is_in_group(GROUP_PLAYER)
-	if not is_player and body is CollisionObject3D:
-		var col_obj: CollisionObject3D = body as CollisionObject3D
-		is_player = (col_obj.collision_layer & Types.MASK_PLAYER) != 0
-
-	if not is_player:
+	if not _is_player_body(body):
 		return
 
 	_player_inside = true
@@ -209,12 +211,7 @@ func _on_body_entered(body: Node3D) -> void:
 func _on_body_exited(body: Node3D) -> void:
 	if not _player_inside or not is_instance_valid(body):
 		return
-	var is_player: bool = body.is_in_group(GROUP_PLAYER)
-	if not is_player and body is CollisionObject3D:
-		var col_obj: CollisionObject3D = body as CollisionObject3D
-		is_player = (col_obj.collision_layer & Types.MASK_PLAYER) != 0
-
-	if not is_player:
+	if not _is_player_body(body):
 		return
 
 	_player_inside = false

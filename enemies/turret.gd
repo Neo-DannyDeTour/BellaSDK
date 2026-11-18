@@ -281,24 +281,26 @@ func _set_target(new_target: Node3D) -> void:
 	target_health_comp = _resolve_health_component(target)
 
 
-## Recursively resolves [HealthComponent] on target or any child node.
+## Resolves [HealthComponent] on target via property, metadata, or [NodeQuery].
 static func _resolve_health_component(node: Node) -> HealthComponent:
 	if not is_instance_valid(node):
 		return null
 
 	if "health_component" in node:
-		var comp_prop: Variant = node.get("health_component")
+		var comp_prop: Variant = node.get(&"health_component")
 		if comp_prop is HealthComponent:
-			return comp_prop
+			return comp_prop as HealthComponent
 
-	if node.has_meta("health_component"):
-		var meta_prop: Variant = node.get_meta("health_component")
+	if node.has_meta(&"health_component"):
+		var meta_prop: Variant = node.get_meta(&"health_component")
 		if meta_prop is HealthComponent:
-			return meta_prop
+			return meta_prop as HealthComponent
+
+	var found: Node = NodeQuery.find_first_child_of_type(node, HealthComponent)
+	if found is HealthComponent:
+		return found as HealthComponent
 
 	for child: Node in node.get_children():
-		if child is HealthComponent:
-			return child
 		var nested: HealthComponent = _resolve_health_component(child)
 		if nested != null:
 			return nested
@@ -356,7 +358,8 @@ func _has_line_of_sight() -> bool:
 
 	var smoke_mgr: Node = get_node_or_null("/root/SmokeManager")
 	if is_instance_valid(smoke_mgr) and smoke_mgr.has_method(&"is_line_of_sight_obscured"):
-		if smoke_mgr.call(&"is_line_of_sight_obscured", start_pos, end_pos):
+		var obscured: Variant = smoke_mgr.call(&"is_line_of_sight_obscured", start_pos, end_pos)
+		if obscured is bool and obscured:
 			return false
 
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
@@ -370,12 +373,11 @@ func _has_line_of_sight() -> bool:
 	if result.is_empty():
 		return false
 
-	var hit_collider: Object = result.get("collider")
-	if hit_collider == target:
+	var raw_collider: Variant = result.get("collider")
+	if raw_collider == target:
 		return true
-	if hit_collider is Node:
-		var hit_node: Node = hit_collider
-		return target.is_ancestor_of(hit_node)
+	if raw_collider is Node:
+		return target.is_ancestor_of(raw_collider as Node)
 	return false
 
 

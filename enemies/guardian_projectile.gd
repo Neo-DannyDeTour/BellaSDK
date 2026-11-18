@@ -20,6 +20,9 @@ var is_exploding: bool = false
 ## Movement velocity vector applied per frame during flight phase.
 var velocity: Vector3 = Vector3.ZERO
 
+## Active tween for explosion expansion visual.
+var _explode_tween: Tween = null
+
 ## Visual geometry of projectile that expands during explosion.
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 
@@ -61,7 +64,14 @@ func _on_body_entered(body: Node3D) -> void:
 	if is_exploding:
 		return
 
-	if body is GuardianPillar:
+	var body_script: Variant = body.get_script()
+	var is_pillar: bool = (
+		body.is_in_group(&"guardian_pillar")
+		or (
+			body_script is Script and (body_script as Script).get_global_name() == &"GuardianPillar"
+		)
+	)
+	if is_pillar:
 		print("EnergyBlast: Ignored collision with GuardianPillar.")
 		return
 
@@ -75,12 +85,14 @@ func _explode() -> void:
 		return
 
 	is_exploding = true
+	set_physics_process(false)
 	print("EnergyBlast: _explode() - Detonating at ", global_position)
 
 	velocity = Vector3.ZERO
 
-	var tween: Tween = create_tween()
-	tween.tween_property(mesh, "scale", Vector3.ONE * explosion_radius, 0.15)
+	_explode_tween = Utilities.reset_tween(self, _explode_tween)
+	if is_instance_valid(_explode_tween):
+		_explode_tween.tween_property(mesh, "scale", Vector3.ONE * explosion_radius, 0.15)
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var shape: SphereShape3D = SphereShape3D.new()
@@ -97,10 +109,9 @@ func _explode() -> void:
 	print("EnergyBlast: Explosion caught ", results.size(), " objects in radius.")
 
 	for result: Dictionary in results:
-		var collider: Object = result["collider"]
-		if collider is Node3D:
-			var col_node: Node3D = collider
-			_apply_damage(col_node)
+		var raw_collider: Variant = result.get("collider")
+		if raw_collider is Node3D:
+			_apply_damage(raw_collider as Node3D)
 
 	explosion_timer.start(0.3)
 	Utilities.safe_connect(explosion_timer.timeout, queue_free)

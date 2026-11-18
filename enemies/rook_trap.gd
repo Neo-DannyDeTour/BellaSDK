@@ -56,6 +56,7 @@ func _ready() -> void:
 	_draw_path_lines()
 
 	if not Engine.is_editor_hint():
+		set_physics_process(false)
 		_setup_trigger_areas()
 		if is_instance_valid(player_hitbox):
 			player_hitbox.collision_layer = CollisionLayers.MASK_NONE
@@ -96,6 +97,7 @@ func _physics_process(delta: float) -> void:
 		if dist_sq <= move_step_sq:
 			moving_body.global_position = _origin_position
 			_state = State.IDLE
+			set_physics_process(false)
 			# print("RookTrap: Returned to origin position.")
 		else:
 			moving_body.global_position += direction * move_step
@@ -115,6 +117,7 @@ func trigger_trap(marker_index: int) -> void:
 	if is_instance_valid(markers[marker_index]):
 		_target_position = markers[marker_index].global_position
 		_state = State.ATTACKING
+		set_physics_process(true)
 		print("RookTrap: Activated rushing toward marker: ", marker_index)
 		_check_immediate_overlap()
 
@@ -161,7 +164,7 @@ func _draw_path_lines() -> void:
 			marker.global_position.x, flat_start.y, marker.global_position.z
 		)
 
-		var dist: float = flat_start.distance_to(flat_marker)
+		var dist: float = sqrt(flat_start.distance_squared_to(flat_marker))
 		box_mesh.size = Vector3(0.2, 0.05, dist)
 		mesh_instance.mesh = box_mesh
 		path_lines_container.add_child(mesh_instance)
@@ -194,7 +197,7 @@ func _setup_trigger_areas() -> void:
 			marker.global_position.x, flat_start.y, marker.global_position.z
 		)
 
-		var dist: float = flat_start.distance_to(flat_marker)
+		var dist: float = sqrt(flat_start.distance_squared_to(flat_marker))
 		box.size = Vector3(0.8, 2.0, dist)
 		coll_shape.shape = box
 

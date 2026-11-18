@@ -96,7 +96,7 @@ func _ready() -> void:
 	assert(radius > 0.0 and max_health > 0)
 
 	collision_layer = LAYER_ENEMIES
-	collision_mask = 0
+	collision_mask = CollisionLayers.MASK_NONE
 	current_health = max_health
 
 	_shared_material = ShaderMaterial.new()
@@ -163,7 +163,9 @@ func generate_shield() -> void:
 	if active_count <= 0:
 		return
 
-	_master_tween = create_tween()
+	_master_tween = Utilities.reset_tween(self, _master_tween)
+	if _master_tween == null:
+		return
 	var step_delay: float = generation_duration / float(maxi(active_count, 1))
 
 	for i: int in range(active_count):
@@ -231,12 +233,11 @@ func _spawn_single_tile(tile_idx: int) -> void:
 	mesh_inst.set_instance_shader_parameter(PARAM_OPACITY, 1.0)
 	mesh_inst.set_instance_shader_parameter(PARAM_HIT_INTENSITY, 0.85)
 
-	var prev_tween: Tween = _tile_tweens[tile_idx]
-	if is_instance_valid(prev_tween):
-		prev_tween.kill()
-
-	var tw: Tween = create_tween().set_parallel(true)
+	var tw: Tween = Utilities.reset_tween(self, _tile_tweens[tile_idx])
 	_tile_tweens[tile_idx] = tw
+	if tw == null:
+		return
+	tw.set_parallel(true)
 	(
 		tw
 		. tween_property(mesh_inst, "scale", Vector3.ONE, 0.18)
@@ -280,17 +281,15 @@ func _trigger_tile_jitter(tile_idx: int, global_damage_ratio: float) -> void:
 	if is_instance_valid(_screen_notifier) and not _screen_notifier.is_on_screen():
 		return
 
-	var existing_tween: Tween = _tile_tweens[tile_idx]
-	if is_instance_valid(existing_tween):
-		existing_tween.kill()
-
 	var base_pos: Vector3 = _tile_positions[tile_idx]
 	var normal: Vector3 = _tile_normals[tile_idx]
 	var base_basis: Basis = _tile_bases[tile_idx]
 	var tilt_axis: Vector3 = base_basis.x
 
-	var tw: Tween = create_tween()
+	var tw: Tween = Utilities.reset_tween(self, _tile_tweens[tile_idx])
 	_tile_tweens[tile_idx] = tw
+	if tw == null:
+		return
 
 	tw.tween_property(mesh_inst, "position", base_pos - (normal * 0.11), 0.035).set_trans(
 		Tween.TRANS_SINE
@@ -339,7 +338,10 @@ func _propagate_hit_wave(origin_idx: int, global_damage_ratio: float) -> void:
 				)
 		return
 
-	_wave_tween = create_tween().set_parallel(true)
+	_wave_tween = Utilities.reset_tween(self, _wave_tween)
+	if _wave_tween == null:
+		return
+	_wave_tween.set_parallel(true)
 
 	for i: int in range(total_count):
 		if i == origin_idx or not _tile_meshes[i].visible:
@@ -361,15 +363,13 @@ func _pulse_wave_tile(tile_idx: int, global_damage_ratio: float) -> void:
 	mesh_inst.set_instance_shader_parameter(PARAM_DAMAGE_RATIO, global_damage_ratio)
 	mesh_inst.set_instance_shader_parameter(PARAM_HIT_INTENSITY, 0.85)
 
-	var existing_tween: Tween = _tile_tweens[tile_idx]
-	if is_instance_valid(existing_tween):
-		existing_tween.kill()
-
 	var base_pos: Vector3 = _tile_positions[tile_idx]
 	var normal: Vector3 = _tile_normals[tile_idx]
 
-	var tw: Tween = create_tween()
+	var tw: Tween = Utilities.reset_tween(self, _tile_tweens[tile_idx])
 	_tile_tweens[tile_idx] = tw
+	if tw == null:
+		return
 
 	(
 		tw
@@ -407,7 +407,11 @@ func _explode_shield() -> void:
 		if is_instance_valid(active_tw):
 			active_tw.kill()
 
-	_master_tween = create_tween().set_parallel(true)
+	_master_tween = Utilities.reset_tween(self, _master_tween)
+	if _master_tween == null:
+		queue_free()
+		return
+	_master_tween.set_parallel(true)
 	var has_visible_tiles: bool = false
 
 	for i: int in range(_tile_meshes.size()):

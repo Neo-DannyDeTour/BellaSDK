@@ -483,7 +483,7 @@ func _build_sensors() -> void:
 
 	_detection_area = Area3D.new()
 	_detection_area.name = "DetectionArea"
-	_detection_area.collision_layer = 0
+	_detection_area.collision_layer = CollisionLayers.MASK_NONE
 	_detection_area.collision_mask = Types.MASK_PLAYER
 	_detection_area.monitorable = false
 	var detect_col: CollisionShape3D = CollisionShape3D.new()
@@ -496,7 +496,7 @@ func _build_sensors() -> void:
 
 	_attack_hitbox = Area3D.new()
 	_attack_hitbox.name = "AttackHitbox"
-	_attack_hitbox.collision_layer = 0
+	_attack_hitbox.collision_layer = CollisionLayers.MASK_NONE
 	_attack_hitbox.collision_mask = Types.MASK_PLAYER
 	_attack_hitbox.monitorable = false
 	_attack_hitbox.monitoring = false
@@ -849,24 +849,21 @@ func _set_state(new_state: SquidState) -> void:
 	print("EnemySquid: State changed to ", _state)
 
 
-## Locates a [HealthComponent] on [param node] or its child hierarchy.
+## Locates a [HealthComponent] on [param node] via property or [NodeQuery].
 func _find_health_component(node: Node) -> HealthComponent:
 	if not is_instance_valid(node):
 		return null
 	if "health_component" in node:
-		var prop_val: Variant = node.get("health_component")
+		var prop_val: Variant = node.get(&"health_component")
 		if prop_val is HealthComponent:
-			var hc: HealthComponent = prop_val
-			return hc
+			return prop_val as HealthComponent
 
 	var direct: Node = node.get_node_or_null("Components/HealthComponent")
 	if direct is HealthComponent:
 		return direct as HealthComponent
 
 	var child_hc: Node = NodeQuery.find_first_child_of_type(node, HealthComponent)
-	if child_hc is HealthComponent:
-		return child_hc as HealthComponent
-	return null
+	return child_hc as HealthComponent if child_hc is HealthComponent else null
 
 
 ## Wakes physics processing when a hostile actor enters [member _detection_area].

@@ -129,9 +129,11 @@ var _health_check_timer: float = 0.0
 var _cached_health_comp: HealthComponent = null
 
 
-## Cleans up spawned preview drones when leaving tree.
+## Cleans up spawned preview drones and disconnects [Events] when leaving tree.
 func _exit_tree() -> void:
 	print("DroneSwarmController: _exit_tree() cleaning up drones.")
+	if is_instance_valid(Events) and Events.player_damaged.is_connected(_on_player_damaged):
+		Events.player_damaged.disconnect(_on_player_damaged)
 	_clear_drones()
 
 
@@ -140,10 +142,8 @@ func _ready() -> void:
 	print("DroneSwarmController: _ready() initializing swarm controller.")
 	if not Engine.is_editor_hint():
 		_setup_detector_area()
-		if has_node("/root/Events"):
-			var events: Node = get_node("/root/Events")
-			if events.has_signal(&"player_damaged"):
-				events.connect(&"player_damaged", _on_player_damaged)
+		if is_instance_valid(Events):
+			Utilities.safe_connect(Events.player_damaged, _on_player_damaged)
 	spawn_drones()
 
 
@@ -304,27 +304,19 @@ func _find_player_target() -> Node3D:
 	return null
 
 
-## Finds [HealthComponent] on target entity using query fallbacks.
+## Finds [HealthComponent] on target entity using [NodeQuery].
 func _get_health_component(node: Node) -> HealthComponent:
 	if not is_instance_valid(node):
 		return null
 	if "health_component" in node:
-		var comp: Variant = node.get("health_component")
+		var comp: Variant = node.get(&"health_component")
 		if comp is HealthComponent:
-			return comp
-	var direct: Node = node.get_node_or_null("HealthComponent")
-	if direct is HealthComponent:
-		return direct
-	var comp_dir: Node = node.get_node_or_null("Components/HealthComponent")
-	if comp_dir is HealthComponent:
-		return comp_dir
+			return comp as HealthComponent
 	var found: Node = NodeQuery.find_first_child_of_type(node, HealthComponent)
 	if found is HealthComponent:
-		return found
-	for child: Node in node.get_children():
-		if child is HealthComponent:
-			return child
-	return null
+		return found as HealthComponent
+	var comp_dir: Node = node.get_node_or_null("Components/HealthComponent")
+	return comp_dir as HealthComponent if comp_dir is HealthComponent else null
 
 
 ## Checks player health and dispenses healing.

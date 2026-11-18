@@ -3,7 +3,6 @@ class_name WaveSpawner
 extends Node3D
 
 ## Emitted when all defined waves are completed.
-@warning_ignore("unused_signal")
 signal all_waves_completed(total_waves: int)
 
 ## Enemy scene instantiated during wave spawning.
@@ -51,6 +50,12 @@ func _ready() -> void:
 	print("WaveSpawner: [", name, "] initializing wave spawner node.")
 	_cache_spawn_points()
 	_connect_event_bus()
+
+
+## Disconnects global [Events] signals when leaving the scene tree.
+func _exit_tree() -> void:
+	if is_instance_valid(Events) and Events.enemy_killed.is_connected(_on_enemy_killed):
+		Events.enemy_killed.disconnect(_on_enemy_killed)
 
 
 ## Caches non-null spawn point nodes to avoid heap allocations during waves.
