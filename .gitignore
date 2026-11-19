@@ -89,3 +89,9 @@ __pycache__/
 *.pyc
 tools/scripts/trellis_asset_gen.py
 .agents/teamwork/
+
+# WIP Bella confidential / Face preview
+npcs/bella/
+scenes/bella_face_preview.*
+test/unit/test_bella_face_rig.*
+tools/blender/*bella*
