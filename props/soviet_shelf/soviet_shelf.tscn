@@ -1,0 +1,75 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" uid="uid://ctgrcorjrjm0h" path="res://props/soviet_shelf/soviet_shelf_prop.gd" id="1_script"]
+[ext_resource type="Shader" uid="uid://bn6jxwhv3h3i0" path="res://props/soviet_shelf/soviet_shelf.gdshader" id="2_shader"]
+[ext_resource type="PackedScene" uid="uid://ujs23267jbn7" path="res://props/soviet_shelf/soviet_shelf.glb" id="3_glb"]
+[ext_resource type="Texture2D" uid="uid://bu5usb1mqyye8" path="res://props/soviet_shelf/textures/soviet_shelf_albedo.png" id="4_albedo"]
+[ext_resource type="Texture2D" uid="uid://bbns80l2ghleo" path="res://props/soviet_shelf/textures/soviet_shelf_normal.png" id="5_normal"]
+[ext_resource type="Texture2D" uid="uid://dd5ss7rb4c7wv" path="res://props/soviet_shelf/textures/soviet_shelf_orm.png" id="6_orm"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_shelf"]
+render_priority = 0
+shader = ExtResource("2_shader")
+shader_parameter/normal_scale = 1.0
+shader_parameter/tex_albedo = ExtResource("4_albedo")
+shader_parameter/tex_orm = ExtResource("6_orm")
+shader_parameter/tex_normal = ExtResource("5_normal")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_side"]
+size = Vector3(0.025, 2.05, 0.38)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_back"]
+size = Vector3(0.9, 2.05, 0.025)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_board"]
+size = Vector3(0.85, 0.025, 0.38)
+
+[node name="SovietShelf" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_script")
+mesh_path = NodePath("Model/Soviet_Shelf")
+
+[node name="Model" parent="." instance=ExtResource("3_glb")]
+
+[node name="Soviet_Shelf" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = SubResource("ShaderMaterial_shelf")
+
+[node name="Col_Side_L" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4375, 1.025, 0)
+shape = SubResource("BoxShape3D_side")
+
+[node name="Col_Side_R" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4375, 1.025, 0)
+shape = SubResource("BoxShape3D_side")
+
+[node name="Col_Back" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.025, 0.1775)
+shape = SubResource("BoxShape3D_back")
+
+[node name="Col_Board_0" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.082, 0)
+shape = SubResource("BoxShape3D_board")
+
+[node name="Col_Board_1" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4715, 0)
+shape = SubResource("BoxShape3D_board")
+
+[node name="Col_Board_2" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.861, 0)
+shape = SubResource("BoxShape3D_board")
+
+[node name="Col_Board_3" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2505, 0)
+shape = SubResource("BoxShape3D_board")
+
+[node name="Col_Board_4" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.64, 0)
+shape = SubResource("BoxShape3D_board")
+
+[node name="Col_Board_5" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.009, 0)
+shape = SubResource("BoxShape3D_board")
+
+[editable path="Model"]

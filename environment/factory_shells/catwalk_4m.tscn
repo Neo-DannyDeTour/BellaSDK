@@ -1,0 +1,35 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" uid="uid://ijl2lujlyjt6" path="res://assets/models/factory_shells/catwalk_4m.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="2_steel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_deck"]
+size = Vector3(4, 0.12, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_railing"]
+size = Vector3(4, 1.05, 0.06)
+
+[node name="Catwalk4m" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="catwalk_4m" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_steel")
+surface_material_override/1 = ExtResource("2_steel")
+
+[node name="DeckCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 0)
+shape = SubResource("BoxShape3D_deck")
+
+[node name="FrontRailingCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.645, -0.95)
+shape = SubResource("BoxShape3D_railing")
+
+[node name="BackRailingCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.645, 0.95)
+shape = SubResource("BoxShape3D_railing")
+
+[editable path="Model"]

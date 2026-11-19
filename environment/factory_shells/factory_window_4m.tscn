@@ -1,0 +1,40 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" uid="uid://ckvcbjjxvewq4" path="res://assets/models/factory_shells/factory_window_4m.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/factory_stained_concrete/factory_stained_concrete.tres" id="2_concrete"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pillar"]
+size = Vector3(0.7, 4, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_spandrel"]
+size = Vector3(2.6, 1.1, 0.35)
+
+[node name="FactoryWindow4m" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="factory_window_4m" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_concrete")
+surface_material_override/1 = ExtResource("3_steel")
+
+[node name="LeftPillar" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.65, 2, 0)
+shape = SubResource("BoxShape3D_pillar")
+
+[node name="RightPillar" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.65, 2, 0)
+shape = SubResource("BoxShape3D_pillar")
+
+[node name="BottomWall" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+shape = SubResource("BoxShape3D_spandrel")
+
+[node name="TopWall" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.45, 0)
+shape = SubResource("BoxShape3D_spandrel")
+
+[editable path="Model"]

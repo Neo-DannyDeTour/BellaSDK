@@ -1,0 +1,38 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" uid="uid://ckw5o02ifhjob" path="res://assets/models/factory_shells/garage_shutter_open_4m.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/factory_stained_concrete/factory_stained_concrete.tres" id="2_concrete"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+[ext_resource type="Material" path="res://assets/materials/corrugated_rusted_metal/corrugated_rusted_metal.tres" id="4_corrugated"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pillar"]
+size = Vector3(0.5, 4, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lintel"]
+size = Vector3(3, 0.9, 0.35)
+
+[node name="GarageShutterOpen4m" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="garage_shutter_open_4m" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_concrete")
+surface_material_override/1 = ExtResource("3_steel")
+surface_material_override/2 = ExtResource("4_corrugated")
+
+[node name="LeftPillar" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.75, 2, 0)
+shape = SubResource("BoxShape3D_pillar")
+
+[node name="RightPillar" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.75, 2, 0)
+shape = SubResource("BoxShape3D_pillar")
+
+[node name="Lintel" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.55, 0)
+shape = SubResource("BoxShape3D_lintel")
+
+[editable path="Model"]

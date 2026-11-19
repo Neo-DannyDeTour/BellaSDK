@@ -1,0 +1,52 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" uid="uid://cab2kcef2vqd2" path="res://assets/models/props/factory_yard/shipping_container_open.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/painted_industrial_metal/painted_industrial_metal.tres" id="2_painted"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+[ext_resource type="Material" path="res://assets/materials/weathered_olive_crate_wood/weathered_olive_crate_wood.tres" id="4_wood"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(2.438, 0.145, 6.058)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_roof"]
+size = Vector3(2.438, 0.069, 6.058)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_side_wall"]
+size = Vector3(0.067, 2.377, 6.058)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_back_wall"]
+size = Vector3(2.304, 2.377, 0.062)
+
+[node name="ShippingContainerOpen" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="shipping_container_open" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_painted")
+surface_material_override/1 = ExtResource("3_steel")
+surface_material_override/2 = ExtResource("4_wood")
+
+[node name="FloorCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0725, 0)
+shape = SubResource("BoxShape3D_floor")
+
+[node name="RoofCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5565, 0)
+shape = SubResource("BoxShape3D_roof")
+
+[node name="LeftWallCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1855, 1.3335, 0)
+shape = SubResource("BoxShape3D_side_wall")
+
+[node name="RightWallCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1855, 1.3335, 0)
+shape = SubResource("BoxShape3D_side_wall")
+
+[node name="BackWallCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3335, -2.998)
+shape = SubResource("BoxShape3D_back_wall")
+
+[editable path="Model"]

@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/materials/foliage_tree_canopy/textures/foliage_tree_canopy_albedo.png" id="1_albedo"]
+[ext_resource type="Texture2D" path="res://assets/materials/foliage_tree_canopy/textures/foliage_tree_canopy_normal.png" id="2_normal"]
+
+[resource]
+resource_name = "foliage_tree_canopy"
+transparency = 2
+alpha_scissor_threshold = 0.5
+cull_mode = 2
+albedo_texture = ExtResource("1_albedo")
+roughness = 0.74
+normal_enabled = true
+normal_texture = ExtResource("2_normal")

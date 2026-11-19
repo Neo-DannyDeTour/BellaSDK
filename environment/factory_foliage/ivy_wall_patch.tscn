@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" uid="uid://c54cc5hhqll7l" path="res://assets/models/foliage/ivy_wall_patch.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/overgrown_bark/overgrown_bark.tres" id="2_bark"]
+[ext_resource type="Material" path="res://assets/materials/foliage_ivy_atlas/foliage_ivy_atlas.tres" id="3_ivy"]
+
+[node name="IvyWallPatch" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="ivy_wall_patch" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_bark")
+surface_material_override/1 = ExtResource("3_ivy")
+
+[editable path="Model"]

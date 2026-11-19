@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" uid="uid://ct6uti156tltv" path="res://assets/models/forklift/forklift.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/forklift/forklift.tres" id="2_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(1.4204, 2.15, 2.2744)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_forks"]
+size = Vector3(1.22, 0.63, 0.7684)
+
+[node name="Forklift" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="geometry_0" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="BodyCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.075, -0.3842)
+shape = SubResource("BoxShape3D_body")
+
+[node name="ForksCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.315, 1.1372)
+shape = SubResource("BoxShape3D_forks")
+
+[editable path="Model"]

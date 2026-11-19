@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" uid="uid://bxugg1vap3cdx" path="res://assets/models/foliage/overgrown_tree.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/overgrown_bark/overgrown_bark.tres" id="2_bark"]
+[ext_resource type="Material" path="res://assets/materials/foliage_tree_canopy/foliage_tree_canopy.tres" id="3_canopy"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_trunk"]
+height = 2.75
+radius = 0.22
+
+[node name="OvergrownTree" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="overgrown_tree" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_bark")
+surface_material_override/1 = ExtResource("3_canopy")
+
+[node name="TrunkCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.375, 0)
+shape = SubResource("CylinderShape3D_trunk")
+
+[editable path="Model"]

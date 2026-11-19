@@ -1,0 +1,47 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" uid="uid://btwiuwptdu2p4" path="res://assets/models/props/factory_workshop/warehouse_shelf.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="2_steel"]
+[ext_resource type="Material" path="res://assets/materials/weathered_olive_crate_wood/weathered_olive_crate_wood.tres" id="3_wood"]
+[ext_resource type="Script" path="res://props/factory_workshop/interactive_shelf.gd" id="4_script"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_upright"]
+size = Vector3(0.07, 2.2, 0.9)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_deck"]
+size = Vector3(2.26, 0.125, 0.9)
+
+[node name="WarehouseShelf" type="AnimatableBody3D"]
+collision_layer = 1
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("4_script")
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="warehouse_shelf" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_steel")
+surface_material_override/1 = ExtResource("3_wood")
+
+[node name="LeftUprightFrame" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.165, 1.1, 0)
+shape = SubResource("BoxShape3D_upright")
+
+[node name="RightUprightFrame" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.165, 1.1, 0)
+shape = SubResource("BoxShape3D_upright")
+
+[node name="DeckTier1" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2325, 0)
+shape = SubResource("BoxShape3D_deck")
+
+[node name="DeckTier2" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1125, 0)
+shape = SubResource("BoxShape3D_deck")
+
+[node name="DeckTier3" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9125, 0)
+shape = SubResource("BoxShape3D_deck")
+
+[editable path="Model"]

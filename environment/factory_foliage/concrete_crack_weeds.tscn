@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://bhxwk4p57c3jh" path="res://assets/models/foliage/concrete_crack_weeds.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/foliage_weeds_atlas/foliage_weeds_atlas.tres" id="2_weeds"]
+
+[node name="ConcreteCrackWeeds" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="concrete_crack_weeds" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_weeds")
+
+[editable path="Model"]
