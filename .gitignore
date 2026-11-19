@@ -95,3 +95,8 @@ npcs/bella/
 scenes/bella_face_preview.*
 test/unit/test_bella_face_rig.*
 tools/blender/*bella*
+
+# Build artifacts and pycache
+build/
+__pycache__/
+*.pyc
