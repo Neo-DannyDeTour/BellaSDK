@@ -46,7 +46,8 @@ BONE_SPECS: List[
     Tuple[str, str | None, Tuple[float, float, float], Tuple[float, float, float], bool]
 ] = [
     ("Root", None, _s(0.0, 0.0, RAW_Z_MIN), _s(0.0, 0.0, 0.18), False),
-    ("Hips", "Root", _s(0.0, -0.008, 1.010), _s(0.0, -0.016, 1.145), True),
+    # Hip sockets at raw Z 1.077 (0.875m): crotch 0.803m + ~7cm, level with buttock max depth.
+    ("Hips", "Root", _s(0.0, -0.008, 1.077), _s(0.0, -0.016, 1.145), True),
     ("Spine", "Hips", _s(0.0, -0.016, 1.145), _s(0.0, -0.022, 1.310), True),
     ("Chest", "Spine", _s(0.0, -0.022, 1.310), _s(0.0, -0.016, 1.460), True),
     ("UpperChest", "Chest", _s(0.0, -0.016, 1.460), _s(0.0, -0.004, 1.610), True),
@@ -63,13 +64,13 @@ BONE_SPECS: List[
     ("RightLowerArm", "RightUpperArm", _s(-0.358, 0.012, 1.355), _s(-0.515, -0.021, 1.215), True),
     ("RightHand", "RightLowerArm", _s(-0.515, -0.021, 1.215), _s(-0.640, -0.040, 1.095), True),
     # Left Leg (+X in Blender)
-    ("LeftUpperLeg", "Hips", _s(0.103, -0.006, 0.990), _s(0.129, 0.024, 0.520), True),
-    ("LeftLowerLeg", "LeftUpperLeg", _s(0.129, 0.024, 0.520), _s(0.152, 0.018, 0.115), True),
+    ("LeftUpperLeg", "Hips", _s(0.103, -0.006, 1.077), _s(0.129, 0.024, 0.558), True),
+    ("LeftLowerLeg", "LeftUpperLeg", _s(0.129, 0.024, 0.558), _s(0.152, 0.018, 0.115), True),
     ("LeftFoot", "LeftLowerLeg", _s(0.152, 0.018, 0.115), _s(0.165, -0.105, 0.032), True),
     ("LeftToes", "LeftFoot", _s(0.165, -0.105, 0.032), _s(0.170, -0.185, 0.028), True),
     # Right Leg (-X in Blender)
-    ("RightUpperLeg", "Hips", _s(-0.103, -0.006, 0.990), _s(-0.129, 0.024, 0.520), True),
-    ("RightLowerLeg", "RightUpperLeg", _s(-0.129, 0.024, 0.520), _s(-0.152, 0.018, 0.115), True),
+    ("RightUpperLeg", "Hips", _s(-0.103, -0.006, 1.077), _s(-0.129, 0.024, 0.558), True),
+    ("RightLowerLeg", "RightUpperLeg", _s(-0.129, 0.024, 0.558), _s(-0.152, 0.018, 0.115), True),
     ("RightFoot", "RightLowerLeg", _s(-0.152, 0.018, 0.115), _s(-0.165, -0.105, 0.032), True),
     ("RightToes", "RightFoot", _s(-0.165, -0.105, 0.032), _s(-0.170, -0.185, 0.028), True),
 ]
@@ -190,9 +191,11 @@ def _compute_unified_weights(
     s = SCALE_FACTOR
     # Anatomical Z landmarks in 1.64m space
     z_ankle = (0.115 - RAW_Z_MIN) * s
-    z_knee = (0.520 - RAW_Z_MIN) * s
-    z_crotch = (0.915 - RAW_Z_MIN) * s
-    z_hips = (1.010 - RAW_Z_MIN) * s
+    z_knee = (0.558 - RAW_Z_MIN) * s
+    z_crotch = (0.988 - RAW_Z_MIN) * s  # measured Short midline min = 0.803m
+    z_hips = (1.077 - RAW_Z_MIN) * s
+    # Arm/torso split keeps old pelvis height so A-pose fingertips never fall into leg branch.
+    z_arm_floor = (1.010 - RAW_Z_MIN) * s
     z_spine = (1.145 - RAW_Z_MIN) * s
     z_chest = (1.310 - RAW_Z_MIN) * s
     z_upper_chest = (1.460 - RAW_Z_MIN) * s
@@ -235,9 +238,9 @@ def _compute_unified_weights(
     sh_head = bone_segs[f"{arm_side}UpperArm"][0]
     arm_z_expected = sh_head.z - max(0.0, abs_x - abs(sh_head.x)) * 0.92
     # Armpit line separates hanging A-pose arm from torso side
-    in_arm_band = (p.z > z_hips + 0.05) and (abs_x > 0.145 * s) and (abs(p.z - arm_z_expected) < 0.19 * s)
+    in_arm_band = (p.z > z_arm_floor + 0.05) and (abs_x > 0.145 * s) and (abs(p.z - arm_z_expected) < 0.19 * s)
     # Stronger outer arm region
-    if abs_x > 0.215 * s and p.z > z_hips:
+    if abs_x > 0.215 * s and p.z > z_arm_floor:
         in_arm_band = True
 
     if in_arm_band:
@@ -280,7 +283,8 @@ def _compute_unified_weights(
     if p.z < z_hips + 0.045 * s:
         leg_side = "Left" if p.x >= 0.0 else "Right"
         # Transition from legs into Hips across crotch -> hips band
-        t_hips = _smoothstep(z_crotch - 0.025 * s, z_hips + 0.040 * s, p.z)
+        # Blend band 0.789m -> 0.900m: thigh below the hip socket follows UpperLeg.
+        t_hips = _smoothstep(z_crotch - 0.018 * s, z_hips + 0.031 * s, p.z)
         # Keep center pelvis slightly more Hips-weighted at crotch
         center_boost = (1.0 - _smoothstep(0.02 * s, 0.09 * s, abs_x)) * _smoothstep(z_crotch - 0.06 * s, z_crotch + 0.02 * s, p.z)
         w_hips = min(1.0, max(t_hips, center_boost * 0.85))
@@ -378,33 +382,65 @@ def _solve_two_bone_ik(
     len2: float,
     pole_dir: Vector,
 ) -> Vector:
-    """Solves 2-bone analytical IK joint position (knee or elbow) with stretch clamp."""
+    """Solves 2-bone analytical IK joint position (knee or elbow) with stretch & collapse clamps."""
     delta = target - root
-    dist = max(0.03, min(delta.length, len1 + len2 - 0.003))
-    fwd = delta.normalized()
+    raw_len = delta.length
+    min_dist = max(0.03, abs(len1 - len2) + 0.005)
+    max_dist = max(min_dist + 0.005, len1 + len2 - 0.004)
+    dist = max(min_dist, min(raw_len, max_dist))
+    if raw_len < 1e-6:
+        fwd = Vector((0.0, 0.0, -1.0))
+    else:
+        fwd = delta / raw_len
     cos_a = max(-0.995, min(0.995, (len1 * len1 + dist * dist - len2 * len2) / (2.0 * len1 * dist)))
     sin_a = math.sqrt(max(0.0, 1.0 - cos_a * cos_a))
     ortho = pole_dir - fwd * pole_dir.dot(fwd)
-    if ortho.length_squared < 1e-8:
-        ortho = Vector((0.0, -1.0, 0.0))
+    if ortho.length_squared < 1e-6:
+        fallback = Vector((0.0, 0.0, 1.0)) if abs(fwd.z) < 0.9 else Vector((1.0, 0.0, 0.0))
+        ortho = fallback - fwd * fallback.dot(fwd)
     ortho.normalize()
     return root + fwd * (len1 * cos_a) + ortho * (len1 * sin_a)
 
 
-def _aim_pose_bone(arm_obj: bpy.types.Object, bone_name: str, target_dir: Vector, twist_rad: float = 0.0) -> None:
-    """Rotates PoseBone in armature space so head->tail aligns with target_dir."""
+def _aim_pose_bone(
+    arm_obj: bpy.types.Object,
+    bone_name: str,
+    target_dir: Vector,
+    twist_rad: float = 0.0,
+    roll_hint: Vector | None = None,
+) -> None:
+    """Rotates PoseBone in armature space so head->tail aligns with target_dir without roll flips."""
     bpy.context.view_layer.update()
     pb = arm_obj.pose.bones[bone_name]
     pb.rotation_mode = "QUATERNION"
-    cur_dir = (pb.tail - pb.head)
+    cur_dir = pb.tail - pb.head
     if cur_dir.length_squared < 1e-10 or target_dir.length_squared < 1e-10:
         return
-    cur_n = cur_dir.normalized()
     tgt_n = target_dir.normalized()
+    pivot = pb.head.copy()
+
+    if roll_hint is not None and roll_hint.length_squared > 1e-8:
+        z_axis = roll_hint - tgt_n * roll_hint.dot(tgt_n)
+        if z_axis.length_squared > 1e-6:
+            z_axis.normalize()
+            x_axis = tgt_n.cross(z_axis).normalized()
+            z_axis = x_axis.cross(tgt_n).normalized()
+            rot_mat = Matrix((
+                (x_axis.x, tgt_n.x, z_axis.x, 0.0),
+                (x_axis.y, tgt_n.y, z_axis.y, 0.0),
+                (x_axis.z, tgt_n.z, z_axis.z, 0.0),
+                (0.0, 0.0, 0.0, 1.0),
+            ))
+            if abs(twist_rad) > 1e-5:
+                rot_mat = Quaternion(tgt_n, twist_rad).to_matrix().to_4x4() @ rot_mat
+            pb.matrix = Matrix.Translation(pivot) @ rot_mat
+            bpy.context.view_layer.update()
+            return
+
+    cur_n = cur_dir.normalized()
     dq = cur_n.rotation_difference(tgt_n)
     if abs(twist_rad) > 1e-5:
         dq = Quaternion(tgt_n, twist_rad) @ dq
-    pivot = pb.head.copy()
     pb.matrix = Matrix.Translation(pivot) @ dq.to_matrix().to_4x4() @ Matrix.Translation(-pivot) @ pb.matrix
     bpy.context.view_layer.update()
 
@@ -423,8 +459,9 @@ def _solve_planted_leg(
     ankle_target: Vector,
     knee_pole: Vector,
     foot_fwd: Vector,
+    foot_up: Vector | None = None,
 ) -> None:
-    """Locks leg foot flat on floor using 2-bone IK from current Hips socket to ankle_target."""
+    """Locks leg foot using 2-bone IK from Hips socket to ankle_target with flip-free roll."""
     bpy.context.view_layer.update()
     u_name = f"{side}UpperLeg"
     l_name = f"{side}LowerLeg"
@@ -436,9 +473,10 @@ def _solve_planted_leg(
     l1 = (u_pb.tail - u_pb.head).length
     l2 = (l_pb.tail - l_pb.head).length
     knee_pos = _solve_two_bone_ik(hip_pos, ankle_target, l1, l2, knee_pole)
-    _aim_pose_bone(arm_obj, u_name, knee_pos - hip_pos)
-    _aim_pose_bone(arm_obj, l_name, ankle_target - knee_pos)
-    _aim_pose_bone(arm_obj, f_name, foot_fwd)
+    _aim_pose_bone(arm_obj, u_name, knee_pos - hip_pos, roll_hint=knee_pole)
+    _aim_pose_bone(arm_obj, l_name, ankle_target - knee_pos, roll_hint=knee_pole)
+    f_roll = foot_up if foot_up is not None else Vector((0.0, 0.0, 1.0))
+    _aim_pose_bone(arm_obj, f_name, foot_fwd, roll_hint=f_roll)
 
 
 def _solve_arm_target(
@@ -448,7 +486,7 @@ def _solve_arm_target(
     elbow_pole: Vector,
     hand_dir: Vector,
 ) -> None:
-    """Places arm via 2-bone IK from shoulder to wrist_target."""
+    """Places arm via 2-bone IK from shoulder to wrist_target with flip-free roll."""
     bpy.context.view_layer.update()
     u_name = f"{side}UpperArm"
     l_name = f"{side}LowerArm"
@@ -460,14 +498,15 @@ def _solve_arm_target(
     l1 = (u_pb.tail - u_pb.head).length
     l2 = (l_pb.tail - l_pb.head).length
     elbow_pos = _solve_two_bone_ik(sh_pos, wrist_target, l1, l2, elbow_pole)
-    _aim_pose_bone(arm_obj, u_name, elbow_pos - sh_pos)
-    _aim_pose_bone(arm_obj, l_name, wrist_target - elbow_pos)
+    arm_roll = -elbow_pole
+    _aim_pose_bone(arm_obj, u_name, elbow_pos - sh_pos, roll_hint=arm_roll)
+    _aim_pose_bone(arm_obj, l_name, wrist_target - elbow_pos, roll_hint=arm_roll)
     _aim_pose_bone(arm_obj, h_name, hand_dir)
 
 
-def _set_all_bezier_smooth(action: bpy.types.Action) -> None:
-    """Sets Bezier auto-clamped interpolation across Blender 5.x channelbags or legacy fcurves."""
-    fcurves = []
+def _get_action_fcurves(action: bpy.types.Action) -> List[bpy.types.FCurve]:
+    """Collects all FCurves across Blender 5.x channelbags or legacy fcurves."""
+    fcurves: List[bpy.types.FCurve] = []
     if hasattr(action, "layers"):
         for layer in action.layers:
             for strip in layer.strips:
@@ -475,8 +514,57 @@ def _set_all_bezier_smooth(action: bpy.types.Action) -> None:
                     fcurves.extend(bag.fcurves)
     elif hasattr(action, "fcurves"):
         fcurves.extend(action.fcurves)
+    return fcurves
 
+
+def _ensure_quaternion_continuity(action: bpy.types.Action) -> None:
+    """Aligns consecutive quaternion keyframes to the same hemisphere to prevent 360-deg flips."""
+    fcurves = _get_action_fcurves(action)
+    by_path: Dict[str, Dict[int, bpy.types.FCurve]] = {}
     for fc in fcurves:
+        if fc.data_path.endswith("rotation_quaternion"):
+            by_path.setdefault(fc.data_path, {})[fc.array_index] = fc
+
+    for idx_map in by_path.values():
+        if len(idx_map) != 4:
+            continue
+        fc_w, fc_x, fc_y, fc_z = idx_map[0], idx_map[1], idx_map[2], idx_map[3]
+        n = min(
+            len(fc_w.keyframe_points),
+            len(fc_x.keyframe_points),
+            len(fc_y.keyframe_points),
+            len(fc_z.keyframe_points),
+        )
+        if n < 2:
+            continue
+        prev = Quaternion((
+            fc_w.keyframe_points[0].co.y,
+            fc_x.keyframe_points[0].co.y,
+            fc_y.keyframe_points[0].co.y,
+            fc_z.keyframe_points[0].co.y,
+        ))
+        for i in range(1, n):
+            curr = Quaternion((
+                fc_w.keyframe_points[i].co.y,
+                fc_x.keyframe_points[i].co.y,
+                fc_y.keyframe_points[i].co.y,
+                fc_z.keyframe_points[i].co.y,
+            ))
+            if prev.dot(curr) < 0.0:
+                curr.negate()
+                fc_w.keyframe_points[i].co.y = curr.w
+                fc_x.keyframe_points[i].co.y = curr.x
+                fc_y.keyframe_points[i].co.y = curr.y
+                fc_z.keyframe_points[i].co.y = curr.z
+            prev = curr
+        for fc in (fc_w, fc_x, fc_y, fc_z):
+            fc.update()
+
+
+def _set_all_bezier_smooth(action: bpy.types.Action) -> None:
+    """Ensures quaternion continuity and sets Bezier auto-clamped interpolation."""
+    _ensure_quaternion_continuity(action)
+    for fc in _get_action_fcurves(action):
         for kp in fc.keyframe_points:
             kp.interpolation = "BEZIER"
             kp.handle_left_type = "AUTO_CLAMPED"
@@ -1122,7 +1210,7 @@ def _pose_crouch(
 
 def _pose_prone(
     arm_obj: bpy.types.Object,
-    hip_z: float = 0.135,
+    hip_z: float = 0.130,
     hip_y_shift: float = 0.0,
     hip_roll: float = 0.0,
     spine_yaw: float = 0.0,
@@ -1140,29 +1228,30 @@ def _pose_prone(
     hips = arm_obj.pose.bones["Hips"]
     hips.location = Vector((0.0, hip_z - hip_rest_z, hip_y_shift))
     _set_bone_euler_local(arm_obj, "Hips", 90.0, hip_roll, 0.0)
-    _set_bone_euler_local(arm_obj, "Spine", -1.0 - breath_arch * 0.4, spine_yaw * 0.4, -hip_roll * 0.4)
-    _set_bone_euler_local(arm_obj, "Chest", -1.5 - breath_arch * 0.4, spine_yaw * 0.4, -hip_roll * 0.4)
+    _set_bone_euler_local(arm_obj, "Spine", -1.5 - breath_arch * 0.3, spine_yaw * 0.4, -hip_roll * 0.4)
+    _set_bone_euler_local(arm_obj, "Chest", -2.0 - breath_arch * 0.3, spine_yaw * 0.4, -hip_roll * 0.4)
     _set_bone_euler_local(arm_obj, "UpperChest", -2.0, spine_yaw * 0.2, 0.0)
-    _set_bone_euler_local(arm_obj, "Neck", -12.0, -spine_yaw * 0.4, 0.0)
+    _set_bone_euler_local(arm_obj, "Neck", -14.0, -spine_yaw * 0.4, 0.0)
     _set_bone_euler_local(arm_obj, "Head", -16.0, -spine_yaw * 0.5, 0.0)
-    _set_bone_euler_local(arm_obj, "LeftShoulder", 0.0, 10.0, 6.0)
-    _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -10.0, -6.0)
+    _set_bone_euler_local(arm_obj, "LeftShoulder", 0.0, 12.0, 4.0)
+    _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -12.0, -4.0)
     bpy.context.view_layer.update()
 
-    la = l_ankle_pos if l_ankle_pos is not None else Vector((0.15, 0.72, 0.155))
-    ra = r_ankle_pos if r_ankle_pos is not None else Vector((-0.15, 0.72, 0.155))
-    lkp = l_knee_pole if l_knee_pole is not None else Vector((0.65, 0.0, -0.35))
-    rkp = r_knee_pole if r_knee_pole is not None else Vector((-0.65, 0.0, -0.35))
-    _solve_planted_leg(arm_obj, "Left", la, lkp, Vector((0.05, 0.72, -0.69)))
-    _solve_planted_leg(arm_obj, "Right", ra, rkp, Vector((-0.05, 0.72, -0.69)))
+    la = l_ankle_pos if l_ankle_pos is not None else Vector((0.13, 0.74, 0.095))
+    ra = r_ankle_pos if r_ankle_pos is not None else Vector((-0.13, 0.74, 0.095))
+    lkp = l_knee_pole if l_knee_pole is not None else Vector((0.92, 0.0, 0.25))
+    rkp = r_knee_pole if r_knee_pole is not None else Vector((-0.92, 0.0, 0.25))
+    prone_foot_up = Vector((0.0, 0.35, 0.94))
+    _solve_planted_leg(arm_obj, "Left", la, lkp, Vector((0.15, 0.90, -0.35)), foot_up=prone_foot_up)
+    _solve_planted_leg(arm_obj, "Right", ra, rkp, Vector((-0.15, 0.90, -0.35)), foot_up=prone_foot_up)
 
-    lw = l_wrist if l_wrist is not None else Vector((0.13, -0.56, 0.075))
-    rw = r_wrist if r_wrist is not None else Vector((-0.13, -0.56, 0.075))
+    lw = l_wrist if l_wrist is not None else Vector((0.14, -0.60, 0.065))
+    rw = r_wrist if r_wrist is not None else Vector((-0.14, -0.60, 0.065))
     _solve_arm_target(
-        arm_obj, "Left", lw, Vector((0.85, 0.35, -0.10)), Vector((-0.30, -0.95, 0.0))
+        arm_obj, "Left", lw, Vector((0.85, 0.40, 0.15)), Vector((-0.25, -0.96, -0.05))
     )
     _solve_arm_target(
-        arm_obj, "Right", rw, Vector((-0.85, 0.35, -0.10)), Vector((0.30, -0.95, 0.0))
+        arm_obj, "Right", rw, Vector((-0.85, 0.40, 0.15)), Vector((0.25, -0.96, -0.05))
     )
 
 
@@ -1451,10 +1540,10 @@ def _bake_prone_idle_clip(arm_obj: bpy.types.Object) -> None:
         bpy.context.scene.frame_set(frame)
         _pose_prone(
             arm_obj,
-            hip_z=0.135 + 0.004 * breath,
+            hip_z=0.130 + 0.004 * breath,
             breath_arch=2.0 * breath,
-            l_wrist=Vector((0.13, -0.56, 0.075 + 0.004 * breath)),
-            r_wrist=Vector((-0.13, -0.56, 0.075 + 0.004 * breath)),
+            l_wrist=Vector((0.14, -0.60, 0.065 + 0.003 * breath)),
+            r_wrist=Vector((-0.14, -0.60, 0.065 + 0.003 * breath)),
         )
         _insert_all_bone_keys(arm_obj, frame)
 
@@ -1484,27 +1573,27 @@ def _bake_prone_crawl_clip(arm_obj: bpy.types.Object) -> None:
         c_val = math.cos(phase)
         s_val = math.sin(phase)
 
-        hip_roll = 6.5 * c_val
+        hip_roll = 5.5 * c_val
         spine_yaw = -6.0 * c_val
 
-        # Left arm: forward reach (-0.70m) -> pull back (-0.36m); Right arm opposite
-        l_arm_y = -0.53 - 0.16 * c_val
-        l_arm_z = 0.085 + 0.045 * max(0.0, s_val)
-        r_arm_y = -0.53 + 0.16 * c_val
-        r_arm_z = 0.085 + 0.045 * max(0.0, -s_val)
+        # Left arm: forward reach (-0.68m) -> pull back (-0.40m); Right arm opposite
+        l_arm_y = -0.54 - 0.14 * c_val
+        l_arm_z = 0.065 + 0.045 * max(0.0, s_val)
+        r_arm_y = -0.54 + 0.14 * c_val
+        r_arm_z = 0.065 + 0.045 * max(0.0, -s_val)
 
-        # Opposite leg kicks/tucks knee out horizontally along floor
+        # Opposite leg slides knee horizontally out along floor (positive Z pole prevents floor clip)
         l_leg_t = max(0.0, -c_val)
         r_leg_t = max(0.0, c_val)
-        la = Vector((0.15 + 0.14 * l_leg_t, 0.72 - 0.24 * l_leg_t, 0.155))
-        ra = Vector((-0.15 - 0.14 * r_leg_t, 0.72 - 0.24 * r_leg_t, 0.155))
-        lkp = Vector((0.65 + 0.35 * l_leg_t, 0.0, -0.25 + 0.35 * l_leg_t)).normalized()
-        rkp = Vector((-0.65 - 0.35 * r_leg_t, 0.0, -0.25 + 0.35 * r_leg_t)).normalized()
+        la = Vector((0.14 + 0.14 * l_leg_t, 0.74 - 0.24 * l_leg_t, 0.095))
+        ra = Vector((-0.14 - 0.14 * r_leg_t, 0.74 - 0.24 * r_leg_t, 0.095))
+        lkp = Vector((0.95, 0.0, 0.22)).normalized()
+        rkp = Vector((-0.95, 0.0, 0.22)).normalized()
 
         _pose_prone(
             arm_obj,
-            hip_z=0.135,
-            hip_y_shift=-0.025 * abs(s_val),
+            hip_z=0.130,
+            hip_y_shift=-0.020 * abs(s_val),
             hip_roll=hip_roll,
             spine_yaw=spine_yaw,
             breath_arch=1.5,
@@ -1512,8 +1601,8 @@ def _bake_prone_crawl_clip(arm_obj: bpy.types.Object) -> None:
             r_ankle_pos=ra,
             l_knee_pole=lkp,
             r_knee_pole=rkp,
-            l_wrist=Vector((0.18, l_arm_y, l_arm_z)),
-            r_wrist=Vector((-0.18, r_arm_y, r_arm_z)),
+            l_wrist=Vector((0.17, l_arm_y, l_arm_z)),
+            r_wrist=Vector((-0.17, r_arm_y, r_arm_z)),
         )
         _insert_all_bone_keys(arm_obj, frame)
 
@@ -1703,18 +1792,18 @@ def _bake_climb_mid_clip(arm_obj: bpy.types.Object) -> None:
 
     l_rest, r_rest, l_dir, r_dir = _get_rest_foot_info(arm_obj)
 
-    # (frame, hip_z, hip_y, spine_x, sh_lift, l_ankle_off, r_ankle_off, l_w, r_w, elbow_pole_y)
+    # (frame, hip_z, hip_y, spine_x, sh_lift, la_off, ra_off, lw, rw, ep_xyz, hdir_xyz)
     keys = [
-        (0,  -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), (0.00,  0.00, 0.00), (0.20, -0.06, 0.78), (-0.20, -0.06, 0.78),  0.85),
-        (9,  -0.160,  0.03, 15.0,  -2.0, (0.00,  0.02, 0.00), (0.00,  0.02, 0.00), (0.22, -0.20, 0.82), (-0.22, -0.20, 0.82),  0.65),
-        (19, -0.020, -0.03, -8.0, +24.0, (0.00,  0.06, 0.10), (0.00,  0.06, 0.04), (0.20, -0.34, 1.56), (-0.20, -0.34, 1.56), -0.65),
-        (33,  0.040,  0.00, 12.0, +10.0, (0.02,  0.08, 0.24), (-0.02, -0.18, 0.42), (0.21, -0.28, 1.12), (-0.21, -0.28, 1.12),  0.50),
-        (46, -0.120, -0.04, 28.0,  -6.0, (0.02,  0.04, 0.14), (-0.02, -0.24, 0.34), (0.23, -0.24, 0.74), (-0.23, -0.24, 0.74),  0.75),
-        (59, -0.100, -0.01, 10.0,  -4.5, (0.00, -0.02, 0.00), (0.00, -0.02, 0.00), (0.21, -0.10, 0.78), (-0.21, -0.10, 0.78),  0.85),
-        (70, -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), (0.00,  0.00, 0.00), (0.20, -0.06, 0.78), (-0.20, -0.06, 0.78),  0.85),
+        (0,  -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.10, -0.25, -0.96)),
+        (10, -0.150,  0.03, 14.0,  -2.0, (0.00,  0.02, 0.00), ( 0.00,  0.02, 0.00), (0.23, -0.22, 0.84), (-0.23, -0.22, 0.84), (0.55, 0.55, -0.60), (-0.10, -0.75, -0.65)),
+        (22, -0.020, -0.03, -6.0, +20.0, (0.00,  0.06, 0.08), ( 0.00,  0.06, 0.04), (0.22, -0.34, 1.50), (-0.22, -0.34, 1.50), (0.52, 0.12, -0.84), (-0.08, -0.82,  0.56)),
+        (36,  0.030,  0.00, 12.0,  +8.0, (0.02,  0.06, 0.22), (-0.02, -0.18, 0.40), (0.25, -0.28, 1.08), (-0.25, -0.28, 1.08), (0.62, 0.50, -0.60), (-0.08, -0.92, -0.38)),
+        (49, -0.120, -0.04, 24.0,  -4.0, (0.02,  0.02, 0.12), (-0.02, -0.22, 0.30), (0.25, -0.24, 0.78), (-0.25, -0.24, 0.78), (0.60, 0.62, -0.50), (-0.10, -0.70, -0.70)),
+        (60, -0.090, -0.01,  9.0,  -4.5, (0.00, -0.02, 0.00), ( 0.00, -0.02, 0.00), (0.22, -0.10, 0.78), (-0.22, -0.10, 0.78), (0.52, 0.72, -0.40), (-0.10, -0.35, -0.93)),
+        (70, -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.10, -0.25, -0.96)),
     ]
 
-    for frame, hz, hy, spx, sh_lift, la_off, ra_off, lw, rw, ep_y in keys:
+    for frame, hz, hy, spx, sh_lift, la_off, ra_off, lw, rw, ep, hd in keys:
         bpy.context.scene.frame_set(frame)
         _reset_pose(arm_obj)
         hips = arm_obj.pose.bones["Hips"]
@@ -1728,10 +1817,10 @@ def _bake_climb_mid_clip(arm_obj: bpy.types.Object) -> None:
         _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -4.0, -sh_lift)
         bpy.context.view_layer.update()
 
-        _solve_planted_leg(arm_obj, "Left", l_rest + Vector(la_off), Vector((0.24, -1.0, 0.25)), l_dir)
-        _solve_planted_leg(arm_obj, "Right", r_rest + Vector(ra_off), Vector((-0.24, -1.0, 0.25)), r_dir)
-        _solve_arm_target(arm_obj, "Left", Vector(lw), Vector((0.55, ep_y, -0.30)), Vector((-0.10, -0.85, 0.50)))
-        _solve_arm_target(arm_obj, "Right", Vector(rw), Vector((-0.55, ep_y, -0.30)), Vector((0.10, -0.85, 0.50)))
+        _solve_planted_leg(arm_obj, "Left", l_rest + Vector(la_off), Vector((0.26, -1.0, 0.25)), l_dir)
+        _solve_planted_leg(arm_obj, "Right", r_rest + Vector(ra_off), Vector((-0.26, -1.0, 0.25)), r_dir)
+        _solve_arm_target(arm_obj, "Left", Vector(lw), Vector((ep[0], ep[1], ep[2])), Vector((hd[0], hd[1], hd[2])))
+        _solve_arm_target(arm_obj, "Right", Vector(rw), Vector((-ep[0], ep[1], ep[2])), Vector((-hd[0], hd[1], hd[2])))
         _insert_all_bone_keys(arm_obj, frame)
 
     _push_clip_zero_based(arm_obj, action, total_frames=70, is_loop=False)
@@ -1753,20 +1842,20 @@ def _bake_pull_up_high_clip(arm_obj: bpy.types.Object) -> None:
 
     l_rest, r_rest, l_dir, r_dir = _get_rest_foot_info(arm_obj)
 
-    # (frame, hip_z, hip_y, spine_x, sh_lift, l_ankle_off, r_ankle_off, l_w, r_w, ep_y)
+    # (frame, hip_z, hip_y, spine_x, sh_lift, la_off, ra_off, lw, rw, ep_xyz, hdir_xyz)
     keys = [
-        (0,   -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.20, -0.06, 0.78), (-0.20, -0.06, 0.78),  0.85),
-        (11,  -0.220,  0.04, 18.0,  -4.0, (0.00,  0.02, 0.00), ( 0.00,  0.02, 0.00), (0.22,  0.18, 0.72), (-0.22,  0.18, 0.72),  0.80),
-        (21,   0.040, -0.04, -6.0, +28.0, (0.00,  0.10, 0.04), ( 0.00,  0.14, 0.08), (0.19, -0.22, 1.82), (-0.19, -0.22, 1.82), -0.60),
-        (35,  -0.040,  0.02, -4.0, +24.0, (0.00,  0.16, 0.14), ( 0.00,  0.18, 0.16), (0.19, -0.18, 1.72), (-0.19, -0.18, 1.72), -0.60),
-        (55,   0.030,  0.00, 12.0, +10.0, (0.02, -0.12, 0.28), (-0.02, -0.04, 0.22), (0.22, -0.24, 1.18), (-0.22, -0.24, 1.18),  0.55),
-        (74,  -0.110, -0.05, 30.0,  -6.0, (0.02,  0.04, 0.16), (-0.02, -0.24, 0.36), (0.23, -0.24, 0.74), (-0.23, -0.24, 0.74),  0.75),
-        (92,  -0.140, -0.02, 14.0,  -4.5, (0.00, -0.04, 0.02), ( 0.00, -0.06, 0.02), (0.21, -0.14, 0.76), (-0.21, -0.14, 0.76),  0.85),
-        (102, -0.070,  0.00,  6.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.20, -0.08, 0.78), (-0.20, -0.08, 0.78),  0.85),
-        (110, -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.20, -0.06, 0.78), (-0.20, -0.06, 0.78),  0.85),
+        (0,   -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.10, -0.25, -0.96)),
+        (12,  -0.210,  0.04, 18.0,  -4.0, (0.00,  0.02, 0.00), ( 0.00,  0.02, 0.00), (0.23,  0.14, 0.74), (-0.23,  0.14, 0.74), (0.55, 0.75, -0.35), (-0.10,  0.20, -0.97)),
+        (24,   0.040, -0.04, -6.0, +24.0, (0.00,  0.10, 0.06), ( 0.00,  0.14, 0.10), (0.21, -0.24, 1.76), (-0.21, -0.24, 1.76), (0.48, 0.05, -0.87), (-0.08, -0.55,  0.83)),
+        (38,  -0.030,  0.02, -4.0, +22.0, (0.00,  0.14, 0.16), ( 0.00,  0.18, 0.18), (0.21, -0.22, 1.68), (-0.21, -0.22, 1.68), (0.50, 0.08, -0.86), (-0.08, -0.60,  0.80)),
+        (58,   0.030,  0.00, 12.0,  +8.0, (0.02, -0.10, 0.28), (-0.02, -0.04, 0.22), (0.26, -0.28, 1.18), (-0.26, -0.28, 1.18), (0.65, 0.45, -0.60), (-0.08, -0.92, -0.38)),
+        (76,  -0.110, -0.05, 26.0,  -4.0, (0.02,  0.04, 0.16), (-0.02, -0.22, 0.34), (0.25, -0.24, 0.78), (-0.25, -0.24, 0.78), (0.60, 0.62, -0.50), (-0.10, -0.70, -0.70)),
+        (94,  -0.130, -0.02, 12.0,  -4.5, (0.00, -0.04, 0.02), ( 0.00, -0.06, 0.02), (0.22, -0.14, 0.76), (-0.22, -0.14, 0.76), (0.52, 0.72, -0.40), (-0.10, -0.40, -0.91)),
+        (103, -0.065,  0.00,  6.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.21, -0.08, 0.78), (-0.21, -0.08, 0.78), (0.50, 0.75, -0.35), (-0.10, -0.28, -0.95)),
+        (110, -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.10, -0.25, -0.96)),
     ]
 
-    for frame, hz, hy, spx, sh_lift, la_off, ra_off, lw, rw, ep_y in keys:
+    for frame, hz, hy, spx, sh_lift, la_off, ra_off, lw, rw, ep, hd in keys:
         bpy.context.scene.frame_set(frame)
         _reset_pose(arm_obj)
         hips = arm_obj.pose.bones["Hips"]
@@ -1780,10 +1869,10 @@ def _bake_pull_up_high_clip(arm_obj: bpy.types.Object) -> None:
         _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -4.0, -sh_lift)
         bpy.context.view_layer.update()
 
-        _solve_planted_leg(arm_obj, "Left", l_rest + Vector(la_off), Vector((0.24, -1.0, 0.25)), l_dir)
-        _solve_planted_leg(arm_obj, "Right", r_rest + Vector(ra_off), Vector((-0.24, -1.0, 0.25)), r_dir)
-        _solve_arm_target(arm_obj, "Left", Vector(lw), Vector((0.55, ep_y, -0.25)), Vector((-0.10, -0.75, 0.65)))
-        _solve_arm_target(arm_obj, "Right", Vector(rw), Vector((-0.55, ep_y, -0.25)), Vector((0.10, -0.75, 0.65)))
+        _solve_planted_leg(arm_obj, "Left", l_rest + Vector(la_off), Vector((0.26, -1.0, 0.25)), l_dir)
+        _solve_planted_leg(arm_obj, "Right", r_rest + Vector(ra_off), Vector((-0.26, -1.0, 0.25)), r_dir)
+        _solve_arm_target(arm_obj, "Left", Vector(lw), Vector((ep[0], ep[1], ep[2])), Vector((hd[0], hd[1], hd[2])))
+        _solve_arm_target(arm_obj, "Right", Vector(rw), Vector((-ep[0], ep[1], ep[2])), Vector((-hd[0], hd[1], hd[2])))
         _insert_all_bone_keys(arm_obj, frame)
 
     _push_clip_zero_based(arm_obj, action, total_frames=110, is_loop=False)
@@ -1841,6 +1930,488 @@ def _bake_drop_down_clip(arm_obj: bpy.types.Object) -> None:
     _reset_pose(arm_obj)
     bpy.ops.object.mode_set(mode="OBJECT")
     print("[Godiva] Baked 'drop_down' NLA clip (45 frames = 0.750s @ 60 FPS)")
+
+
+# ---------------------------------------------------------------------------
+# Clip 20: 'shelf_crawl_through' (72 frames, 1.20s one-shot, y=0.295..1.05m)
+# ---------------------------------------------------------------------------
+
+def _bake_shelf_crawl_through_clip(arm_obj: bpy.types.Object) -> None:
+    """Bakes low hands-and-knees crawl through lower shelf opening (72 frames = 1.20s)."""
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode="POSE")
+    action = bpy.data.actions.new(name="shelf_crawl_through")
+    arm_obj.animation_data.action = action
+
+    hip_rest_z = arm_obj.data.bones["Hips"].head_local.z
+
+    def _pose_quad_crawl(
+        hip_z: float,
+        hip_yaw: float,
+        hip_roll: float,
+        la: Tuple[float, float, float],
+        ra: Tuple[float, float, float],
+        lw: Tuple[float, float, float],
+        rw: Tuple[float, float, float],
+    ) -> None:
+        _reset_pose(arm_obj)
+        hips = arm_obj.pose.bones["Hips"]
+        hips.location = Vector((0.0, hip_z - hip_rest_z, 0.0))
+        _set_bone_euler_local(arm_obj, "Hips", 70.0, hip_yaw, hip_roll)
+        _set_bone_euler_local(arm_obj, "Spine", 2.0, -hip_yaw * 0.4, -hip_roll * 0.4)
+        _set_bone_euler_local(arm_obj, "Chest", -4.0, -hip_yaw * 0.4, -hip_roll * 0.4)
+        _set_bone_euler_local(arm_obj, "UpperChest", -6.0, -hip_yaw * 0.2, 0.0)
+        _set_bone_euler_local(arm_obj, "Neck", -24.0, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Head", -26.0, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "LeftShoulder", 0.0, 10.0, 2.0)
+        _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -10.0, -2.0)
+        bpy.context.view_layer.update()
+
+        crawl_foot_up = Vector((0.0, 0.40, 0.92))
+        _solve_planted_leg(
+            arm_obj, "Left", Vector(la), Vector((0.28, -0.60, -0.75)), Vector((0.08, 0.85, -0.52)), foot_up=crawl_foot_up
+        )
+        _solve_planted_leg(
+            arm_obj, "Right", Vector(ra), Vector((-0.28, -0.60, -0.75)), Vector((-0.08, 0.85, -0.52)), foot_up=crawl_foot_up
+        )
+        _solve_arm_target(
+            arm_obj, "Left", Vector(lw), Vector((0.60, 0.72, -0.32)), Vector((-0.10, -0.95, -0.25))
+        )
+        _solve_arm_target(
+            arm_obj, "Right", Vector(rw), Vector((-0.60, 0.72, -0.32)), Vector((0.10, -0.95, -0.25))
+        )
+
+    # Frame 0: low crouch entry
+    bpy.context.scene.frame_set(0)
+    _pose_crouch(arm_obj, hip_drop=-0.46)
+    _insert_all_bone_keys(arm_obj, 0)
+
+    # Frame 12: drop onto hands & knees
+    bpy.context.scene.frame_set(12)
+    _pose_quad_crawl(
+        0.34, 0.0, 0.0,
+        (0.15, 0.48, 0.11), (-0.15, 0.48, 0.11),
+        (0.18, -0.44, 0.06), (-0.18, -0.44, 0.06),
+    )
+    _insert_all_bone_keys(arm_obj, 12)
+
+    # Frame 24: stride 1 (left hand + right knee advance)
+    bpy.context.scene.frame_set(24)
+    _pose_quad_crawl(
+        0.33, 6.0, 4.0,
+        (0.15, 0.56, 0.11), (-0.15, 0.36, 0.12),
+        (0.19, -0.56, 0.10), (-0.18, -0.34, 0.06),
+    )
+    _insert_all_bone_keys(arm_obj, 24)
+
+    # Frame 38: stride 2 (right hand + left knee advance)
+    bpy.context.scene.frame_set(38)
+    _pose_quad_crawl(
+        0.33, -6.0, -4.0,
+        (0.15, 0.36, 0.12), (-0.15, 0.56, 0.11),
+        (0.18, -0.34, 0.06), (-0.19, -0.56, 0.10),
+    )
+    _insert_all_bone_keys(arm_obj, 38)
+
+    # Frame 52: gather hands & knees to rise
+    bpy.context.scene.frame_set(52)
+    _pose_quad_crawl(
+        0.35, 0.0, 0.0,
+        (0.15, 0.44, 0.11), (-0.15, 0.44, 0.11),
+        (0.18, -0.42, 0.06), (-0.18, -0.42, 0.06),
+    )
+    _insert_all_bone_keys(arm_obj, 52)
+
+    # Frame 62: push back up to crouch
+    bpy.context.scene.frame_set(62)
+    _pose_crouch(
+        arm_obj,
+        hip_drop=-0.50,
+        torso_lean=1.25,
+        l_wrist=Vector((0.20, -0.30, 0.28)),
+        r_wrist=Vector((-0.20, -0.30, 0.28)),
+    )
+    _insert_all_bone_keys(arm_obj, 62)
+
+    # Frame 72: clean crouch ready exit
+    bpy.context.scene.frame_set(72)
+    _pose_crouch(arm_obj, hip_drop=-0.46)
+    _insert_all_bone_keys(arm_obj, 72)
+
+    _push_clip_zero_based(arm_obj, action, total_frames=72, is_loop=False)
+    _reset_pose(arm_obj)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print("[Godiva] Baked 'shelf_crawl_through' NLA clip (72 frames = 1.200s @ 60 FPS)")
+
+
+# ---------------------------------------------------------------------------
+# Clip 21: 'shelf_climb_over' (96 frames, 1.60s one-shot, 2.2m mantle + drop)
+# ---------------------------------------------------------------------------
+
+def _bake_shelf_climb_over_clip(arm_obj: bpy.types.Object) -> None:
+    """Bakes 96-frame shelf top mantle and far-side drop-down landing (1.60s)."""
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode="POSE")
+    action = bpy.data.actions.new(name="shelf_climb_over")
+    arm_obj.animation_data.action = action
+
+    l_rest, r_rest, l_dir, r_dir = _get_rest_foot_info(arm_obj)
+
+    # (frame, hip_z, hip_y, spine_x, sh_lift, la_off, ra_off, lw, rw, ep_xyz, hdir_xyz)
+    keys = [
+        (0,  -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.10, -0.25, -0.96)),
+        (10, -0.190,  0.04, 16.0,  -3.0, (0.00,  0.02, 0.00), ( 0.00,  0.02, 0.00), (0.23,  0.12, 0.74), (-0.23,  0.12, 0.74), (0.55, 0.75, -0.35), (-0.10,  0.18, -0.97)),
+        (22,  0.040, -0.04, -6.0, +24.0, (0.00,  0.10, 0.08), ( 0.00,  0.14, 0.10), (0.21, -0.24, 1.74), (-0.21, -0.24, 1.74), (0.48, 0.05, -0.87), (-0.08, -0.58,  0.81)),
+        (38,  0.020,  0.00, 12.0,  +8.0, (0.02,  0.04, 0.24), (-0.02, -0.18, 0.38), (0.25, -0.28, 1.16), (-0.25, -0.28, 1.16), (0.62, 0.45, -0.60), (-0.08, -0.92, -0.38)),
+        (52, -0.160, -0.04, 24.0,  -4.0, (0.02, -0.06, 0.14), (-0.02, -0.18, 0.24), (0.25, -0.24, 0.76), (-0.25, -0.24, 0.76), (0.60, 0.62, -0.50), (-0.10, -0.70, -0.70)),
+        (66, -0.040,  0.00, 10.0,  -2.0, (0.02, -0.08, 0.08), (-0.02,  0.08, 0.10), (0.32, -0.14, 1.04), (-0.32, -0.14, 1.04), (0.62, 0.65, -0.42), (-0.15, -0.45, -0.88)),
+        (82, -0.280, -0.02, 22.0,  -4.0, (0.02, -0.05, 0.00), (-0.02,  0.04, 0.00), (0.24, -0.26, 0.66), (-0.24, -0.26, 0.66), (0.58, 0.68, -0.42), (-0.12, -0.55, -0.82)),
+        (96, -0.025,  0.00,  3.0,  -4.5, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00), (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.10, -0.25, -0.96)),
+    ]
+
+    for frame, hz, hy, spx, sh_lift, la_off, ra_off, lw, rw, ep, hd in keys:
+        bpy.context.scene.frame_set(frame)
+        _reset_pose(arm_obj)
+        hips = arm_obj.pose.bones["Hips"]
+        hips.location = Vector((0.0, hz, hy))
+        _set_bone_euler_local(arm_obj, "Hips", spx * 0.35, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Spine", spx * 0.45, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Chest", spx * 0.35, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Neck", -spx * 0.45, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Head", -spx * 0.50, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "LeftShoulder", 0.0, 4.0, sh_lift)
+        _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -4.0, -sh_lift)
+        bpy.context.view_layer.update()
+
+        _solve_planted_leg(arm_obj, "Left", l_rest + Vector(la_off), Vector((0.26, -1.0, 0.25)), l_dir)
+        _solve_planted_leg(arm_obj, "Right", r_rest + Vector(ra_off), Vector((-0.26, -1.0, 0.25)), r_dir)
+        _solve_arm_target(arm_obj, "Left", Vector(lw), Vector((ep[0], ep[1], ep[2])), Vector((hd[0], hd[1], hd[2])))
+        _solve_arm_target(arm_obj, "Right", Vector(rw), Vector((-ep[0], ep[1], ep[2])), Vector((-hd[0], hd[1], hd[2])))
+        _insert_all_bone_keys(arm_obj, frame)
+
+    _push_clip_zero_based(arm_obj, action, total_frames=96, is_loop=False)
+    _reset_pose(arm_obj)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print("[Godiva] Baked 'shelf_climb_over' NLA clip (96 frames = 1.600s @ 60 FPS)")
+
+
+# ---------------------------------------------------------------------------
+# Clip 22: 'shelf_vault_through' (57 frames, 0.95s one-shot, F.E.A.R. dive)
+# ---------------------------------------------------------------------------
+
+def _bake_shelf_vault_through_clip(arm_obj: bpy.types.Object) -> None:
+    """Bakes F.E.A.R.-style athletic dive/vault through mid shelf opening (57 frames = 0.95s)."""
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode="POSE")
+    action = bpy.data.actions.new(name="shelf_vault_through")
+    arm_obj.animation_data.action = action
+
+    l_rest, r_rest, l_dir, r_dir = _get_rest_foot_info(arm_obj)
+
+    # (frame, hz, hy, hip_p, sp_p, ch_p, nk_p, hd_p, la, ra, kp_y, kp_z, lw, rw, ep, hd)
+    keys = [
+        (0,  -0.025,  0.00,  2.0,  3.0,  2.0,  -2.5,  -2.5,
+         (l_rest.x, l_rest.y, l_rest.z), (r_rest.x, r_rest.y, r_rest.z), -1.0,  0.20,
+         (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.10, -0.25, -0.96)),
+        (8,  -0.220,  0.04, 12.0, 12.0,  8.0, -14.0, -16.0,
+         (l_rest.x, l_rest.y + 0.04, l_rest.z), (r_rest.x, r_rest.y + 0.04, r_rest.z), -1.0,  0.20,
+         (0.24,  0.16, 0.72), (-0.24,  0.16, 0.72), (0.55, 0.75, -0.35), (-0.10,  0.20, -0.97)),
+        (18,  0.020, -0.04, 42.0,  8.0,  6.0, -24.0, -24.0,
+         (0.14,  0.26, 0.24), (-0.14,  0.30, 0.28), -0.90, -0.15,
+         (0.24, -0.44, 1.12), (-0.24, -0.44, 1.12), (0.65, 0.45, -0.58), (-0.08, -0.94,  0.30)),
+        (28, -0.060, -0.02, 66.0, -2.0, -4.0, -26.0, -28.0,
+         (0.15,  0.46, 0.44), (-0.15,  0.50, 0.48), -0.80, -0.45,
+         (0.22, -0.52, 0.88), (-0.22, -0.52, 0.88), (0.72, 0.45, -0.50), (-0.08, -0.98,  0.12)),
+        (38, -0.080,  0.00, 26.0,  8.0,  6.0, -16.0, -18.0,
+         (0.14, -0.08, 0.20), (-0.14,  0.04, 0.18), -1.0,  0.15,
+         (0.30, -0.22, 0.90), (-0.30, -0.22, 0.90), (0.62, 0.60, -0.48), (-0.12, -0.60, -0.78)),
+        (47, -0.280, -0.02, 10.0, 12.0,  8.0, -14.0, -16.0,
+         (l_rest.x + 0.02, l_rest.y - 0.05, l_rest.z), (r_rest.x - 0.02, r_rest.y + 0.05, r_rest.z), -1.0,  0.25,
+         (0.24, -0.26, 0.66), (-0.24, -0.26, 0.66), (0.58, 0.68, -0.42), (-0.12, -0.55, -0.82)),
+        (57, -0.025,  0.00,  2.0,  3.0,  2.0,  -2.5,  -2.5,
+         (l_rest.x, l_rest.y, l_rest.z), (r_rest.x, r_rest.y, r_rest.z), -1.0,  0.20,
+         (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.10, -0.25, -0.96)),
+    ]
+
+    for frame, hz, hy, hp, spp, chp, nkp, hdp, la, ra, kpy, kpz, lw, rw, ep, hd in keys:
+        bpy.context.scene.frame_set(frame)
+        _reset_pose(arm_obj)
+        hips = arm_obj.pose.bones["Hips"]
+        hips.location = Vector((0.0, hz, hy))
+        _set_bone_euler_local(arm_obj, "Hips", hp, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Spine", spp, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Chest", chp, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Neck", nkp, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Head", hdp, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "LeftShoulder", 0.0, 6.0, -2.0)
+        _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -6.0, 2.0)
+        bpy.context.view_layer.update()
+
+        airborne = frame in (18, 28)
+        fdir_l = Vector((0.08, 0.75, -0.65)).normalized() if airborne else l_dir
+        fdir_r = Vector((-0.08, 0.75, -0.65)).normalized() if airborne else r_dir
+        fup = Vector((0.0, 0.45, 0.89)) if airborne else Vector((0.0, 0.0, 1.0))
+
+        _solve_planted_leg(arm_obj, "Left", Vector(la), Vector((0.35, kpy, kpz)), fdir_l, foot_up=fup)
+        _solve_planted_leg(arm_obj, "Right", Vector(ra), Vector((-0.35, kpy, kpz)), fdir_r, foot_up=fup)
+        _solve_arm_target(arm_obj, "Left", Vector(lw), Vector((ep[0], ep[1], ep[2])), Vector((hd[0], hd[1], hd[2])))
+        _solve_arm_target(arm_obj, "Right", Vector(rw), Vector((-ep[0], ep[1], ep[2])), Vector((-hd[0], hd[1], hd[2])))
+        _insert_all_bone_keys(arm_obj, frame)
+
+    _push_clip_zero_based(arm_obj, action, total_frames=57, is_loop=False)
+    _reset_pose(arm_obj)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print("[Godiva] Baked 'shelf_vault_through' NLA clip (57 frames = 0.950s @ 60 FPS)")
+
+
+# ---------------------------------------------------------------------------
+# Clip 23: 'shelf_push_aside' (66 frames, 1.10s one-shot, braced side shove)
+# ---------------------------------------------------------------------------
+
+def _bake_shelf_push_aside_clip(arm_obj: bpy.types.Object) -> None:
+    """Bakes braced two-hand heavy sideways shove (66 frames = 1.10s @ 60 FPS)."""
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode="POSE")
+    action = bpy.data.actions.new(name="shelf_push_aside")
+    arm_obj.animation_data.action = action
+
+    l_rest, r_rest, l_dir, r_dir = _get_rest_foot_info(arm_obj)
+
+    # (frame, hx, hz, hy, spx, yaw, roll, la_off, ra_off, lw, rw, l_ep, r_ep)
+    keys = [
+        (0,   0.00, -0.025,  0.00,  3.0,   0.0,  0.0, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00),
+         (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.50, 0.75, -0.35)),
+        (10,  0.07, -0.120,  0.01, 12.0, +12.0,  4.0, (0.08, -0.05, 0.00), (-0.08,  0.04, 0.00),
+         (0.14, -0.34, 1.12), (-0.22, -0.34, 1.12), (0.62, 0.58, -0.50), (-0.62, 0.58, -0.50)),
+        (24,  0.06, -0.160,  0.00, 16.0, +16.0,  6.0, (0.08, -0.05, 0.00), (-0.08,  0.04, 0.00),
+         (0.10, -0.36, 1.10), (-0.24, -0.36, 1.10), (0.65, 0.55, -0.50), (-0.65, 0.55, -0.50)),
+        (40, -0.10, -0.100, -0.04, 18.0, -18.0, -7.0, (0.08, -0.05, 0.00), (-0.10, -0.02, 0.00),
+         (-0.04, -0.40, 1.16), (-0.36, -0.38, 1.14), (0.55, 0.65, -0.50), (-0.65, 0.55, -0.50)),
+        (52, -0.04, -0.080, -0.01,  9.0,  -6.0, -2.0, (0.04, -0.02, 0.00), (-0.04,  0.00, 0.00),
+         (0.18, -0.18, 0.90), (-0.24, -0.18, 0.90), (0.55, 0.68, -0.45), (-0.55, 0.68, -0.45)),
+        (66,  0.00, -0.025,  0.00,  3.0,   0.0,  0.0, (0.00,  0.00, 0.00), ( 0.00,  0.00, 0.00),
+         (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35), (-0.50, 0.75, -0.35)),
+    ]
+
+    for frame, hx, hz, hy, spx, yaw, roll, la_off, ra_off, lw, rw, lep, rep in keys:
+        bpy.context.scene.frame_set(frame)
+        _reset_pose(arm_obj)
+        hips = arm_obj.pose.bones["Hips"]
+        hips.location = Vector((hx, hz, hy))
+        _set_bone_euler_local(arm_obj, "Hips", spx * 0.35, yaw * 0.35, roll * 0.5)
+        _set_bone_euler_local(arm_obj, "Spine", spx * 0.40, yaw * 0.35, roll * 0.3)
+        _set_bone_euler_local(arm_obj, "Chest", spx * 0.35, yaw * 0.30, roll * 0.2)
+        _set_bone_euler_local(arm_obj, "Neck", -spx * 0.45, -yaw * 0.35, 0.0)
+        _set_bone_euler_local(arm_obj, "Head", -spx * 0.50, -yaw * 0.45, 0.0)
+        _set_bone_euler_local(arm_obj, "LeftShoulder", 0.0, 6.0, -3.0)
+        _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -6.0, 3.0)
+        bpy.context.view_layer.update()
+
+        _solve_planted_leg(arm_obj, "Left", l_rest + Vector(la_off), Vector((0.26, -1.0, 0.20)), l_dir)
+        _solve_planted_leg(arm_obj, "Right", r_rest + Vector(ra_off), Vector((-0.26, -1.0, 0.20)), r_dir)
+        pushing = frame in (10, 24, 40)
+        l_hdir = Vector((-0.35, -0.92, 0.12)) if pushing else Vector((-0.10, -0.30, -0.95))
+        r_hdir = Vector((-0.25, -0.95, 0.12)) if pushing else Vector((0.10, -0.30, -0.95))
+        _solve_arm_target(arm_obj, "Left", Vector(lw), Vector(lep), l_hdir)
+        _solve_arm_target(arm_obj, "Right", Vector(rw), Vector(rep), r_hdir)
+        _insert_all_bone_keys(arm_obj, frame)
+
+    _push_clip_zero_based(arm_obj, action, total_frames=66, is_loop=False)
+    _reset_pose(arm_obj)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print("[Godiva] Baked 'shelf_push_aside' NLA clip (66 frames = 1.100s @ 60 FPS)")
+
+
+# ---------------------------------------------------------------------------
+# Clip 24: 'shelf_topple' (66 frames, 1.10s one-shot, forward two-hand heave)
+# ---------------------------------------------------------------------------
+
+def _bake_shelf_topple_clip(arm_obj: bpy.types.Object) -> None:
+    """Bakes forceful forward two-hand push to tip shelf flat (66 frames = 1.10s)."""
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode="POSE")
+    action = bpy.data.actions.new(name="shelf_topple")
+    arm_obj.animation_data.action = action
+
+    l_rest, r_rest, l_dir, r_dir = _get_rest_foot_info(arm_obj)
+
+    # (frame, hz, hy, spx, la_off, ra_off, lw, rw, ep)
+    keys = [
+        (0,  -0.025,  0.00,  3.0, (0.00,  0.00, 0.00), ( 0.00, 0.00, 0.00),
+         (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35)),
+        (10, -0.140,  0.02, 12.0, (0.02, -0.14, 0.00), (-0.02, 0.18, 0.00),
+         (0.22, -0.24, 1.14), (-0.22, -0.24, 1.14), (0.62, 0.58, -0.50)),
+        (22, -0.160, -0.04, 22.0, (0.02, -0.15, 0.00), (-0.02, 0.20, 0.01),
+         (0.22, -0.38, 1.20), (-0.22, -0.38, 1.20), (0.64, 0.52, -0.55)),
+        (38, -0.100, -0.10, 30.0, (0.02, -0.16, 0.00), (-0.02, 0.22, 0.05),
+         (0.21, -0.54, 1.26), (-0.21, -0.54, 1.26), (0.58, 0.45, -0.66)),
+        (52, -0.090, -0.02, 10.0, (0.01, -0.06, 0.00), (-0.01, 0.08, 0.00),
+         (0.22, -0.22, 0.92), (-0.22, -0.22, 0.92), (0.55, 0.68, -0.45)),
+        (66, -0.025,  0.00,  3.0, (0.00,  0.00, 0.00), ( 0.00, 0.00, 0.00),
+         (0.21, -0.06, 0.78), (-0.21, -0.06, 0.78), (0.50, 0.75, -0.35)),
+    ]
+
+    for frame, hz, hy, spx, la_off, ra_off, lw, rw, ep in keys:
+        bpy.context.scene.frame_set(frame)
+        _reset_pose(arm_obj)
+        hips = arm_obj.pose.bones["Hips"]
+        hips.location = Vector((0.0, hz, hy))
+        _set_bone_euler_local(arm_obj, "Hips", spx * 0.35, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Spine", spx * 0.45, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Chest", spx * 0.35, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Neck", -spx * 0.45, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Head", -spx * 0.50, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "LeftShoulder", 0.0, 8.0, -2.0)
+        _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -8.0, 2.0)
+        bpy.context.view_layer.update()
+
+        _solve_planted_leg(arm_obj, "Left", l_rest + Vector(la_off), Vector((0.24, -1.0, 0.22)), l_dir)
+        _solve_planted_leg(arm_obj, "Right", r_rest + Vector(ra_off), Vector((-0.24, -1.0, 0.22)), r_dir)
+        pushing = frame in (10, 22, 38)
+        hd_l = Vector((-0.06, -0.96, 0.26)) if pushing else Vector((-0.10, -0.30, -0.95))
+        hd_r = Vector((0.06, -0.96, 0.26)) if pushing else Vector((0.10, -0.30, -0.95))
+        _solve_arm_target(arm_obj, "Left", Vector(lw), Vector(ep), hd_l)
+        _solve_arm_target(arm_obj, "Right", Vector(rw), Vector((-ep[0], ep[1], ep[2])), hd_r)
+        _insert_all_bone_keys(arm_obj, frame)
+
+    _push_clip_zero_based(arm_obj, action, total_frames=66, is_loop=False)
+    _reset_pose(arm_obj)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print("[Godiva] Baked 'shelf_topple' NLA clip (66 frames = 1.100s @ 60 FPS)")
+
+
+# ---------------------------------------------------------------------------
+# Clip 25: 'wall_hug_idle' (90 frames, 1.483s trimmed loop, back flush to wall)
+# ---------------------------------------------------------------------------
+
+def _bake_wall_hug_idle_clip(arm_obj: bpy.types.Object) -> None:
+    """Bakes back-to-wall yielding corridor idle loop (90 frames, trimmed 0..89)."""
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode="POSE")
+    action = bpy.data.actions.new(name="wall_hug_idle")
+    arm_obj.animation_data.action = action
+
+    l_rest, r_rest, l_dir, r_dir = _get_rest_foot_info(arm_obj)
+    l_foot_dir = Quaternion(Vector((0.0, 0.0, 1.0)), math.radians(6.0)) @ l_dir
+    r_foot_dir = Quaternion(Vector((0.0, 0.0, 1.0)), math.radians(-6.0)) @ r_dir
+    l_ankle = l_rest + Vector((-0.02, 0.03, 0.0))
+    r_ankle = r_rest + Vector((0.02, 0.01, 0.0))
+
+    for frame in [0, 15, 30, 45, 60, 75, 90]:
+        phase = (frame / 90.0) * math.tau
+        breath = 0.5 - 0.5 * math.cos(phase)
+        glance = math.sin(phase)
+        bpy.context.scene.frame_set(frame)
+        _reset_pose(arm_obj)
+
+        # Back/shoulder pressed flush back (-Z local = +Y world) with slim upright profile
+        hips = arm_obj.pose.bones["Hips"]
+        hips.location = Vector((0.0, -0.018 - 0.004 * breath, -0.055))
+        _set_bone_euler_local(arm_obj, "Hips", -2.0, 10.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Spine", -1.5 - 1.0 * breath, 2.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Chest", -1.5 - 1.2 * breath, 2.0, 0.0)
+        _set_bone_euler_local(arm_obj, "UpperChest", -1.0, 1.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Neck", 1.5, -7.0 + 2.0 * glance, 0.0)
+        _set_bone_euler_local(arm_obj, "Head", 2.0, -8.0 + 3.0 * glance, 0.0)
+        _set_bone_euler_local(arm_obj, "LeftShoulder", 0.0, -6.0, -5.0 + 1.2 * breath)
+        _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, 6.0, 5.0 - 1.2 * breath)
+        bpy.context.view_layer.update()
+
+        _solve_planted_leg(arm_obj, "Left", l_ankle, Vector((0.18, -1.0, 0.0)), l_foot_dir)
+        _solve_planted_leg(arm_obj, "Right", r_ankle, Vector((-0.18, -1.0, 0.0)), r_foot_dir)
+
+        # Arms tucked neatly back near wall/hips
+        _solve_arm_target(
+            arm_obj, "Left", Vector((0.20, 0.04, 0.84 + 0.005 * breath)),
+            Vector((0.65, 0.65, -0.38)), Vector((-0.10, -0.15, -0.98)),
+        )
+        _solve_arm_target(
+            arm_obj, "Right", Vector((-0.20, 0.06, 0.84 + 0.005 * breath)),
+            Vector((-0.65, 0.65, -0.38)), Vector((0.10, -0.15, -0.98)),
+        )
+        _insert_all_bone_keys(arm_obj, frame)
+
+    _push_clip_zero_based(arm_obj, action, total_frames=90, is_loop=True)
+    _reset_pose(arm_obj)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print("[Godiva] Baked 'wall_hug_idle' NLA clip (90 frames, trimmed 0..89 = 1.483s @ 60 FPS)")
+
+
+# ---------------------------------------------------------------------------
+# Clips 26 & 27: 'sidestep_left' & 'sidestep_right' (36 frames, 0.583s loop)
+# ---------------------------------------------------------------------------
+
+def _bake_sidestep_clip(arm_obj: bpy.types.Object, direction: int) -> None:
+    """Bakes quick lateral sidestep loop (direction=+1 left/+X, -1 right/-X, 36 frames)."""
+    clip_name = "sidestep_left" if direction > 0 else "sidestep_right"
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode="POSE")
+    action = bpy.data.actions.new(name=clip_name)
+    arm_obj.animation_data.action = action
+
+    l_rest, r_rest, l_dir, r_dir = _get_rest_foot_info(arm_obj)
+    d = float(direction)
+
+    for frame in range(0, 37, 3):
+        u = frame / 36.0
+        phase = u * math.tau
+        bpy.context.scene.frame_set(frame)
+        _reset_pose(arm_obj)
+
+        # Crisp lateral bounce and subtle lean into sidestep direction
+        bob = -0.095 - 0.022 * math.cos(2.0 * phase)
+        lat_shift = 0.045 * d * math.sin(phase)
+        hips = arm_obj.pose.bones["Hips"]
+        hips.location = Vector((lat_shift, bob, 0.0))
+        _set_bone_euler_local(arm_obj, "Hips", 5.0, -4.0 * d, -4.5 * d)
+        _set_bone_euler_local(arm_obj, "Spine", 5.0, 2.0 * d, 2.5 * d)
+        _set_bone_euler_local(arm_obj, "Chest", 4.0, 2.0 * d, 1.5 * d)
+        _set_bone_euler_local(arm_obj, "Neck", -6.0, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "Head", -7.0, 0.0, 0.0)
+        _set_bone_euler_local(arm_obj, "LeftShoulder", 0.0, 3.0, -4.0)
+        _set_bone_euler_local(arm_obj, "RightShoulder", 0.0, -3.0, 4.0)
+        bpy.context.view_layer.update()
+
+        # Half 1 (0..0.5): lead foot reaches outward; Half 2 (0.5..1.0): trail foot draws in
+        if u <= 0.5:
+            t1 = u / 0.5
+            lead_x = 0.16 * d * math.sin(t1 * math.pi)
+            lead_z = 0.075 * math.sin(t1 * math.pi)
+            trail_x = -0.04 * d * math.sin(t1 * math.pi)
+            trail_z = 0.0
+        else:
+            t2 = (u - 0.5) / 0.5
+            lead_x = 0.04 * d * (1.0 - t2)
+            lead_z = 0.0
+            trail_x = -0.14 * d * math.sin(t2 * math.pi)
+            trail_z = 0.075 * math.sin(t2 * math.pi)
+
+        if direction > 0:
+            l_off = Vector((lead_x, -0.02, lead_z))
+            r_off = Vector((trail_x, 0.02, trail_z))
+        else:
+            r_off = Vector((lead_x, -0.02, lead_z))
+            l_off = Vector((trail_x, 0.02, trail_z))
+
+        _solve_planted_leg(arm_obj, "Left", l_rest + l_off, Vector((0.24, -1.0, 0.15)), l_dir)
+        _solve_planted_leg(arm_obj, "Right", r_rest + r_off, Vector((-0.24, -1.0, 0.15)), r_dir)
+
+        # Compact balanced arms
+        sway_x = -0.03 * d * math.sin(phase)
+        _solve_arm_target(
+            arm_obj, "Left", Vector((0.23 + sway_x, -0.14, 0.86)),
+            Vector((0.55, 0.72, -0.35)), Vector((-0.12, -0.55, -0.82)),
+        )
+        _solve_arm_target(
+            arm_obj, "Right", Vector((-0.23 + sway_x, -0.14, 0.86)),
+            Vector((-0.55, 0.72, -0.35)), Vector((0.12, -0.55, -0.82)),
+        )
+        _insert_all_bone_keys(arm_obj, frame)
+
+    _push_clip_zero_based(arm_obj, action, total_frames=36, is_loop=True)
+    _reset_pose(arm_obj)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print(f"[Godiva] Baked '{clip_name}' NLA clip (36 frames, trimmed 0..35 = 0.583s @ 60 FPS)")
 
 
 def _verify_stance_clearances(
@@ -1985,6 +2556,15 @@ def run_pipeline(src_glb: Path, out_glb: Path, preview_dir: Path | None = None) 
     _bake_climb_mid_clip(arm_obj)
     _bake_pull_up_high_clip(arm_obj)
     _bake_drop_down_clip(arm_obj)
+
+    _bake_shelf_crawl_through_clip(arm_obj)
+    _bake_shelf_climb_over_clip(arm_obj)
+    _bake_shelf_vault_through_clip(arm_obj)
+    _bake_shelf_push_aside_clip(arm_obj)
+    _bake_shelf_topple_clip(arm_obj)
+    _bake_wall_hug_idle_clip(arm_obj)
+    _bake_sidestep_clip(arm_obj, direction=1)
+    _bake_sidestep_clip(arm_obj, direction=-1)
 
     _verify_stance_clearances(arm_obj, mesh_objs)
 

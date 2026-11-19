@@ -39,6 +39,8 @@ def export_godot_glb(
     apply_modifiers: bool = True,
     only_selected: bool = False,
     save_blend: bool = False,
+    export_morph: bool = True,
+    export_morph_normal: bool = True,
 ) -> Path:
     """Export the active scene or selection to Godot 4-compatible GLB format.
 
@@ -46,7 +48,7 @@ def export_godot_glb(
     - Scale 1.0 (Blender units = Godot meters)
     - +Y up orientation
     - Baked actions and animation tracks
-    - PBR materials
+    - PBR materials and optional shape key morph targets
     """
     out_path = Path(filepath).resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -61,14 +63,33 @@ def export_godot_glb(
     if bpy.context.object and bpy.context.object.mode != "OBJECT":
         bpy.ops.object.mode_set(mode="OBJECT")
 
+    target_objs = bpy.context.selected_objects if only_selected else bpy.context.scene.objects
+    has_shape_keys = any(
+        obj.type == "MESH"
+        and obj.data is not None
+        and obj.data.shape_keys is not None
+        and len(obj.data.shape_keys.key_blocks) > 0
+        for obj in target_objs
+    )
+    effective_apply = apply_modifiers
+    if export_morph and has_shape_keys and effective_apply:
+        print(
+            "[Blender] Notice: target mesh has shape keys; forcing export_apply=False "
+            "to preserve morph targets."
+        )
+        effective_apply = False
+
     # Configure glTF export parameters compatible with Blender 5.x
     export_kwargs = {
         "filepath": str(out_path),
         "export_format": "GLB",
         "export_yup": True,
-        "export_apply": apply_modifiers,
+        "export_apply": effective_apply,
         "export_materials": "EXPORT",
         "export_attributes": True,
+        "export_morph": export_morph,
+        "export_morph_normal": export_morph_normal,
+        "export_morph_tangent": False,
         "use_selection": only_selected,
     }
 
