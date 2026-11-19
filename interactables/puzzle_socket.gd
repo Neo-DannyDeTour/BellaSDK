@@ -155,7 +155,8 @@ func _ready() -> void:
 ## Disconnects global event bus listeners on tree exit.
 func _exit_tree() -> void:
 	if (
-		is_instance_valid(Events)
+		not Engine.is_editor_hint()
+		and is_instance_valid(Events)
 		and Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled)
 	):
 		Events.item_prompts_toggled.disconnect(_on_item_prompts_toggled)

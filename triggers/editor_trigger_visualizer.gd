@@ -104,7 +104,7 @@ func _ready() -> void:
 
 ## Disconnects global [Events] signal on tree exit.
 func _exit_tree() -> void:
-	if is_instance_valid(Events):
+	if not Engine.is_editor_hint() and is_instance_valid(Events):
 		if Events.trigger_visibility_toggled.is_connected(set_debug_visibility):
 			Events.trigger_visibility_toggled.disconnect(set_debug_visibility)
 

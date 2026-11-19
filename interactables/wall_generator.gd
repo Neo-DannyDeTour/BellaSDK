@@ -132,8 +132,9 @@ func _ready() -> void:
 
 ## Disconnects global event listeners when leaving the scene tree.
 func _exit_tree() -> void:
-	if Events.item_picked_up.is_connected(_on_cell_picked_up):
-		Events.item_picked_up.disconnect(_on_cell_picked_up)
+	if not Engine.is_editor_hint() and is_instance_valid(Events):
+		if Events.item_picked_up.is_connected(_on_cell_picked_up):
+			Events.item_picked_up.disconnect(_on_cell_picked_up)
 
 
 # --------------------------------------

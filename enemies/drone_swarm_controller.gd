@@ -132,7 +132,11 @@ var _cached_health_comp: HealthComponent = null
 ## Cleans up spawned preview drones and disconnects [Events] when leaving tree.
 func _exit_tree() -> void:
 	print("DroneSwarmController: _exit_tree() cleaning up drones.")
-	if is_instance_valid(Events) and Events.player_damaged.is_connected(_on_player_damaged):
+	if (
+		not Engine.is_editor_hint()
+		and is_instance_valid(Events)
+		and Events.player_damaged.is_connected(_on_player_damaged)
+	):
 		Events.player_damaged.disconnect(_on_player_damaged)
 	_clear_drones()
 
