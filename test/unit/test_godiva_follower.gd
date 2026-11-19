@@ -3,6 +3,12 @@ extends GutTest
 
 ## Preloaded Godiva scene using [GodivaFollower] and [NavigationAgent3D].
 const GODIVA_SCENE: PackedScene = preload("res://npcs/godiva/godiva.tscn")
+## Preloaded interactive warehouse shelf scene.
+const SHELF_SCENE: PackedScene = preload("res://props/factory_workshop/warehouse_shelf.tscn")
+## Preloaded 4m factory doorway scene with chokepoint sensor.
+const DOORWAY_SCENE: PackedScene = preload(
+	"res://environment/factory_shells/factory_doorway_4m.tscn"
+)
 ## Preloaded [EventSequenceTrigger] script for NPC_FOLLOW integration testing.
 const EVENT_TRIGGER_SCRIPT: GDScript = preload(
 	"res://addons/detour_event_sequencer/event_sequence_trigger.gd"
@@ -481,8 +487,602 @@ func test_godiva_traversal_animation_clips_registered() -> void:
 		&"climb_mid",
 		&"pull_up_high",
 		&"drop_down",
+		&"shelf_crawl_through",
+		&"shelf_climb_over",
+		&"shelf_vault_through",
+		&"shelf_push_aside",
+		&"shelf_topple",
+		&"wall_hug_idle",
+		&"sidestep_left",
+		&"sidestep_right",
 	]:
 		assert_true(
 			anim_player.has_animation(clip_name),
 			"godiva_rigged.glb must contain clip: " + String(clip_name)
 		)
+
+
+## Verifies InteractiveShelf push_aside, topple, cleared state, and linked_nav_link disable.
+func test_interactive_shelf_push_and_topple_state() -> void:
+	var static_shelf: InteractiveShelf = SHELF_SCENE.instantiate() as InteractiveShelf
+	assert_not_null(static_shelf, "warehouse_shelf.tscn root must be InteractiveShelf.")
+	add_child_autofree(static_shelf)
+	assert_false(static_shelf.pushable, "WarehouseShelf must default to pushable = false.")
+	assert_false(static_shelf.can_manipulate(), "Non-pushable shelf must report cannot manipulate.")
+
+	var container: Node3D = Node3D.new()
+	add_child_autofree(container)
+
+	var push_link: NavigationLink3D = NavigationLink3D.new()
+	push_link.name = "PushLink"
+	container.add_child(push_link)
+
+	var push_shelf: InteractiveShelf = SHELF_SCENE.instantiate() as InteractiveShelf
+	push_shelf.name = "PushShelf"
+	push_shelf.pushable = true
+	push_shelf.linked_nav_link = NodePath("../PushLink")
+	container.add_child(push_shelf)
+
+	watch_signals(push_shelf)
+	var start_pos: Vector3 = push_shelf.global_position
+	push_shelf.push_aside(Vector3(0.0, 0.0, -1.0), 0.1)
+	await wait_for_signal(push_shelf.shelf_manipulated, 0.5)
+	assert_signal_emitted_with_parameters(
+		push_shelf, "shelf_manipulated", [InteractiveShelf.ACTION_PUSH_ASIDE]
+	)
+	assert_true(push_shelf.is_cleared(), "Push-aside must mark shelf cleared.")
+	assert_false(push_shelf.can_manipulate(), "Cleared shelf must not be manipulable again.")
+	assert_false(push_link.enabled, "Push-aside must disable linked NavigationLink3D.")
+	assert_gt(
+		push_shelf.global_position.distance_to(start_pos),
+		1.4,
+		"Push-aside must slide shelf ~1.6m sideways."
+	)
+
+	var topple_link: NavigationLink3D = NavigationLink3D.new()
+	topple_link.name = "ToppleLink"
+	container.add_child(topple_link)
+
+	var topple_shelf: InteractiveShelf = SHELF_SCENE.instantiate() as InteractiveShelf
+	topple_shelf.name = "ToppleShelf"
+	topple_shelf.pushable = true
+	topple_shelf.linked_nav_link = NodePath("../ToppleLink")
+	container.add_child(topple_shelf)
+
+	watch_signals(topple_shelf)
+	topple_shelf.topple(Vector3(0.0, 0.0, -1.0), 0.1)
+	await wait_for_signal(topple_shelf.shelf_manipulated, 0.5)
+	assert_signal_emitted_with_parameters(
+		topple_shelf, "shelf_manipulated", [InteractiveShelf.ACTION_TOPPLE]
+	)
+	assert_true(topple_shelf.is_cleared(), "Topple must mark shelf cleared.")
+	assert_false(topple_link.enabled, "Topple must disable linked NavigationLink3D.")
+	assert_almost_eq(
+		absf(topple_shelf.global_transform.basis.y.dot(Vector3.UP)),
+		0.0,
+		0.1,
+		"Toppled shelf local +Y must tip ~90 deg onto floor."
+	)
+
+
+## Verifies contextual shelf mode selection across urgency, clearance, cramped, and cleared states.
+func test_select_shelf_traversal_contextual_modes() -> void:
+	var arena: Node3D = Node3D.new()
+	add_child_autofree(arena)
+
+	var player_stub: Node3D = Node3D.new()
+	player_stub.add_to_group(&"player")
+	arena.add_child(player_stub)
+
+	var shelf: InteractiveShelf = SHELF_SCENE.instantiate() as InteractiveShelf
+	shelf.pushable = true
+	arena.add_child(shelf)
+	shelf.global_position = Vector3(0.0, 0.0, -2.0)
+
+	var entry_pos: Vector3 = Vector3(0.0, 0.0, -0.8)
+	var exit_pos: Vector3 = Vector3(0.0, 0.0, -3.2)
+	_godiva.global_position = entry_pos
+	_godiva.start_following()
+
+	# Normal urgency + open overhead -> climb over.
+	player_stub.global_position = Vector3(0.0, 0.0, -4.0)
+	_godiva._update_follow_target()
+	assert_eq(
+		_godiva.select_shelf_traversal(shelf, entry_pos, exit_pos),
+		GodivaFollower.TRAVERSAL_SHELF_CLIMB,
+		"Normal urgency with clear overhead must select shelf_climb_over."
+	)
+
+	# Normal urgency + low overhead ceiling -> crawl through.
+	var low_ceil: StaticBody3D = StaticBody3D.new()
+	low_ceil.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	var ceil_col: CollisionShape3D = CollisionShape3D.new()
+	var ceil_box: BoxShape3D = BoxShape3D.new()
+	ceil_box.size = Vector3(4.0, 0.2, 4.0)
+	ceil_col.shape = ceil_box
+	low_ceil.add_child(ceil_col)
+	arena.add_child(low_ceil)
+	low_ceil.global_position = Vector3(0.0, 2.7, -2.0)
+	await get_tree().physics_frame
+	assert_eq(
+		_godiva.select_shelf_traversal(shelf, entry_pos, exit_pos),
+		GodivaFollower.TRAVERSAL_SHELF_CRAWL,
+		"Low overhead clearance above shelf top must select shelf_crawl_through."
+	)
+	low_ceil.global_position = Vector3(0.0, 12.0, -2.0)
+	await get_tree().physics_frame
+
+	# High urgency (run_distance <= dist < run_distance * 1.5) -> vault through.
+	player_stub.global_position = Vector3(0.0, 0.0, -7.5)
+	_godiva._update_follow_target()
+	assert_eq(
+		_godiva.select_shelf_traversal(shelf, entry_pos, exit_pos),
+		GodivaFollower.TRAVERSAL_SHELF_VAULT,
+		"High urgency below 1.5x run_distance must select shelf_vault_through."
+	)
+
+	# Very high urgency (>= 1.5x run_distance) + pushable + open space -> topple.
+	player_stub.global_position = Vector3(0.0, 0.0, -12.0)
+	_godiva._update_follow_target()
+	assert_eq(
+		_godiva.select_shelf_traversal(shelf, entry_pos, exit_pos),
+		GodivaFollower.TRAVERSAL_SHELF_TOPPLE,
+		"Very high urgency on pushable shelf in open space must select shelf_topple."
+	)
+
+	# Very high urgency + cramped forward wall -> push aside.
+	var back_wall: StaticBody3D = StaticBody3D.new()
+	back_wall.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	var wall_col: CollisionShape3D = CollisionShape3D.new()
+	var wall_box: BoxShape3D = BoxShape3D.new()
+	wall_box.size = Vector3(4.0, 3.0, 0.3)
+	wall_col.shape = wall_box
+	back_wall.add_child(wall_col)
+	arena.add_child(back_wall)
+	back_wall.global_position = Vector3(0.0, 1.5, -3.6)
+	await get_tree().physics_frame
+	assert_eq(
+		_godiva.select_shelf_traversal(shelf, entry_pos, exit_pos),
+		GodivaFollower.TRAVERSAL_SHELF_PUSH,
+		"Cramped forward space behind pushable shelf must select shelf_push_aside."
+	)
+
+	# Deterministic override takes precedence when shelf is not cleared.
+	_godiva.shelf_mode_override = GodivaFollower.TRAVERSAL_SHELF_CRAWL
+	assert_eq(
+		_godiva.select_shelf_traversal(shelf, entry_pos, exit_pos),
+		GodivaFollower.TRAVERSAL_SHELF_CRAWL,
+		"shelf_mode_override must force selected shelf traversal mode."
+	)
+	_godiva.shelf_mode_override = &""
+
+	# Cleared shelf returns empty StringName so Godiva walks straight through.
+	shelf.push_aside(Vector3(0.0, 0.0, -1.0), 0.0)
+	assert_eq(
+		_godiva.select_shelf_traversal(shelf, entry_pos, exit_pos),
+		&"",
+		"Cleared InteractiveShelf must return empty mode to walk straight through."
+	)
+
+
+## Verifies all 4 shelf traversal modes execute multi-phase tweens and manipulate shelf on push.
+func test_all_four_shelf_traversal_modes_execute_and_finish() -> void:
+	var arena: Node3D = Node3D.new()
+	add_child_autofree(arena)
+
+	var shelf: InteractiveShelf = SHELF_SCENE.instantiate() as InteractiveShelf
+	shelf.name = "TestShelf"
+	shelf.pushable = true
+	arena.add_child(shelf)
+	shelf.global_position = Vector3(0.0, 0.0, -2.0)
+
+	var shelf_link: NavigationLink3D = NavigationLink3D.new()
+	shelf_link.name = "ShelfLink"
+	shelf_link.set_meta(&"traversal_type", "shelf_interact")
+	shelf_link.set_meta(&"shelf_node_path", NodePath("../TestShelf"))
+	arena.add_child(shelf_link)
+
+	_godiva.start_following()
+	watch_signals(_godiva)
+
+	var entry_pos: Vector3 = Vector3(0.0, 0.0, -0.8)
+	var exit_pos: Vector3 = Vector3(0.0, 0.0, -3.2)
+
+	for mode: StringName in [
+		GodivaFollower.TRAVERSAL_SHELF_CRAWL,
+		GodivaFollower.TRAVERSAL_SHELF_CLIMB,
+		GodivaFollower.TRAVERSAL_SHELF_VAULT,
+		GodivaFollower.TRAVERSAL_SHELF_PUSH,
+	]:
+		_godiva.global_position = entry_pos
+		_godiva.shelf_mode_override = mode
+		(
+			_godiva
+			. nav_agent
+			. link_reached
+			. emit(
+				{
+					"link_entry_position": entry_pos,
+					"link_exit_position": exit_pos,
+					"owner": shelf_link,
+				}
+			)
+		)
+		assert_signal_emitted_with_parameters(_godiva, "traversal_started", [mode])
+		var dur: float = _godiva._get_clip_duration(
+			mode, _godiva._get_default_traversal_duration(mode)
+		)
+		await wait_for_signal(_godiva.traversal_finished, dur + 0.6)
+		assert_signal_emitted_with_parameters(_godiva, "traversal_finished", [mode])
+		assert_lt(
+			_godiva.global_position.distance_to(exit_pos),
+			0.1,
+			"Shelf traversal '" + String(mode) + "' must land Godiva at exit_pos."
+		)
+
+	assert_true(
+		shelf.is_cleared(),
+		"TRAVERSAL_SHELF_PUSH must trigger InteractiveShelf.push_aside and clear the shelf."
+	)
+
+
+## Verifies FactoryDoorway4m chokepoint yield, wall-hug sidestep, and resume on clear or timeout.
+func test_doorway_chokepoint_yield_and_resume() -> void:
+	var arena: Node3D = Node3D.new()
+	add_child_autofree(arena)
+
+	var floor_body: StaticBody3D = StaticBody3D.new()
+	floor_body.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	var floor_col: CollisionShape3D = CollisionShape3D.new()
+	var floor_box: BoxShape3D = BoxShape3D.new()
+	floor_box.size = Vector3(20.0, 0.5, 20.0)
+	floor_col.shape = floor_box
+	floor_col.position = Vector3(0.0, -0.25, 0.0)
+	floor_body.add_child(floor_col)
+	arena.add_child(floor_body)
+
+	var doorway: StaticBody3D = DOORWAY_SCENE.instantiate() as StaticBody3D
+	arena.add_child(doorway)
+	doorway.global_position = Vector3(0.0, 0.0, 0.0)
+
+	var sensor: Area3D = doorway.get_node_or_null(^"ChokepointSensor") as Area3D
+	assert_not_null(sensor, "FactoryDoorway4m must contain ChokepointSensor Area3D.")
+	assert_true(sensor.is_in_group(&"chokepoint"), "ChokepointSensor must be in group chokepoint.")
+
+	var player_stub: Node3D = Node3D.new()
+	player_stub.add_to_group(&"player")
+	arena.add_child(player_stub)
+	player_stub.global_position = Vector3(0.0, 0.0, 2.5)
+
+	_godiva.global_position = Vector3(0.1, 0.0, 0.0)
+	_godiva.start_following()
+	watch_signals(_godiva)
+
+	await get_tree().physics_frame
+
+	# Player approaches Godiva inside doorway (< 3.5m).
+	player_stub.global_position = Vector3(0.0, 0.0, 2.0)
+	_godiva._physics_process(0.16)
+	assert_true(
+		_godiva.is_yielding_doorway(),
+		"Godiva inside FactoryDoorway4m must yield when player approaches within 3.5m."
+	)
+	assert_signal_emitted_with_parameters(_godiva, "doorway_yield_changed", [true])
+
+	var start_x: float = _godiva.global_position.x
+	for step_idx: int in range(25):
+		_godiva._physics_process(1.0 / 60.0)
+		assert_gte(step_idx, 0)
+	assert_gt(
+		absf(_godiva.global_position.x - start_x),
+		0.15,
+		"Godiva must sidestep off-center toward nearest doorway wall while yielding."
+	)
+
+	# Player passes through and clears > 2.5m -> Godiva resumes following.
+	player_stub.global_position = Vector3(0.0, 0.0, -2.0)
+	_godiva._physics_process(1.0 / 60.0)
+	player_stub.global_position = Vector3(0.0, 0.0, -3.2)
+	_godiva._physics_process(1.0 / 60.0)
+	assert_false(
+		_godiva.is_yielding_doorway(), "Godiva must resume following once player clears > 2.5m."
+	)
+	assert_signal_emitted_with_parameters(_godiva, "doorway_yield_changed", [false])
+
+
+## Verifies untagged narrow corridor (< 2.6m) triggers yield via throttled 2-ray check and timeout.
+func test_untagged_narrow_corridor_yield_and_timeout() -> void:
+	var arena: Node3D = Node3D.new()
+	add_child_autofree(arena)
+
+	var floor_body: StaticBody3D = StaticBody3D.new()
+	floor_body.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	var floor_col: CollisionShape3D = CollisionShape3D.new()
+	var floor_box: BoxShape3D = BoxShape3D.new()
+	floor_box.size = Vector3(12.0, 0.5, 12.0)
+	floor_col.shape = floor_box
+	floor_col.position = Vector3(0.0, -0.25, 0.0)
+	floor_body.add_child(floor_col)
+	arena.add_child(floor_body)
+
+	# Two untagged parallel walls 2.0m apart (< 2.6m threshold).
+	for side_x: float in [-1.0, 1.0]:
+		var wall: StaticBody3D = StaticBody3D.new()
+		wall.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+		var w_col: CollisionShape3D = CollisionShape3D.new()
+		var w_box: BoxShape3D = BoxShape3D.new()
+		w_box.size = Vector3(0.2, 3.0, 6.0)
+		w_col.shape = w_box
+		wall.add_child(w_col)
+		arena.add_child(wall)
+		wall.global_position = Vector3(side_x, 1.5, 0.0)
+
+	var player_stub: Node3D = Node3D.new()
+	player_stub.add_to_group(&"player")
+	arena.add_child(player_stub)
+	player_stub.global_position = Vector3(0.0, 0.0, 2.2)
+
+	_godiva.global_position = Vector3(0.0, 0.0, 0.0)
+	_godiva.start_following()
+	await get_tree().physics_frame
+
+	player_stub.global_position = Vector3(0.0, 0.0, 1.8)
+	_godiva._physics_process(0.16)
+	assert_true(
+		_godiva.is_yielding_doorway(),
+		"Untagged narrow corridor (< 2.6m) must trigger doorway yield via 2-ray check."
+	)
+
+	# Hold player in place past 4.0s timeout -> must auto-resume.
+	for tick: int in range(42):
+		_godiva._physics_process(0.1)
+		assert_gte(tick, 0)
+	assert_false(
+		_godiva.is_yielding_doorway(), "Doorway yield must auto-resume after 4.0s timeout."
+	)
+
+
+## Verifies direct shelf collision trigger, cooldown guard, and cleared-shelf rejection.
+func test_shelf_collision_trigger_cooldown_and_cleared_guard() -> void:
+	var arena: Node3D = Node3D.new()
+	add_child_autofree(arena)
+
+	var shelf: InteractiveShelf = SHELF_SCENE.instantiate() as InteractiveShelf
+	shelf.name = "CollisionShelf"
+	shelf.pushable = true
+	arena.add_child(shelf)
+	shelf.global_position = Vector3(0.0, 0.0, -2.0)
+
+	_godiva.global_position = Vector3(0.0, 0.0, -0.8)
+	_godiva.shelf_mode_override = GodivaFollower.TRAVERSAL_SHELF_VAULT
+	_godiva.start_following()
+	watch_signals(_godiva)
+
+	assert_true(
+		_godiva._try_trigger_shelf_collision(shelf),
+		"Direct collision with uncleared InteractiveShelf must trigger traversal."
+	)
+	assert_signal_emitted_with_parameters(
+		_godiva, "traversal_started", [GodivaFollower.TRAVERSAL_SHELF_VAULT]
+	)
+
+	var dur: float = (
+		_godiva
+		. _get_clip_duration(
+			GodivaFollower.TRAVERSAL_SHELF_VAULT,
+			_godiva._get_default_traversal_duration(GodivaFollower.TRAVERSAL_SHELF_VAULT),
+		)
+	)
+	await wait_for_signal(_godiva.traversal_finished, dur + 0.6)
+	assert_signal_emitted_with_parameters(
+		_godiva, "traversal_finished", [GodivaFollower.TRAVERSAL_SHELF_VAULT]
+	)
+	assert_gt(
+		_godiva._shelf_collision_cooldown_sec,
+		0.0,
+		"Completing a shelf traversal must arm _shelf_collision_cooldown_sec."
+	)
+	assert_false(
+		_godiva._try_trigger_shelf_collision(shelf),
+		"Active shelf collision cooldown must block immediate re-trigger."
+	)
+
+	_godiva._shelf_collision_cooldown_sec = 0.0
+	shelf.push_aside(Vector3(0.0, 0.0, -1.0), 0.0)
+	assert_true(shelf.is_cleared(), "Shelf must report cleared after push_aside.")
+	assert_false(
+		_godiva._try_trigger_shelf_collision(shelf),
+		"Cleared shelf must not trigger collision traversal."
+	)
+
+
+## Verifies GodivaIKController TwoBoneIK3D setup, hand targets, and prone foot-IK suppression.
+func test_ik_controller_setup_hand_targets_and_prone_suppression() -> void:
+	var ik: GodivaIKController = _godiva.ik_controller
+	assert_not_null(ik, "GodivaFollower must wire GodivaIKController.")
+
+	var foot_ik: TwoBoneIK3D = ik.get_foot_ik()
+	var hand_ik: TwoBoneIK3D = ik.get_hand_ik()
+	assert_not_null(foot_ik, "GodivaIKController must attach FootIK TwoBoneIK3D.")
+	assert_not_null(hand_ik, "GodivaIKController must attach HandIK TwoBoneIK3D.")
+	assert_eq(foot_ik.get_setting_count(), 2, "FootIK must configure both left and right legs.")
+	assert_eq(hand_ik.get_setting_count(), 2, "HandIK must configure both left and right arms.")
+	assert_eq(
+		foot_ik.get_parent(), _godiva.get_skeleton(), "FootIK must be a direct child of Skeleton3D."
+	)
+	assert_eq(
+		hand_ik.get_parent(), _godiva.get_skeleton(), "HandIK must be a direct child of Skeleton3D."
+	)
+
+	ik.set_hand_targets(Vector3(-0.24, 1.2, -0.5), Vector3(0.24, 1.2, -0.5), 0.85)
+	assert_true(ik.is_hand_ik_active(), "set_hand_targets must activate hand IK.")
+	for step: int in range(20):
+		ik._physics_process(1.0 / 60.0)
+		assert_gte(step, 0)
+	assert_gt(hand_ik.influence, 0.6, "HandIK influence must blend up toward target weight.")
+
+	ik.clear_hand_targets()
+	assert_false(ik.is_hand_ik_active(), "clear_hand_targets must deactivate hand IK.")
+	for step_out: int in range(30):
+		ik._physics_process(1.0 / 60.0)
+		assert_gte(step_out, 0)
+	assert_lt(hand_ik.influence, 0.05, "HandIK influence must damp back toward 0.0 after clear.")
+
+	_godiva._apply_stance(GodivaFollower.Stance.PRONE, true)
+	assert_true(ik.is_foot_ik_suppressed(), "Prone stance must suppress foot grounding IK.")
+	foot_ik.influence = 0.8
+	for step_prone: int in range(25):
+		ik._physics_process(1.0 / 60.0)
+		assert_gte(step_prone, 0)
+	assert_lt(foot_ik.influence, 0.05, "Suppressed FootIK influence must damp toward 0.0.")
+
+	_godiva._apply_stance(GodivaFollower.Stance.STAND, true)
+	assert_false(ik.is_foot_ik_suppressed(), "Standing stance must re-enable foot grounding IK.")
+
+
+## Verifies NpcActor parametric locomotion BlendSpace1D blending and scripted clip override.
+func test_npc_actor_parametric_locomotion_blend_space() -> void:
+	assert_true(
+		_godiva.has_locomotion_blend_space(),
+		"NpcActor must build locomotion BlendSpace1D when idle, walk, and run exist."
+	)
+	var tree: AnimationTree = _godiva.get_animation_tree()
+	assert_not_null(tree, "AnimationTree must exist.")
+
+	_godiva.set_locomotion_blend(0.38)
+	var raw_walk_blend: Variant = tree.get(NpcActor.PARAM_LOCOMOTION_BLEND)
+	var walk_blend: float = raw_walk_blend if raw_walk_blend is float else -1.0
+	assert_almost_eq(walk_blend, 0.38, 0.005, "Walk speed ratio must drive blend_position=0.38.")
+	assert_eq(
+		_godiva.get_current_animation(),
+		NpcActor.STATE_LOCOMOTION,
+		"set_locomotion_blend must switch state machine to locomotion."
+	)
+
+	_godiva.set_locomotion_blend(1.0)
+	var raw_run_blend: Variant = tree.get(NpcActor.PARAM_LOCOMOTION_BLEND)
+	var run_blend: float = raw_run_blend if raw_run_blend is float else -1.0
+	assert_almost_eq(run_blend, 1.0, 0.005, "Run speed ratio must drive blend_position=1.0.")
+
+	_godiva.play_animation("a_pose")
+	_godiva.set_locomotion_blend(0.5)
+	assert_eq(
+		_godiva.get_current_animation(),
+		&"a_pose",
+		"Scripted clip must prevent set_locomotion_blend from overriding playback."
+	)
+	_godiva.stop_animation()
+	assert_eq(_godiva.get_current_animation(), &"idle", "stop_animation must return to idle.")
+
+
+## Verifies motion warping anchor probing snaps wall face, ledge top, and landing floor.
+func test_motion_warping_anchor_probing_snaps_wall_ledge_and_floor() -> void:
+	var arena: Node3D = Node3D.new()
+	add_child_autofree(arena)
+
+	var ledge_block: StaticBody3D = StaticBody3D.new()
+	ledge_block.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	var ledge_col: CollisionShape3D = CollisionShape3D.new()
+	var ledge_box: BoxShape3D = BoxShape3D.new()
+	ledge_box.size = Vector3(4.0, 1.4, 2.0)
+	ledge_col.shape = ledge_box
+	ledge_block.add_child(ledge_col)
+	arena.add_child(ledge_block)
+	# Front face at Z=-1.0, top surface at Y=1.4.
+	ledge_block.global_position = Vector3(0.0, 0.7, -2.0)
+
+	await get_tree().physics_frame
+
+	var anchors: Dictionary[StringName, Variant] = (
+		_godiva
+		. _probe_traversal_anchors(
+			GodivaFollower.TRAVERSAL_CLIMB_MID,
+			Vector3(0.0, 0.0, 0.0),
+			Vector3(0.0, 1.55, -1.5),
+			null,
+		)
+	)
+	var raw_has_wall: Variant = anchors.get(GodivaFollower.ANCHOR_HAS_WALL, false)
+	var has_wall: bool = raw_has_wall if raw_has_wall is bool else false
+	assert_true(has_wall, "Wall face ray must hit front face of climbable block.")
+
+	var raw_wall_pos: Variant = anchors.get(GodivaFollower.ANCHOR_WALL_POS, Vector3.ZERO)
+	var wall_pos: Vector3 = raw_wall_pos if raw_wall_pos is Vector3 else Vector3.ZERO
+	assert_almost_eq(wall_pos.z, -1.0, 0.05, "Wall contact Z must snap to block face at Z=-1.0.")
+
+	var raw_ledge_y: Variant = anchors.get(GodivaFollower.ANCHOR_LEDGE_Y, 0.0)
+	var ledge_y: float = raw_ledge_y if raw_ledge_y is float else 0.0
+	assert_almost_eq(ledge_y, 1.4, 0.05, "Ledge ray must snap to exact top surface Y=1.4.")
+
+	var raw_floor_y: Variant = anchors.get(GodivaFollower.ANCHOR_FLOOR_Y, 0.0)
+	var floor_y: float = raw_floor_y if raw_floor_y is float else 0.0
+	assert_almost_eq(
+		floor_y, 1.4, 0.05, "Landing floor ray must snap floating exit_pos.y=1.55 down to Y=1.4."
+	)
+
+	var shelf: InteractiveShelf = SHELF_SCENE.instantiate() as InteractiveShelf
+	arena.add_child(shelf)
+	shelf.global_position = Vector3(0.0, 2.0, -4.0)
+	var shelf_climb: Dictionary[StringName, Variant] = (
+		_godiva
+		. _probe_traversal_anchors(
+			GodivaFollower.TRAVERSAL_SHELF_CLIMB,
+			Vector3(0.0, 2.0, -3.0),
+			Vector3(0.0, 2.0, -5.0),
+			shelf,
+		)
+	)
+	var raw_climb_y: Variant = shelf_climb.get(GodivaFollower.ANCHOR_LEDGE_Y, 0.0)
+	var climb_y: float = raw_climb_y if raw_climb_y is float else 0.0
+	assert_almost_eq(
+		climb_y, 3.975, 0.01, "Shelf climb anchor must snap to shelf.y + 1.975 deck top."
+	)
+
+
+## Verifies testbed.tscn disables Link_Platform_OverheadSlab and bakes CSGBox3D11 into navmesh.
+func test_testbed_navmesh_covers_csgbox11_and_disables_floating_link() -> void:
+	var packed: PackedScene = ResourceLoader.load("res://levels/testbed.tscn") as PackedScene
+	assert_not_null(packed, "levels/testbed.tscn must load cleanly.")
+	var state: SceneState = packed.get_state()
+
+	var found_disabled_overhead: bool = false
+	var found_csg11_link: bool = false
+	var nav_mesh: NavigationMesh = null
+
+	for n_idx: int in range(state.get_node_count()):
+		var node_name: StringName = state.get_node_name(n_idx)
+		if node_name == &"Link_Platform_OverheadSlab":
+			for p_idx: int in range(state.get_node_property_count(n_idx)):
+				if state.get_node_property_name(n_idx, p_idx) == &"enabled":
+					var raw_en: Variant = state.get_node_property_value(n_idx, p_idx)
+					if raw_en is bool and not raw_en:
+						found_disabled_overhead = true
+		elif node_name == &"Link_OverheadSlab_To_CSGBox11":
+			found_csg11_link = true
+		elif node_name == &"GodivaNavigationRegion3D":
+			for p_idx: int in range(state.get_node_property_count(n_idx)):
+				if state.get_node_property_name(n_idx, p_idx) == &"navigation_mesh":
+					var raw_nm: Variant = state.get_node_property_value(n_idx, p_idx)
+					if raw_nm is NavigationMesh:
+						nav_mesh = raw_nm as NavigationMesh
+
+	assert_true(
+		found_disabled_overhead, "Link_Platform_OverheadSlab must be disabled (enabled = false)."
+	)
+	assert_true(
+		found_csg11_link, "Link_OverheadSlab_To_CSGBox11 must exist under GodivaNavigationRegion3D."
+	)
+	assert_not_null(nav_mesh, "GodivaNavigationRegion3D must have a NavigationMesh.")
+	assert_eq(
+		nav_mesh.filter_baking_aabb,
+		AABB(Vector3(93.0, 31.5, -226.0), Vector3(28.0, 11.0, 44.0)),
+		"NavigationMesh_godiva_test filter_baking_aabb must cover CSGBox3D11."
+	)
+
+	var csg11_vert_count: int = 0
+	for v: Vector3 in nav_mesh.get_vertices():
+		if v.z <= -214.0 and v.z >= -226.0 and v.y >= 37.0 and v.y <= 38.5:
+			csg11_vert_count += 1
+	assert_gt(
+		csg11_vert_count, 0, "Baked NavigationMesh_godiva_test must include CSGBox3D11 vertices."
+	)
