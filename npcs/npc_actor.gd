@@ -10,6 +10,12 @@ signal animation_completed(clip_name: StringName)
 
 ## Default AnimationTree state machine playback property key.
 const PARAM_PLAYBACK: StringName = &"parameters/playback"
+## AnimationTree parameter path for the 1D locomotion blend space position.
+const PARAM_LOCOMOTION_BLEND: StringName = &"parameters/locomotion/blend_position"
+## State machine node name for parametric idle-walk-run blending.
+const STATE_LOCOMOTION: StringName = &"locomotion"
+## BlendSpace1D threshold for walk clip inside [constant STATE_LOCOMOTION].
+const LOCOMOTION_WALK_POINT: float = 0.38
 ## Minimum angular alignment (radians) to finish a body yaw turn.
 const BODY_TURN_STOP_RAD: float = 0.14
 ## Minimum squared planar distance to evaluate horizontal yaw direction.
@@ -104,6 +110,10 @@ var _look_blend: float = 0.0
 var _is_turning_body: bool = false
 ## Cached list of clip names registered in [member _anim_tree].
 var _registered_clips: Array[StringName] = []
+## True when idle, walk, and run clips exist and [constant STATE_LOCOMOTION] is built.
+var _has_locomotion_blend_space: bool = false
+## Last blend position applied to [constant PARAM_LOCOMOTION_BLEND] in [0.0, 1.0].
+var _locomotion_blend_pos: float = 0.0
 
 
 ## Initializes collision layers, [AnimationTree], [LookAtModifier3D] stack, and event listeners.
@@ -250,6 +260,31 @@ func get_current_animation() -> StringName:
 	return _current_clip
 
 
+## Drives parametric idle-walk-run blending in [0.0, 1.0] when no scripted clip is active.
+func set_locomotion_blend(speed_ratio: float) -> void:
+	if not _has_locomotion_blend_space or not is_instance_valid(_anim_tree):
+		return
+	if _is_playing_oneshot or _is_scripted_clip_active:
+		return
+
+	_locomotion_blend_pos = clampf(speed_ratio, 0.0, 1.0)
+	_anim_tree.set(PARAM_LOCOMOTION_BLEND, _locomotion_blend_pos)
+
+	if is_instance_valid(_playback):
+		var cur_node: StringName = _playback.get_current_node()
+		if cur_node != STATE_LOCOMOTION:
+			if cur_node.is_empty() or cur_node == &"Start":
+				_playback.start(STATE_LOCOMOTION, true)
+			else:
+				_playback.travel(STATE_LOCOMOTION)
+	_current_clip = STATE_LOCOMOTION
+
+
+## Returns true if the parametric [constant STATE_LOCOMOTION] BlendSpace1D is available.
+func has_locomotion_blend_space() -> bool:
+	return _has_locomotion_blend_space
+
+
 ## Returns the rigged [Skeleton3D] managed by this actor.
 func get_skeleton() -> Skeleton3D:
 	return _skeleton
@@ -280,6 +315,7 @@ func _setup_animation_tree() -> void:
 
 	var state_machine: AnimationNodeStateMachine = AnimationNodeStateMachine.new()
 	_registered_clips.clear()
+	_has_locomotion_blend_space = false
 
 	var clip_list: PackedStringArray = _anim_player.get_animation_list()
 	for raw_name: String in clip_list:
@@ -292,6 +328,31 @@ func _setup_animation_tree() -> void:
 		_registered_clips.append(clip_sn)
 		_apply_clip_loop_mode(clip_sn, looping_clips.has(clip_sn))
 
+	if (
+		_registered_clips.has(&"idle")
+		and _registered_clips.has(&"walk")
+		and _registered_clips.has(&"run")
+	):
+		var blend_space: AnimationNodeBlendSpace1D = AnimationNodeBlendSpace1D.new()
+		blend_space.min_space = 0.0
+		blend_space.max_space = 1.0
+		blend_space.blend_mode = AnimationNodeBlendSpace1D.BLEND_MODE_INTERPOLATED
+
+		var idle_node: AnimationNodeAnimation = AnimationNodeAnimation.new()
+		idle_node.animation = &"idle"
+		blend_space.add_blend_point(idle_node, 0.0, -1, &"idle")
+
+		var walk_node: AnimationNodeAnimation = AnimationNodeAnimation.new()
+		walk_node.animation = &"walk"
+		blend_space.add_blend_point(walk_node, LOCOMOTION_WALK_POINT, -1, &"walk")
+
+		var run_node: AnimationNodeAnimation = AnimationNodeAnimation.new()
+		run_node.animation = &"run"
+		blend_space.add_blend_point(run_node, 1.0, -1, &"run")
+
+		state_machine.add_node(STATE_LOCOMOTION, blend_space)
+		_has_locomotion_blend_space = true
+
 	if _registered_clips.has(default_animation):
 		var start_trans: AnimationNodeStateMachineTransition = (
 			AnimationNodeStateMachineTransition.new()
@@ -299,8 +360,12 @@ func _setup_animation_tree() -> void:
 		start_trans.advance_mode = AnimationNodeStateMachineTransition.ADVANCE_MODE_AUTO
 		state_machine.add_transition(&"Start", default_animation, start_trans)
 
-	for from_clip: StringName in _registered_clips:
-		for to_clip: StringName in _registered_clips:
+	var all_states: Array[StringName] = _registered_clips.duplicate()
+	if _has_locomotion_blend_space:
+		all_states.append(STATE_LOCOMOTION)
+
+	for from_clip: StringName in all_states:
+		for to_clip: StringName in all_states:
 			if from_clip == to_clip:
 				continue
 			var trans: AnimationNodeStateMachineTransition = (
@@ -315,6 +380,8 @@ func _setup_animation_tree() -> void:
 	_anim_tree.root_node = _anim_tree.get_path_to(model_root)
 	_anim_tree.anim_player = _anim_tree.get_path_to(_anim_player)
 	_anim_tree.active = true
+	if _has_locomotion_blend_space:
+		_anim_tree.set(PARAM_LOCOMOTION_BLEND, 0.0)
 
 	var raw_pb: Variant = _anim_tree.get(PARAM_PLAYBACK)
 	if raw_pb is AnimationNodeStateMachinePlayback:

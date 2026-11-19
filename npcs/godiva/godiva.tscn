@@ -2,21 +2,23 @@
 
 [ext_resource type="Script" uid="uid://eq6vpfwe5qlq" path="res://npcs/godiva/godiva_follower.gd" id="1_godiva_follower"]
 [ext_resource type="PackedScene" uid="uid://pmw062e23tk0" path="res://assets/models/godiva/godiva_rigged.glb" id="2_godiva_glb"]
+[ext_resource type="Script" path="res://npcs/godiva/godiva_ik_controller.gd" id="3_godiva_ik"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_godiva"]
 radius = 0.24
 height = 1.64
 
-[node name="Godiva" type="CharacterBody3D" node_paths=PackedStringArray("model_root", "visibility_notifier", "nav_agent", "collision_shape")]
+[node name="Godiva" type="CharacterBody3D" node_paths=PackedStringArray("model_root", "visibility_notifier", "nav_agent", "collision_shape", "ik_controller")]
 collision_layer = 4
 collision_mask = 3
 script = ExtResource("1_godiva_follower")
 nav_agent = NodePath("NavigationAgent3D")
 collision_shape = NodePath("CollisionShape3D")
+ik_controller = NodePath("GodivaIKController")
 model_root = NodePath("GodivaModel")
 visibility_notifier = NodePath("VisibleOnScreenNotifier3D")
 default_animation = &"idle"
-looping_clips = Array[StringName]([&"idle", &"a_pose", &"t_pose", &"turn_left", &"turn_right", &"air_hump", &"booty_slap", &"walk", &"run", &"crouch_idle", &"crouch_walk", &"prone_idle", &"prone_crawl"])
+looping_clips = Array[StringName]([&"idle", &"a_pose", &"t_pose", &"turn_left", &"turn_right", &"air_hump", &"booty_slap", &"walk", &"run", &"crouch_idle", &"crouch_walk", &"prone_idle", &"prone_crawl", &"wall_hug_idle", &"sidestep_left", &"sidestep_right"])
 event_animation_map = Dictionary[String, String]({
 "godiva_air_hump": "air_hump",
 "godiva_booty_slap": "booty_slap"
@@ -40,3 +42,6 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0
 
 [node name="LookTarget" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.48, -3)
+
+[node name="GodivaIKController" type="Node" parent="."]
+script = ExtResource("3_godiva_ik")
