@@ -1,0 +1,40 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://interactables/washing_machine/washing_machine.gd" id="1_washer_script"]
+[ext_resource type="PackedScene" uid="uid://cbxxdogmlp8gs" path="res://assets/models/props/washing_machine/washing_machine.glb" id="2_washer_glb"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="3_interact_comp"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="4_highlight_comp"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(0.68, 0.99, 0.7)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_door"]
+size = Vector3(0.48, 0.04, 0.44)
+
+[node name="WashingMachine" type="StaticBody3D" groups=["interactable"] node_paths=PackedStringArray("door_pivot")]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_washer_script")
+door_pivot = NodePath("DoorPivot")
+
+[node name="Model" parent="." instance=ExtResource("2_washer_glb")]
+
+[node name="BodyCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.495, 0)
+shape = SubResource("BoxShape3D_body")
+
+[node name="DoorPivot" type="AnimatableBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, -0.16)
+collision_layer = 4
+collision_mask = 0
+
+[node name="DoorCollision" type="CollisionShape3D" parent="DoorPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.015, 0.22)
+shape = SubResource("BoxShape3D_door")
+
+[node name="InteractComponent" type="Node" parent="."]
+script = ExtResource("3_interact_comp")
+
+[node name="HighlightComponent" type="Node" parent="." node_paths=PackedStringArray("interact_component")]
+script = ExtResource("4_highlight_comp")
+interact_component = NodePath("../InteractComponent")
