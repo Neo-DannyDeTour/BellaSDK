@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" uid="uid://bsteh425scwjb" path="res://assets/models/props/factory_yard/wooden_pallet.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/weathered_olive_crate_wood/weathered_olive_crate_wood.tres" id="2_wood"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pallet"]
+size = Vector3(1.2, 0.145, 1)
+
+[node name="WoodenPallet" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="wooden_pallet" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_wood")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0725, 0)
+shape = SubResource("BoxShape3D_pallet")
+
+[editable path="Model"]

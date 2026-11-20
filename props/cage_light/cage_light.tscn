@@ -1,0 +1,44 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" uid="uid://caafateda5v8t" path="res://props/cage_light/cage_light.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cvwfdmyj57ei2" path="res://assets/models/props/cage_light/cage_light.glb" id="2_glb"]
+[ext_resource type="Shader" uid="uid://blcr2f003ml3f" path="res://shaders/cage_light_glass.gdshader" id="3_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_glass"]
+resource_local_to_scene = false
+render_priority = 0
+shader = ExtResource("3_shader")
+shader_parameter/albedo_color = Color(0.88, 0.72, 0.42, 1)
+shader_parameter/roughness = 0.42
+shader_parameter/fresnel_power = 2.2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cage"]
+size = Vector3(0.2, 0.36, 0.14)
+
+[node name="CageLight" type="Node3D" node_paths=PackedStringArray("mesh_instance", "omni_light")]
+script = ExtResource("1_script")
+mesh_instance = NodePath("Model/CageLight")
+omni_light = NodePath("OmniLight3D")
+
+[node name="Model" parent="." instance=ExtResource("2_glb")]
+
+[node name="CageLight" parent="Model" index="0"]
+layers = 1
+surface_material_override/1 = SubResource("ShaderMaterial_glass")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.16)
+layers = 1
+light_color = Color(1, 0.68, 0.22, 1)
+light_energy = 1.2
+omni_range = 5.0
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.07)
+shape = SubResource("BoxShape3D_cage")
+
+[editable path="Model"]
