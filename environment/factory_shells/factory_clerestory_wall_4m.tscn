@@ -1,0 +1,48 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" uid="uid://bgj48rw10ddcp" path="res://assets/models/factory_shells/factory_clerestory_wall_4m.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/factory_stained_concrete/factory_stained_concrete.tres" id="2_concrete"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+[ext_resource type="Material" path="res://assets/materials/factory_grimy_glass/factory_grimy_glass.tres" id="4_glass"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_left"]
+size = Vector3(0.9, 1.6, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_right"]
+size = Vector3(0.9, 1.6, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bottom"]
+size = Vector3(2.2, 0.225, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_top"]
+size = Vector3(2.2, 0.225, 0.35)
+
+[node name="FactoryClerestoryWall4m" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="factory_clerestory_wall_4m" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_concrete")
+surface_material_override/1 = ExtResource("3_steel")
+surface_material_override/2 = ExtResource("4_glass")
+
+[node name="LeftPillarCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.55, 0.8, 0)
+shape = SubResource("BoxShape3D_left")
+
+[node name="RightPillarCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.55, 0.8, 0)
+shape = SubResource("BoxShape3D_right")
+
+[node name="BottomSpandrelCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1125, 0)
+shape = SubResource("BoxShape3D_bottom")
+
+[node name="TopLintelCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4875, 0)
+shape = SubResource("BoxShape3D_top")
+
+[editable path="Model"]

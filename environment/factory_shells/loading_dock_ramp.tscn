@@ -1,7 +1,7 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://mwk1kxr0fmdv"]
 
 [ext_resource type="PackedScene" uid="uid://cj4vg86gqt1yk" path="res://assets/models/factory_shells/loading_dock_ramp.glb" id="1_glb"]
-[ext_resource type="Material" path="res://assets/materials/factory_stained_concrete/factory_stained_concrete.tres" id="2_concrete"]
+[ext_resource type="Material" uid="uid://ccsqgtfcladmq" path="res://assets/materials/factory_stained_concrete/factory_stained_concrete.tres" id="2_concrete"]
 [ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_dock"]
@@ -10,22 +10,20 @@ size = Vector3(4, 1.1, 2.5)
 [sub_resource type="BoxShape3D" id="BoxShape3D_ramp"]
 size = Vector3(4, 0.12, 3.661369)
 
-[node name="LoadingDockRamp" type="StaticBody3D"]
-collision_layer = 1
+[node name="LoadingDockRamp" type="StaticBody3D" unique_id=62976331]
 collision_mask = 0
 
-[node name="Model" parent="." instance=ExtResource("1_glb")]
+[node name="Model" parent="." unique_id=2092753376 instance=ExtResource("1_glb")]
 
-[node name="loading_dock_ramp" parent="Model" index="0"]
-layers = 1
+[node name="loading_dock_ramp" parent="Model" index="0" unique_id=1990711572]
 surface_material_override/0 = ExtResource("2_concrete")
 surface_material_override/1 = ExtResource("3_steel")
 
-[node name="DockCollision" type="CollisionShape3D" parent="."]
+[node name="DockCollision" type="CollisionShape3D" parent="." unique_id=38708951]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, -1.75)
 shape = SubResource("BoxShape3D_dock")
 
-[node name="RampCollision" type="CollisionShape3D" parent="."]
+[node name="RampCollision" type="CollisionShape3D" parent="." unique_id=1369021203]
 transform = Transform3D(1, 0, 0, 0, 0.955927, -0.293606, 0, 0.293606, 0.955927, 0, 0.505144, 1.232384)
 shape = SubResource("BoxShape3D_ramp")
 

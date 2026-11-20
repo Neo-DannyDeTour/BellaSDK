@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://cxg6hht2slt25"]
 
 [ext_resource type="PackedScene" uid="uid://osgq3lmnhhqs" path="res://assets/models/factory_shells/factory_floor_4m.glb" id="1_glb"]
 [ext_resource type="Material" path="res://assets/materials/factory_floor_slab/factory_floor_slab.tres" id="2_floor"]
@@ -6,17 +6,15 @@
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
 size = Vector3(4, 0.25, 4)
 
-[node name="FactoryFloor4m" type="StaticBody3D"]
-collision_layer = 1
+[node name="FactoryFloor4m" type="StaticBody3D" unique_id=1224114900]
 collision_mask = 0
 
-[node name="Model" parent="." instance=ExtResource("1_glb")]
+[node name="Model" parent="." unique_id=75470889 instance=ExtResource("1_glb")]
 
-[node name="factory_floor_4m" parent="Model" index="0"]
-layers = 1
+[node name="factory_floor_4m" parent="Model" index="0" unique_id=1761941384]
 surface_material_override/0 = ExtResource("2_floor")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1982199312]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.125, 0)
 shape = SubResource("BoxShape3D_floor")
 
