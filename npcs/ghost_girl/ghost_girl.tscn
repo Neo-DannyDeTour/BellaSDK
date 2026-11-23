@@ -1,0 +1,41 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://bley570aq4cxw" path="res://npcs/npc_actor.gd" id="1_npc_actor"]
+[ext_resource type="PackedScene" uid="uid://bharcmvc28iav" path="res://assets/models/ghost_girl/ghost_girl_rigged.glb" id="2_ghost_girl_glb"]
+[ext_resource type="Script" uid="uid://b11bt11kd1gm4" path="res://npcs/face_rig_controller.gd" id="3_face_rig"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ghost_girl"]
+radius = 0.24
+height = 1.58
+
+[node name="GhostGirl" type="CharacterBody3D" node_paths=PackedStringArray("model_root", "visibility_notifier")]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_npc_actor")
+model_root = NodePath("GhostGirlModel")
+visibility_notifier = NodePath("VisibleOnScreenNotifier3D")
+default_animation = &"idle"
+looping_clips = Array[StringName]([&"idle", &"walk", &"run"])
+chest_bone_name = "Chest"
+head_bone_name = "Head"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.79, 0)
+shape = SubResource("CapsuleShape3D_ghost_girl")
+
+[node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="."]
+aabb = AABB(-0.45, 0, -0.45, 0.9, 1.66, 0.9)
+
+[node name="GhostGirlModel" parent="." instance=ExtResource("2_ghost_girl_glb")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
+
+[node name="LookTarget" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.44, -3)
+
+[node name="FaceRigController" type="Node" parent="." node_paths=PackedStringArray("model_root", "visibility_notifier", "look_target")]
+script = ExtResource("3_face_rig")
+model_root = NodePath("../GhostGirlModel")
+visibility_notifier = NodePath("../VisibleOnScreenNotifier3D")
+look_target = NodePath("../LookTarget")
+head_mesh_name = "GhostGirl_Head"
+eyelash_mesh_name = "GhostGirl_Eyelashes"
