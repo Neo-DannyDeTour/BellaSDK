@@ -8,6 +8,14 @@ signal expression_changed(expression_name: StringName)
 ## Emitted when an automatic or manual eye blink sequence begins.
 signal blink_triggered
 
+## Facial rig driver backend selected automatically during [method _ready].
+enum RigBackend {
+	## Drives [ArrayMesh] blendshapes on head/eyelash meshes and couples [member jaw_bone].
+	BLENDSHAPE,
+	## Drives Humanizer [AnimationTree] [AnimationNodeAdd2] blend parameters.
+	HUMANIZER_ANIM_TREE,
+}
+
 ## Duration in seconds for the eyelid close phase of a blink.
 const BLINK_CLOSE_DURATION: float = 0.06
 ## Duration in seconds for the eyelid reopen phase of a blink.
@@ -22,6 +30,89 @@ const SHAPE_JAW_OPEN: StringName = &"jawOpen"
 const SHAPE_BLINK_LEFT: StringName = &"eyeBlinkLeft"
 ## Blendshape key driving right eyelid closure.
 const SHAPE_BLINK_RIGHT: StringName = &"eyeBlinkRight"
+## BlendTree node name checked to auto-discover a Humanizer facial [AnimationTree].
+const NODE_EYE_BLINK_LEFT: StringName = &"eyeBlinkLeft"
+## AnimationTree parameter path checked to auto-discover a Humanizer facial [AnimationTree].
+const PARAM_EYE_BLINK_LEFT: StringName = &"parameters/eyeBlinkLeft/add_amount"
+## Pre-allocated Humanizer head yaw/pitch/roll [AnimationNodeAdd2] node keys.
+const HEAD_ROT_KEYS: Array[StringName] = [
+	&"headLeft",
+	&"headRight",
+	&"headUp",
+	&"headDown",
+	&"headRollLeft",
+	&"headRollRight",
+]
+## Humanizer [AnimationNodeAdd2] key for leftward head yaw.
+const KEY_HEAD_LEFT: StringName = &"headLeft"
+## Humanizer [AnimationNodeAdd2] key for rightward head yaw.
+const KEY_HEAD_RIGHT: StringName = &"headRight"
+## Humanizer [AnimationNodeAdd2] key for upward head pitch.
+const KEY_HEAD_UP: StringName = &"headUp"
+## Humanizer [AnimationNodeAdd2] key for downward head pitch.
+const KEY_HEAD_DOWN: StringName = &"headDown"
+## Humanizer [AnimationNodeAdd2] key for counter-clockwise head roll.
+const KEY_HEAD_ROLL_LEFT: StringName = &"headRollLeft"
+## Humanizer [AnimationNodeAdd2] key for clockwise head roll.
+const KEY_HEAD_ROLL_RIGHT: StringName = &"headRollRight"
+## Radian range mapped to 1.0 on Humanizer head rotation [AnimationNodeAdd2] parameters (35 deg).
+const HEAD_ROT_MAX_RAD: float = 0.610865
+
+## Complete 52 standard ARKit blendshape keys in Live Link Face index order (0..51).
+const ARKIT_52_KEYS: Array[StringName] = [
+	&"eyeBlinkLeft",
+	&"eyeLookDownLeft",
+	&"eyeLookInLeft",
+	&"eyeLookOutLeft",
+	&"eyeLookUpLeft",
+	&"eyeSquintLeft",
+	&"eyeWideLeft",
+	&"eyeBlinkRight",
+	&"eyeLookDownRight",
+	&"eyeLookInRight",
+	&"eyeLookOutRight",
+	&"eyeLookUpRight",
+	&"eyeSquintRight",
+	&"eyeWideRight",
+	&"jawForward",
+	&"jawRight",
+	&"jawLeft",
+	&"jawOpen",
+	&"mouthClose",
+	&"mouthFunnel",
+	&"mouthPucker",
+	&"mouthRight",
+	&"mouthLeft",
+	&"mouthSmileLeft",
+	&"mouthSmileRight",
+	&"mouthFrownLeft",
+	&"mouthFrownRight",
+	&"mouthDimpleLeft",
+	&"mouthDimpleRight",
+	&"mouthStretchLeft",
+	&"mouthStretchRight",
+	&"mouthRollLower",
+	&"mouthRollUpper",
+	&"mouthShrugLower",
+	&"mouthShrugUpper",
+	&"mouthPressLeft",
+	&"mouthPressRight",
+	&"mouthLowerDownLeft",
+	&"mouthLowerDownRight",
+	&"mouthUpperUpLeft",
+	&"mouthUpperUpRight",
+	&"browDownLeft",
+	&"browDownRight",
+	&"browInnerUp",
+	&"browOuterUpLeft",
+	&"browOuterUpRight",
+	&"cheekPuff",
+	&"cheekSquintLeft",
+	&"cheekSquintRight",
+	&"noseSneerLeft",
+	&"noseSneerRight",
+	&"tongueOut",
+]
 
 ## Mouth and jaw ARKit keys zeroed when applying a viseme via [method set_viseme].
 const MOUTH_JAW_KEYS: Array[StringName] = [
@@ -139,7 +230,13 @@ const VISEME_MAP: Dictionary[StringName, Dictionary] = {
 ## Optional [VisibleOnScreenNotifier3D] pausing eye modifiers, blink timer, and tweens.
 @export var visibility_notifier: VisibleOnScreenNotifier3D
 ## World-space gaze [Marker3D] targeted by both eye [LookAtModifier3D] nodes.
-@export var look_target: Marker3D
+@export var look_target: Marker3D:
+	set(value):
+		look_target = value
+		if is_inside_tree():
+			_update_eye_look_targets()
+## Optional Humanizer facial [AnimationTree]; auto-discovered in [member model_root] when null.
+@export var face_animation_tree: AnimationTree
 
 @export_group("Face Rig Nodes & Bones")
 ## Mesh node name exposing the 27 ARKit facial blendshapes.
@@ -184,17 +281,25 @@ const VISEME_MAP: Dictionary[StringName, Dictionary] = {
 ## Maximum downward rotation in degrees applied to [member jaw_bone] at jawOpen = 1.0.
 @export_range(5.0, 45.0, 0.5) var jaw_open_max_deg: float = 22.0
 
+## Active facial driver backend selected in [method _ready].
+var _rig_backend: RigBackend = RigBackend.BLENDSHAPE
 ## Cached [Skeleton3D] discovered inside [member model_root].
 var _skeleton: Skeleton3D = null
-## Cached head [MeshInstance3D] driving all 27 facial blendshapes.
+## Cached head [MeshInstance3D] driving facial blendshapes in blendshape mode.
 var _head_mesh: MeshInstance3D = null
 ## Optional eyelash [MeshInstance3D] mirroring the 6 eyelid blendshapes.
 var _eyelash_mesh: MeshInstance3D = null
+## Cached Humanizer facial [AnimationTree] driving [AnimationNodeAdd2] blend parameters.
+var _face_anim_tree: AnimationTree = null
 ## Cached blendshape index map on [member _head_mesh].
 var _head_shape_indices: Dictionary[StringName, int] = {}
 ## Cached blendshape index map on [member _eyelash_mesh].
 var _eyelash_shape_indices: Dictionary[StringName, int] = {}
-## Ordered list of available blendshape names cached from [member _head_mesh].
+## Cached Humanizer [AnimationTree] parameter paths keyed by ARKit blendshape name.
+var _anim_tree_param_paths: Dictionary[StringName, StringName] = {}
+## Cached Humanizer [AnimationTree] parameter paths keyed by head rotation node name.
+var _anim_tree_head_paths: Dictionary[StringName, StringName] = {}
+## Ordered list of available blendshape names cached from head mesh or [AnimationTree].
 var _available_blendshapes: Array[StringName] = []
 ## Cached bone index for [member jaw_bone] inside [member _skeleton].
 var _jaw_bone_idx: int = -1
@@ -237,13 +342,31 @@ func _ready() -> void:
 	assert(is_instance_valid(model_root), "FaceRigController requires model_root.")
 
 	_skeleton = model_root.find_child("Skeleton3D", true, false) as Skeleton3D
-	_head_mesh = model_root.find_child(head_mesh_name, true, false) as MeshInstance3D
-	_eyelash_mesh = model_root.find_child(eyelash_mesh_name, true, false) as MeshInstance3D
+	if not is_instance_valid(_skeleton):
+		_skeleton = model_root.find_child("GeneralSkeleton", true, false) as Skeleton3D
+	if not head_mesh_name.is_empty():
+		_head_mesh = model_root.find_child(head_mesh_name, true, false) as MeshInstance3D
+	if not eyelash_mesh_name.is_empty():
+		_eyelash_mesh = model_root.find_child(eyelash_mesh_name, true, false) as MeshInstance3D
+
+	_face_anim_tree = face_animation_tree
+	if not is_instance_valid(_face_anim_tree):
+		_face_anim_tree = _discover_face_animation_tree(model_root)
+
+	if not is_instance_valid(_head_mesh) and is_instance_valid(_face_anim_tree):
+		_rig_backend = RigBackend.HUMANIZER_ANIM_TREE
+	else:
+		_rig_backend = RigBackend.BLENDSHAPE
+
 	assert(is_instance_valid(_skeleton), "FaceRigController requires Skeleton3D in model_root.")
-	assert(is_instance_valid(_head_mesh), "FaceRigController requires head mesh in model_root.")
+	assert(
+		is_instance_valid(_head_mesh) or is_instance_valid(_face_anim_tree),
+		"FaceRigController requires head mesh or face AnimationTree in model_root.",
+	)
 
 	_cache_blendshape_maps()
-	_jaw_bone_idx = _skeleton.find_bone(jaw_bone)
+	_setup_face_animation_tree()
+	_jaw_bone_idx = _skeleton.find_bone(jaw_bone) if not jaw_bone.is_empty() else -1
 	if _jaw_bone_idx >= 0:
 		_jaw_rest_rotation = (
 			_skeleton.get_bone_rest(_jaw_bone_idx).basis.get_rotation_quaternion().normalized()
@@ -284,6 +407,8 @@ func set_expression(expression_name: StringName, duration: float = 0.18) -> void
 	Utilities.safe_kill_tween(_blink_tween)
 	_blink_tween = null
 	_current_expression = expression_name
+	if is_instance_valid(_face_anim_tree):
+		_reset_head_anim_params()
 
 	var preset: Dictionary = EXPRESSION_PRESETS[expression_name]
 	_expr_start_weights.clear()
@@ -329,7 +454,7 @@ func set_viseme(viseme_name: StringName, weight: float) -> void:
 	print("FaceRigController: viseme -> ", viseme_name, " weight=", clamped_scale)
 
 
-## Sets a single blendshape weight on head and eyelash meshes and couples [member jaw_bone].
+## Sets a single blendshape weight on head, eyelash, or Humanizer tree and couples jaw bone.
 func set_blendshape(shape_name: StringName, weight: float) -> void:
 	var clamped: float = clampf(weight, 0.0, 1.0)
 	if is_instance_valid(_head_mesh) and _head_shape_indices.has(shape_name):
@@ -340,10 +465,28 @@ func set_blendshape(shape_name: StringName, weight: float) -> void:
 		var lash_idx: int = _eyelash_shape_indices[shape_name]
 		_eyelash_mesh.set_blend_shape_value(lash_idx, clamped)
 
-	if shape_name == SHAPE_JAW_OPEN and is_instance_valid(_skeleton) and _jaw_bone_idx >= 0:
+	if is_instance_valid(_face_anim_tree) and _anim_tree_param_paths.has(shape_name):
+		_face_anim_tree.set(_anim_tree_param_paths[shape_name], clamped)
+
+	if (
+		_rig_backend == RigBackend.BLENDSHAPE
+		and shape_name == SHAPE_JAW_OPEN
+		and is_instance_valid(_skeleton)
+		and _jaw_bone_idx >= 0
+	):
 		var jaw_angle: float = deg_to_rad(clamped * jaw_open_max_deg)
 		var target_rot: Quaternion = _jaw_rest_rotation * Quaternion(Vector3.LEFT, jaw_angle)
 		_skeleton.set_bone_pose_rotation(_jaw_bone_idx, target_rot)
+
+
+## Applies a live ARKit frame (52 shapes + optional head rotations) without heap allocations.
+func apply_arkit_weights(weights: PackedFloat32Array) -> void:
+	var count: int = mini(weights.size(), ARKIT_52_KEYS.size())
+	for idx: int in range(count):
+		set_blendshape(ARKIT_52_KEYS[idx], weights[idx])
+
+	if is_instance_valid(_face_anim_tree) and _face_anim_tree.active and weights.size() >= 55:
+		_apply_head_rotation_params(weights[52], weights[53], weights[54])
 
 
 ## Plays a 0.06s close then 0.08s open eye blink tween and emits [signal blink_triggered].
@@ -371,15 +514,17 @@ func set_eye_look_enabled(enabled: bool) -> void:
 	print("FaceRigController: eye_look_enabled=", enabled)
 
 
-## Returns the current blendshape weight on [member _head_mesh] for [param shape_name].
+## Returns the current blendshape weight on head mesh or Humanizer [AnimationTree].
 func get_blendshape_weight(shape_name: StringName) -> float:
-	if not is_instance_valid(_head_mesh) or not _head_shape_indices.has(shape_name):
-		return 0.0
-	var head_idx: int = _head_shape_indices[shape_name]
-	return _head_mesh.get_blend_shape_value(head_idx)
+	if is_instance_valid(_head_mesh) and _head_shape_indices.has(shape_name):
+		var head_idx: int = _head_shape_indices[shape_name]
+		return _head_mesh.get_blend_shape_value(head_idx)
+	if is_instance_valid(_face_anim_tree) and _anim_tree_param_paths.has(shape_name):
+		return _to_float(_face_anim_tree.get(_anim_tree_param_paths[shape_name]))
+	return 0.0
 
 
-## Returns all blendshape names exposed by [member _head_mesh].
+## Returns all blendshape names exposed by head mesh or Humanizer [AnimationTree].
 func get_available_blendshapes() -> Array[StringName]:
 	return _available_blendshapes.duplicate()
 
@@ -404,11 +549,119 @@ func get_jaw_bone_index() -> int:
 	return _jaw_bone_idx
 
 
+## Returns the active facial rig driver backend ([enum RigBackend]).
+func get_rig_backend() -> RigBackend:
+	return _rig_backend
+
+
+## Returns the resolved facial head [MeshInstance3D], or null in Humanizer mode.
+func get_head_mesh() -> MeshInstance3D:
+	return _head_mesh
+
+
+## Returns the resolved eyelash [MeshInstance3D], or null if not present.
+func get_eyelash_mesh() -> MeshInstance3D:
+	return _eyelash_mesh
+
+
+## Returns the resolved [Skeleton3D] inside [member model_root].
+func get_skeleton() -> Skeleton3D:
+	return _skeleton
+
+
+## Returns the resolved Humanizer facial [AnimationTree], or null in blendshape mode.
+func get_face_animation_tree() -> AnimationTree:
+	return _face_anim_tree
+
+
 ## Caches blendshape name-to-index lookup maps for head and eyelash meshes.
 func _cache_blendshape_maps() -> void:
 	_available_blendshapes.clear()
 	_head_shape_indices = _extract_blendshape_map(_head_mesh, true)
 	_eyelash_shape_indices = _extract_blendshape_map(_eyelash_mesh, false)
+
+
+## Searches [param root_node] for an [AnimationTree] exposing Humanizer facial Add2 nodes.
+func _discover_face_animation_tree(root_node: Node) -> AnimationTree:
+	if not is_instance_valid(root_node):
+		return null
+	if root_node is AnimationTree:
+		var root_tree: AnimationTree = root_node as AnimationTree
+		if _is_face_animation_tree(root_tree):
+			return root_tree
+	for child: Node in root_node.find_children("*", "AnimationTree", true, false):
+		if child is AnimationTree:
+			var cand_tree: AnimationTree = child as AnimationTree
+			if _is_face_animation_tree(cand_tree):
+				return cand_tree
+	return null
+
+
+## Returns true if [param anim_tree] exposes [code]eyeBlinkLeft[/code] as a blend tree node.
+func _is_face_animation_tree(anim_tree: AnimationTree) -> bool:
+	if not is_instance_valid(anim_tree):
+		return false
+	if anim_tree.tree_root is AnimationNodeBlendTree:
+		var blend_tree: AnimationNodeBlendTree = anim_tree.tree_root as AnimationNodeBlendTree
+		if blend_tree.has_node(NODE_EYE_BLINK_LEFT):
+			return true
+	var raw_val: Variant = anim_tree.get(PARAM_EYE_BLINK_LEFT)
+	return raw_val is float or raw_val is int
+
+
+## Caches Humanizer Add2 paths on [member _face_anim_tree] and resets all Add2 defaults to zero.
+func _setup_face_animation_tree() -> void:
+	_anim_tree_param_paths.clear()
+	_anim_tree_head_paths.clear()
+	if not is_instance_valid(_face_anim_tree):
+		return
+
+	_face_anim_tree.active = true
+	var blend_tree: AnimationNodeBlendTree = (
+		_face_anim_tree.tree_root as AnimationNodeBlendTree
+		if _face_anim_tree.tree_root is AnimationNodeBlendTree
+		else null
+	)
+
+	if is_instance_valid(blend_tree):
+		for node_name_str: String in blend_tree.get_node_list():
+			var node_sn: StringName = StringName(node_name_str)
+			if blend_tree.get_node(node_sn) is AnimationNodeAdd2:
+				var reset_path: StringName = StringName(
+					"parameters/" + node_name_str + "/add_amount"
+				)
+				_face_anim_tree.set(reset_path, 0.0)
+
+	for arkit_key: StringName in ARKIT_52_KEYS:
+		var param_path: StringName = StringName("parameters/" + String(arkit_key) + "/add_amount")
+		var supported: bool = false
+		if is_instance_valid(blend_tree):
+			supported = (
+				blend_tree.has_node(arkit_key)
+				and blend_tree.get_node(arkit_key) is AnimationNodeAdd2
+			)
+		if not supported:
+			var raw_val: Variant = _face_anim_tree.get(param_path)
+			supported = raw_val is float or raw_val is int
+		if supported:
+			_anim_tree_param_paths[arkit_key] = param_path
+			_face_anim_tree.set(param_path, 0.0)
+			if not _available_blendshapes.has(arkit_key):
+				_available_blendshapes.append(arkit_key)
+
+	for head_key: StringName in HEAD_ROT_KEYS:
+		var head_path: StringName = StringName("parameters/" + String(head_key) + "/add_amount")
+		var head_supported: bool = false
+		if is_instance_valid(blend_tree):
+			head_supported = (
+				blend_tree.has_node(head_key) and blend_tree.get_node(head_key) is AnimationNodeAdd2
+			)
+		if not head_supported:
+			var raw_head: Variant = _face_anim_tree.get(head_path)
+			head_supported = raw_head is float or raw_head is int
+		if head_supported:
+			_anim_tree_head_paths[head_key] = head_path
+			_face_anim_tree.set(head_path, 0.0)
 
 
 ## Extracts a typed blendshape index map from [param mesh_inst] when backed by an [ArrayMesh].
@@ -430,7 +683,7 @@ func _extract_blendshape_map(
 
 ## Attaches or updates a single eye [LookAtModifier3D] child on [member _skeleton].
 func _create_eye_look_modifier(mod_name: String, bone: String) -> LookAtModifier3D:
-	if not is_instance_valid(_skeleton) or _skeleton.find_bone(bone) < 0:
+	if not is_instance_valid(_skeleton) or bone.is_empty() or _skeleton.find_bone(bone) < 0:
 		return null
 
 	var mod: LookAtModifier3D = _skeleton.get_node_or_null(NodePath(mod_name)) as LookAtModifier3D
@@ -442,8 +695,12 @@ func _create_eye_look_modifier(mod_name: String, bone: String) -> LookAtModifier
 	mod.bone_name = bone
 	if is_instance_valid(look_target):
 		mod.target_node = mod.get_path_to(look_target)
-	mod.forward_axis = SkeletonModifier3D.BONE_AXIS_PLUS_Z
-	mod.primary_rotation_axis = Vector3.AXIS_Y
+	if _rig_backend == RigBackend.HUMANIZER_ANIM_TREE:
+		mod.forward_axis = SkeletonModifier3D.BONE_AXIS_PLUS_Y
+		mod.primary_rotation_axis = Vector3.AXIS_Z
+	else:
+		mod.forward_axis = SkeletonModifier3D.BONE_AXIS_PLUS_Z
+		mod.primary_rotation_axis = Vector3.AXIS_Y
 	mod.use_secondary_rotation = true
 	mod.use_angle_limitation = true
 	mod.symmetry_limitation = true
@@ -452,6 +709,47 @@ func _create_eye_look_modifier(mod_name: String, bone: String) -> LookAtModifier
 	mod.influence = eye_look_influence if eye_look_enabled else 0.0
 	mod.active = _is_on_screen and eye_look_enabled
 	return mod
+
+
+## Updates [code]target_node[/code] on both eye modifiers when [member look_target] changes.
+func _update_eye_look_targets() -> void:
+	if is_instance_valid(_left_eye_mod):
+		_left_eye_mod.target_node = (
+			_left_eye_mod.get_path_to(look_target) if is_instance_valid(look_target) else ^""
+		)
+	if is_instance_valid(_right_eye_mod):
+		_right_eye_mod.target_node = (
+			_right_eye_mod.get_path_to(look_target) if is_instance_valid(look_target) else ^""
+		)
+
+
+## Maps Live Link Face head yaw, pitch, and roll radians onto Humanizer Add2 pose parameters.
+func _apply_head_rotation_params(yaw: float, pitch: float, roll: float) -> void:
+	var left_w: float = clampf(yaw / HEAD_ROT_MAX_RAD, 0.0, 1.0) if yaw > 0.0 else 0.0
+	var right_w: float = clampf(-yaw / HEAD_ROT_MAX_RAD, 0.0, 1.0) if yaw < 0.0 else 0.0
+	var down_w: float = clampf(pitch / HEAD_ROT_MAX_RAD, 0.0, 1.0) if pitch > 0.0 else 0.0
+	var up_w: float = clampf(-pitch / HEAD_ROT_MAX_RAD, 0.0, 1.0) if pitch < 0.0 else 0.0
+	var roll_r: float = clampf(roll / HEAD_ROT_MAX_RAD, 0.0, 1.0) if roll > 0.0 else 0.0
+	var roll_l: float = clampf(-roll / HEAD_ROT_MAX_RAD, 0.0, 1.0) if roll < 0.0 else 0.0
+
+	_set_head_anim_param(KEY_HEAD_LEFT, left_w)
+	_set_head_anim_param(KEY_HEAD_RIGHT, right_w)
+	_set_head_anim_param(KEY_HEAD_DOWN, down_w)
+	_set_head_anim_param(KEY_HEAD_UP, up_w)
+	_set_head_anim_param(KEY_HEAD_ROLL_RIGHT, roll_r)
+	_set_head_anim_param(KEY_HEAD_ROLL_LEFT, roll_l)
+
+
+## Sets a single cached Humanizer head rotation [AnimationNodeAdd2] weight without allocation.
+func _set_head_anim_param(head_key: StringName, weight: float) -> void:
+	if _anim_tree_head_paths.has(head_key):
+		_face_anim_tree.set(_anim_tree_head_paths[head_key], weight)
+
+
+## Zeros all cached Humanizer head rotation [AnimationNodeAdd2] parameters.
+func _reset_head_anim_params() -> void:
+	for head_key: StringName in _anim_tree_head_paths:
+		_face_anim_tree.set(_anim_tree_head_paths[head_key], 0.0)
 
 
 ## Creates or reuses the one-shot [code]BlinkTimer[/code] child node.

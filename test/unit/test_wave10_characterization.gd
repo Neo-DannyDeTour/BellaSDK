@@ -14,6 +14,7 @@ const PICKABLE_LIQUID_BOTTLE_SCENE: PackedScene = preload(
 	"res://interactables/liquid_bottle/pickable_liquid_bottle.tscn"
 )
 const MIRROR_SCENE: PackedScene = preload("res://interactables/mirror.tscn")
+const DESTRUCTIBLE_GLASS_SCENE: PackedScene = preload("res://interactables/destructible_glass.tscn")
 const PICKABLE_BOX_SCENE: PackedScene = preload("res://interactables/pickable_box.tscn")
 const PICKABLE_TIRE_SCENE: PackedScene = preload("res://interactables/pickable_tire.tscn")
 const PICKABLE_VALVE_SCENE: PackedScene = preload("res://interactables/pickable_valve.tscn")
@@ -249,26 +250,79 @@ func test_pickable_liquid_bottle_contracts() -> void:
 	bottle.apply_slosh_impulse(Vector2(0.1, 0.2), 0.5)
 
 
-## Verifies [Mirror] constants, signals, exports, and impact/repair contracts.
+## Verifies [Mirror] constants, exports, and clean planar reflection setup.
 func test_mirror_contracts() -> void:
-	assert_eq(Mirror.PARAM_CRACK_INTENSITY, &"crack_intensity")
-	assert_eq(Mirror.PARAM_IMPACT_UV, &"impact_uv")
 	assert_eq(Mirror.GROUP_IGNORE_SETTINGS, &"ignore_global_video_settings")
 
 	var mirror: Mirror = MIRROR_SCENE.instantiate() as Mirror
 	assert_not_null(mirror)
 	add_child_autofree(mirror)
 
-	assert_has_signal(mirror, &"mirror_cracked")
 	assert_eq(mirror.size, Vector2(1.5, 2.0))
 	assert_eq(mirror.pixels_per_unit, 64)
 	assert_eq(mirror.max_viewport_size, 512)
 	assert_eq(mirror.max_update_distance, 15.0)
+	assert_false(mirror.has_method(&"take_damage"))
 
-	watch_signals(mirror)
-	mirror.apply_impact(mirror.global_position, 0.4)
-	assert_signal_emitted(mirror, &"mirror_cracked")
-	mirror.repair_mirror()
+
+## Verifies [DestructibleGlass] constants, signals, and BREAKABLE vs ARMORED modes.
+func test_destructible_glass_contracts() -> void:
+	assert_eq(DestructibleGlass.PARAM_IS_ARMORED, &"is_armored")
+	assert_eq(DestructibleGlass.PARAM_CRACK_INTENSITY, &"crack_intensity")
+	assert_eq(DestructibleGlass.PARAM_IMPACT_UV, &"impact_uv")
+
+	var breakable: DestructibleGlass = DESTRUCTIBLE_GLASS_SCENE.instantiate() as DestructibleGlass
+	assert_not_null(breakable)
+	add_child_autofree(breakable)
+	assert_eq(breakable.mode, DestructibleGlass.GlassMode.BREAKABLE)
+	assert_has_signal(breakable, &"glass_cracked")
+	assert_has_signal(breakable, &"glass_broken")
+
+	watch_signals(breakable)
+	breakable.take_damage(20.0, breakable.global_position, Vector3.FORWARD)
+	assert_signal_emitted(breakable, &"glass_cracked")
+	assert_false(breakable.is_broken())
+
+	breakable.take_damage(40.0, breakable.global_position, Vector3.FORWARD)
+	assert_signal_emitted(breakable, &"glass_broken")
+	assert_true(breakable.is_broken())
+
+	breakable.repair_glass()
+	assert_false(breakable.is_broken())
+
+	var armored: DestructibleGlass = DESTRUCTIBLE_GLASS_SCENE.instantiate() as DestructibleGlass
+	assert_not_null(armored)
+	armored.mode = DestructibleGlass.GlassMode.ARMORED
+	add_child_autofree(armored)
+
+	watch_signals(armored)
+	armored.take_damage(500.0, armored.global_position, Vector3.FORWARD)
+	assert_signal_emitted(armored, &"glass_cracked")
+	assert_signal_not_emitted(armored, &"glass_broken")
+	assert_false(armored.is_broken())
+
+
+## Verifies localized Voronoi fracture keeps perimeter shards intact and supports multi-hit holes.
+func test_destructible_glass_partial_voronoi_fracture() -> void:
+	var glass: DestructibleGlass = DESTRUCTIBLE_GLASS_SCENE.instantiate() as DestructibleGlass
+	assert_not_null(glass)
+	glass.size = Vector2(2.0, 2.0)
+	glass.break_radius = 0.28
+	add_child_autofree(glass)
+
+	assert_eq(glass.get_alive_shard_count(), 1)
+	glass.take_damage(60.0, glass.global_position, Vector3.FORWARD)
+	assert_true(glass.is_broken())
+
+	var remaining_after_first: int = glass.get_alive_shard_count()
+	assert_gt(remaining_after_first, 4)
+
+	glass.take_damage(60.0, glass.global_position + Vector3(0.75, 0.75, 0.0), Vector3.FORWARD)
+	assert_lt(glass.get_alive_shard_count(), remaining_after_first)
+
+	glass.repair_glass()
+	assert_false(glass.is_broken())
+	assert_eq(glass.get_alive_shard_count(), 1)
 
 
 ## Verifies [PathStick] defaults and release_player reset contract.

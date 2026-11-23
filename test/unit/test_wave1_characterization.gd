@@ -30,6 +30,7 @@ const SPATIAL_SHADERS: Array[String] = [
 	"res://environment/weather_volume/snow_particle.gdshader",
 	"res://environment/windy_cloth.gdshader",
 	"res://interactables/conveyor_belt.gdshader",
+	"res://interactables/destructible_glass.gdshader",
 	"res://interactables/energy_bar.gdshader",
 	"res://interactables/grimy_horror_glass.gdshader",
 	"res://interactables/indicator_led.gdshader",
@@ -290,16 +291,28 @@ func test_interactable_and_player_uniform_contracts() -> void:
 		[
 			"reflection_texture",
 			"glass_tint",
-			"cage_color",
-			"cage_density",
-			"cage_thickness",
-			"cage_depth",
-			"crack_refraction",
 			"base_roughness",
 		]
 	)
 	_assert_uniforms(
+		"res://interactables/destructible_glass.gdshader",
+		[
+			"glass_tint",
+			"fresnel_power",
+			"fresnel_strength",
+			"cage_color",
+			"cage_density",
+			"cage_thickness",
+			"cage_depth",
+			"base_roughness",
+			"is_armored",
+			"crack_intensity",
+			"impact_uv",
+		]
+	)
+	_assert_uniforms(
 		"res://interactables/conveyor_belt.gdshader",
+		"res://interactables/destructible_glass.gdshader",
 		[
 			"albedo_texture",
 			"texture_scale",

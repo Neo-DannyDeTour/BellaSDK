@@ -94,6 +94,10 @@ func test_animation_tree_idle_and_air_hump() -> void:
 	assert_eq(_godiva.get_current_animation(), &"air_hump", "Current clip should be air_hump.")
 	assert_signal_emitted_with_parameters(_godiva, "animation_started", [&"air_hump"])
 
+	_godiva.play_animation("boogie")
+	assert_eq(_godiva.get_current_animation(), &"boogie", "Current clip should be boogie.")
+	assert_signal_emitted_with_parameters(_godiva, "animation_started", [&"boogie"])
+
 	_godiva.play_animation("booty_slap")
 	for f_slap: int in range(20):
 		tree.advance(1.0 / 60.0)
@@ -155,6 +159,20 @@ func test_global_events_dispatcher_mapping() -> void:
 		_godiva.get_current_animation(),
 		&"idle",
 		"Events.level_event_triggered(false) should stop mapped clip."
+	)
+
+	Events.level_event_triggered.emit("godiva_boogie", true)
+	assert_eq(
+		_godiva.get_current_animation(),
+		&"boogie",
+		"Events.level_event_triggered(true) should start boogie."
+	)
+
+	Events.level_event_triggered.emit("godiva_boogie", false)
+	assert_eq(
+		_godiva.get_current_animation(),
+		&"idle",
+		"Events.level_event_triggered(false) should stop boogie."
 	)
 
 	Events.level_event_triggered.emit("godiva_booty_slap", true)

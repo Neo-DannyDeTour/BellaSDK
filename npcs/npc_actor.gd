@@ -40,7 +40,14 @@ const NEUTRAL_LOOK_DIST_M: float = 3.0
 @export var turn_right_animation: StringName = &"turn_right"
 ## Animation clip names forced to [constant Animation.LOOP_LINEAR] on startup.
 @export var looping_clips: Array[StringName] = [
-	&"idle", &"a_pose", &"t_pose", &"turn_left", &"turn_right", &"air_hump", &"booty_slap"
+	&"idle",
+	&"a_pose",
+	&"t_pose",
+	&"turn_left",
+	&"turn_right",
+	&"air_hump",
+	&"boogie",
+	&"booty_slap",
 ]
 ## Crossfade blend time in seconds between [AnimationNodeStateMachine] states.
 @export_range(0.0, 1.0, 0.01) var crossfade_duration: float = 0.15

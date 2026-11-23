@@ -18,9 +18,10 @@ ik_controller = NodePath("GodivaIKController")
 model_root = NodePath("GodivaModel")
 visibility_notifier = NodePath("VisibleOnScreenNotifier3D")
 default_animation = &"idle"
-looping_clips = Array[StringName]([&"idle", &"a_pose", &"t_pose", &"turn_left", &"turn_right", &"air_hump", &"booty_slap", &"walk", &"run", &"crouch_idle", &"crouch_walk", &"prone_idle", &"prone_crawl", &"wall_hug_idle", &"sidestep_left", &"sidestep_right"])
+looping_clips = Array[StringName]([&"idle", &"a_pose", &"t_pose", &"turn_left", &"turn_right", &"air_hump", &"boogie", &"booty_slap", &"walk", &"run", &"crouch_idle", &"crouch_walk", &"prone_idle", &"prone_crawl", &"wall_hug_idle", &"sidestep_left", &"sidestep_right"])
 event_animation_map = Dictionary[String, String]({
 "godiva_air_hump": "air_hump",
+"godiva_boogie": "boogie",
 "godiva_booty_slap": "booty_slap"
 })
 
