@@ -75,6 +75,7 @@
 [ext_resource type="Script" path="res://player/weapon_procedural_animator.gd" id="73_animator"]
 [ext_resource type="Material" uid="uid://d3x1lensd1rt" path="res://shaders/mat_lens_dirt_billboard.tres" id="74_lensdirt"]
 [ext_resource type="PackedScene" uid="uid://b8drnkeffct01" path="res://player/drunk_effect.tscn" id="75_drunk"]
+[ext_resource type="PackedScene" path="res://npcs/bella/bella_player.tscn" id="76_bella_body"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_lensdirt"]
 material = ExtResource("74_lensdirt")
@@ -458,6 +459,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.52, 0)
 [node name="Eyes" type="Node3D" parent="Head" unique_id=1925066158]
 
 [node name="Camera3D" type="Camera3D" parent="Head/Eyes" unique_id=1414380114]
+cull_mask = 1048573
 script = ExtResource("2_a2xo5")
 
 [node name="InteractionShapeCast" type="ShapeCast3D" parent="Head/Eyes/Camera3D" unique_id=1917702885]
@@ -563,6 +565,7 @@ target_position = Vector3(0, -0.75, 0)
 
 [node name="Sprite3D" type="Sprite3D" parent="." unique_id=1428497960]
 transform = Transform3D(-0.1, 0, 1.1175871e-08, 0, 0.099999994, 0, -1.1175871e-08, 0, -0.1, 0, 1.0166427, -0.17768371)
+visible = false
 transparent = false
 double_sided = false
 texture = ExtResource("7_cw2d6")
@@ -756,6 +759,13 @@ script = ExtResource("71_utr5e")
 
 [node name="JibCrane" type="Node" parent="StateMachine" unique_id=1928374651]
 script = ExtResource("72_jibcr")
+
+[node name="BellaBody" parent="." unique_id=1982736453 node_paths=PackedStringArray("player", "locomotion_component", "camera_controller", "weapon_inventory_component") instance=ExtResource("76_bella_body")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.08)
+player = NodePath("..")
+locomotion_component = NodePath("../Components/LocomotionComponent")
+camera_controller = NodePath("../Head/CameraController")
+weapon_inventory_component = NodePath("../Components/WeaponInventoryComponent")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]
