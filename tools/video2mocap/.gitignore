@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.egg-info/
+out/
+runs/
+*.mp4
+*.mov
+.pytest_cache/
+.ruff_cache/
+models/

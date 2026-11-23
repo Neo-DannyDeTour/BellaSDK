@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "video2mocap"
+version = "0.1.0"
+description = "Video to production-quality skeletal animation (BVH/FBX) for Blender and Unreal Engine, multi-person, with a license-clean default pipeline and AI-assisted review."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.23", "scipy>=1.10", "matplotlib>=3.7"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+video = ["imageio>=2.34", "av>=12"]
+
+[project.scripts]
+v2m = "video2mocap.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/video2mocap"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+
+[tool.ruff]
+line-length = 120

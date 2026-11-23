@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>video2mocap editor</title>
+<style>
+  :root { --bg:#111214; --panel:#1b1d21; --line:#2c2f35; --fg:#e8e8e6; --dim:#8b8f96; --accent:#ffc23d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.4 system-ui, sans-serif; height:100vh; display:flex; flex-direction:column; }
+  header { padding:8px 14px; display:flex; gap:14px; align-items:center; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  header h1 { font-size:14px; margin:0; font-weight:600; }
+  #people { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { display:flex; align-items:center; gap:6px; padding:3px 10px; border-radius:99px; background:var(--panel); cursor:pointer; user-select:none; }
+  .chip i { width:10px; height:10px; border-radius:50%; }
+  .chip.off { opacity:.35; }
+  main { flex:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) 260px; gap:8px; padding:8px; min-height:0; }
+  .pane { position:relative; background:#000; border-radius:8px; overflow:hidden; min-height:0; }
+  #videoPane { display:flex; align-items:center; justify-content:center; }
+  #videoBox { position:relative; }
+  video { display:block; max-width:100%; max-height:calc(100vh - 150px); }
+  #overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  #three { width:100%; height:100%; display:block; }
+  .label { position:absolute; left:10px; top:8px; color:var(--dim); font-size:12px; pointer-events:none; }
+  #side { background:var(--panel); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:10px; min-height:0; }
+  #side h2 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); margin:0; }
+  #sel { min-height:38px; }
+  #edits { flex:1; overflow:auto; display:flex; flex-direction:column; gap:4px; }
+  .edit { display:flex; justify-content:space-between; gap:6px; padding:5px 7px; border-radius:6px; background:#23262b; cursor:pointer; }
+  .edit:hover { background:#2a2e34; }
+  .edit b { font-weight:500; }
+  .edit span.x { color:var(--dim); padding:0 4px; }
+  .edit span.x:hover { color:#ff6b6b; }
+  .row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  button { background:#24272c; color:var(--fg); border:1px solid #34383f; border-radius:6px; padding:5px 10px; cursor:pointer; font:inherit; }
+  button.on { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:var(--accent); color:#111; border-color:var(--accent); font-weight:600; }
+  input[type=number] { width:56px; background:#24272c; color:var(--fg); border:1px solid #34383f; border-radius:6px; padding:4px; }
+  footer { padding:6px 14px 10px; display:flex; gap:10px; align-items:center; }
+  #timeline { flex:1; position:relative; height:30px; }
+  #seek { position:absolute; inset:8px 0 auto 0; width:100%; accent-color:var(--accent); }
+  #ticks { position:absolute; left:0; right:0; top:0; height:8px; pointer-events:none; }
+  #info { color:var(--dim); font-variant-numeric:tabular-nums; min-width:150px; text-align:right; }
+  #status { color:var(--dim); font-size:12px; min-height:16px; }
+  kbd { background:#24272c; border:1px solid #34383f; border-radius:4px; padding:0 4px; font-size:11px; }
+  @media (max-width:1000px) { main { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header><h1>video2mocap · editor</h1><div id="people"></div></header>
+<main>
+  <div class="pane" id="videoPane"><span class="label">vídeo + monigotes</span>
+    <div id="videoBox"><video id="video" muted playsinline></video><canvas id="overlay"></canvas></div>
+  </div>
+  <div class="pane"><span class="label">3D · clic en una articulación para editarla · arrastra para girar la vista</span><canvas id="three"></canvas></div>
+  <div id="side">
+    <h2>Selección</h2>
+    <div id="sel">Ninguna articulación seleccionada.</div>
+    <div class="row">
+      <button id="modeRot" class="on" title="R">Girar</button>
+      <button id="modeMove" title="T">Mover (cadera)</button>
+      <label>Transición <input id="falloff" type="number" min="0" max="60" value="6"> f</label>
+    </div>
+    <h2>Cara <span id="faceWho" style="text-transform:none;letter-spacing:0"></span></h2>
+    <div class="row" style="align-items:flex-start"><canvas id="faceCv" width="110" height="120"></canvas><div id="faceBars" style="flex:1;font-size:11px"></div></div>
+    <h2>Keyframes editados</h2>
+    <div id="edits"></div>
+    <div class="row">
+      <button id="undo" title="Ctrl+Z">Deshacer</button>
+      <button id="save" class="primary">Guardar</button>
+    </div>
+    <div id="status"></div>
+    <div style="color:var(--dim);font-size:11px">
+      <kbd>espacio</kbd> play · <kbd>←</kbd><kbd>→</kbd> fotograma · <kbd>R</kbd>/<kbd>T</kbd> girar/mover · <kbd>Esc</kbd> deseleccionar
+    </div>
+  </div>
+</main>
+<footer>
+  <button id="play">▶︎</button>
+  <button id="speed">1×</button>
+  <div id="timeline"><canvas id="ticks"></canvas><input id="seek" type="range" min="0" value="0" step="1"></div>
+  <span id="info"></span>
+</footer>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
+
+const data = await (await fetch("viewer.json", { cache: "no-store" })).json();
+const $ = id => document.getElementById(id);
+const video = $("video"); video.src = data.video;
+const ctx = $("overlay").getContext("2d");
+$("seek").max = data.frames - 1;
+const SMALL = /thumb|index|middle|ring|pinky|eye|jaw|end/i;
+const visible = data.people.map(() => true);
+let selected = null;   // {pi, j}
+let dragging = false, dirty = false;
+
+// ------------------------------------------------------------------ data prep
+const Q = a => new THREE.Quaternion(a[1], a[2], a[3], a[0]);          // wxyz -> three
+const W = q => [q.w, q.x, q.y, q.z];
+for (const p of data.people) {
+  p.T = p.local.length;
+  p.offsetsV = p.offsets.map(o => new THREE.Vector3(...o));
+  p.restQ = p.rest.map(Q);
+}
+
+// ------------------------------------------------------------------ edits (same semantics as v2m edit)
+function weight(f, e) {
+  const [s, t] = e.frames, n = e.falloff | 0;
+  if (f >= s && f <= t) return 1;
+  const k = f < s ? s - f : f - t;
+  return k <= n ? 0.5 + 0.5 * Math.cos(Math.PI * k / (n + 1)) : 0;
+}
+const I = new THREE.Quaternion();
+function fk(p, f) {
+  const J = p.names.length, pos = new Array(J), rot = new Array(J);
+  const root = new THREE.Vector3(...p.root[f]);
+  const local = p.local[f].map(Q);
+  for (const e of p.edits) {
+    const w = weight(f, e); if (!w) continue;
+    if (e.op === "rotate") { const j = p.names.indexOf(e.joint); local[j].multiply(I.clone().slerp(Q(e.quat), w)); }
+    else if (e.op === "offset_root") root.add(new THREE.Vector3(...e.delta_m).multiplyScalar(w));
+  }
+  for (let j = 0; j < J; j++) {
+    const par = p.parents[j], loc = p.restQ[j].clone().multiply(local[j]);
+    if (par < 0) { rot[j] = loc; pos[j] = root.clone(); }
+    else { rot[j] = rot[par].clone().multiply(loc); pos[j] = p.offsetsV[j].clone().applyQuaternion(rot[par]).add(pos[par]); }
+  }
+  return { pos, rot };
+}
+function project(p, f, x) {
+  const c = p.cam, M = c.M, b = c.b, s = c.shift;
+  const v = [x.x - s[0] - b[0], x.y - s[1] - b[1], x.z - s[2] - b[2]];
+  const xt = [0, 1, 2].map(i => v[0] * M[0][i] + v[1] * M[1][i] + v[2] * M[2][i]);
+  const R = c.R[f], t = c.t[f], K = c.K[f];
+  const xc = [0, 1, 2].map(i => R[3 * i] * xt[0] + R[3 * i + 1] * xt[1] + R[3 * i + 2] * xt[2] + t[i]);
+  if (xc[2] <= 1e-3) return null;
+  const u = K[0] * xc[0] + K[1] * xc[1] + K[2] * xc[2], w = K[6] * xc[0] + K[7] * xc[1] + K[8] * xc[2];
+  const vv = K[3] * xc[0] + K[4] * xc[1] + K[5] * xc[2];
+  return [u / w, vv / w];
+}
+
+// ------------------------------------------------------------------ 3D scene
+const canvas = $("three");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(devicePixelRatio);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x15171a);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 500);
+const orbit = new OrbitControls(camera, canvas);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.3); sun.position.set(3, 6, 4); scene.add(sun);
+scene.add(new THREE.GridHelper(60, 60, 0x3a3e45, 0x262a30));
+
+const jointMat = new THREE.MeshStandardMaterial({ color: 0xf2f2f0, roughness: .5 });
+const contactMat = new THREE.MeshStandardMaterial({ color: 0x53d18b, emissive: 0x1f6b40 });
+const selMat = new THREE.MeshStandardMaterial({ color: 0xffc23d, emissive: 0x6b4d00 });
+const pickables = [];
+const figures = data.people.map((p, pi) => {
+  const group = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: p.color, roughness: .55 });
+  const joints = [], bones = [];
+  p.parents.forEach((par, j) => {
+    const n = p.names[j], small = SMALL.test(n);
+    const s = new THREE.Mesh(new THREE.SphereGeometry(/^head$/i.test(n) ? 0.09 : small ? 0.008 : 0.028, 12, 8), jointMat);
+    s.userData = { pi, j }; group.add(s); joints.push(s); pickables.push(s);
+    if (par >= 0) {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 8), mat);
+      c.userData = { j, par, r: small ? 0.005 : 0.02 }; group.add(c); bones.push(c);
+    }
+  });
+  scene.add(group);
+  return { group, joints, bones };
+});
+
+const gizmoTarget = new THREE.Object3D(); scene.add(gizmoTarget);
+const gizmo = new TransformControls(camera, canvas);
+gizmo.setSpace("local"); gizmo.setSize(0.8); scene.add(gizmo);
+gizmo.addEventListener("dragging-changed", e => { orbit.enabled = !e.value; dragging = e.value; if (e.value) beginDrag(); });
+gizmo.addEventListener("objectChange", () => { if (dragging) applyDrag(); });
+
+const up = new THREE.Vector3(0, 1, 0);
+let followTarget = null, cache = { f: -1, res: [] };
+function solveAll(frame) {
+  return data.people.map((p, i) => {
+    const f = frame - p.frame_start;
+    return visible[i] && f >= 0 && f < p.T ? { f, ...fk(p, f) } : null;
+  });
+}
+function draw3d(frame, res) {
+  const centre = new THREE.Vector3(); let n = 0;
+  res.forEach((r, i) => {
+    const fig = figures[i], p = data.people[i];
+    fig.group.visible = !!r; if (!r) return;
+    fig.joints.forEach((s, j) => {
+      s.position.copy(r.pos[j]);
+      const isSel = selected && selected.pi === i && selected.j === j;
+      s.material = isSel ? selMat : (p.contacts[p.names[j]]?.[r.f] ? contactMat : jointMat);
+    });
+    fig.bones.forEach(c => {
+      const a = r.pos[c.userData.par], b = r.pos[c.userData.j], d = b.clone().sub(a), len = d.length();
+      c.position.copy(a).addScaledVector(d, .5);
+      c.scale.set(c.userData.r, Math.max(len, 1e-4), c.userData.r);
+      c.quaternion.setFromUnitVectors(up, d.normalize());
+    });
+    centre.add(r.pos[0]); n++;
+  });
+  if (n && !selected) {
+    centre.divideScalar(n);
+    if (!followTarget) { followTarget = centre.clone(); orbit.target.copy(centre); camera.position.set(centre.x + 3, centre.y + .8, centre.z + 4); }
+    const d = centre.clone().sub(followTarget); d.y = 0;
+    camera.position.add(d); orbit.target.add(d); followTarget.add(d);
+  }
+  if (selected && !dragging) {
+    const r = res[selected.pi];
+    if (r) { gizmoTarget.position.copy(r.pos[selected.j]); gizmoTarget.quaternion.copy(r.rot[selected.j]); gizmo.visible = true; }
+    else gizmo.visible = false;
+  }
+}
+
+// ------------------------------------------------------------------ 2D overlay
+function draw2d(res) {
+  const box = video.getBoundingClientRect(), cv = $("overlay");
+  cv.width = box.width * devicePixelRatio; cv.height = box.height * devicePixelRatio;
+  ctx.setTransform(cv.width / data.width, 0, 0, cv.height / data.height, 0, 0);
+  ctx.clearRect(0, 0, data.width, data.height); ctx.lineCap = "round";
+  res.forEach((r, i) => {
+    if (!r) return;
+    const p = data.people[i], uv = r.pos.map(x => project(p, r.f, x));
+    ctx.strokeStyle = p.color; ctx.lineWidth = Math.max(2, data.width / 320);
+    p.parents.forEach((par, j) => {
+      if (par < 0 || SMALL.test(p.names[j]) || !uv[j] || !uv[par]) return;
+      ctx.beginPath(); ctx.moveTo(...uv[par]); ctx.lineTo(...uv[j]); ctx.stroke();
+    });
+    if (selected && selected.pi === i && uv[selected.j]) {
+      ctx.fillStyle = "#ffc23d"; ctx.beginPath(); ctx.arc(...uv[selected.j], Math.max(5, data.width / 150), 0, 7); ctx.fill();
+    }
+    const h = uv[p.names.indexOf("Head")];
+    if (h) { ctx.fillStyle = p.color; ctx.font = `${Math.max(14, data.width / 40)}px system-ui`; ctx.fillText(p.name, h[0] + 8, h[1] - 12); }
+  });
+}
+
+// ------------------------------------------------------------------ face panel
+function drawFace(res) {
+  const pi = selected ? selected.pi : data.people.findIndex(p => p.face);
+  const cv = $("faceCv"), g = cv.getContext("2d"), W = cv.width, H = cv.height;
+  g.clearRect(0, 0, W, H);
+  const p = data.people[pi], r = res[pi];
+  if (!p || !p.face) { $("faceWho").textContent = ""; $("faceBars").innerHTML = '<span style="color:var(--dim)">Sin captura de cara (v2m face …)</span>'; return; }
+  $("faceWho").innerHTML = `· <span style="color:${p.color}">${p.name}</span>`;
+  if (!r) { $("faceBars").textContent = "fuera de su tramo"; return; }
+  const c = p.face.curves[r.f], ok = p.face.valid[r.f], v = n => c[p.face.names.indexOf(n)] || 0;
+  g.globalAlpha = ok ? 1 : .35;
+  g.strokeStyle = "#e8e8e6"; g.lineWidth = 2; g.lineCap = "round";
+  g.beginPath(); g.ellipse(W / 2, H / 2, 46, 56, 0, 0, 7); g.stroke();
+  for (const [side, x] of [["Left", 37], ["Right", 73]]) {
+    const open = Math.max(0.05, 1 - v("eyeBlink" + side)) * (1 + 0.6 * v("eyeWide" + side));
+    g.beginPath(); g.ellipse(x, 48, 8, 5 * open, 0, 0, 7); g.stroke();
+    const by = 35 - 10 * (v("browInnerUp") + v("browOuterUp" + side)) / 2 + 6 * v("browDown" + side);
+    g.beginPath(); g.moveTo(x - 10, by + 2 * v("browInnerUp") * (side === "Left" ? 1 : -1)); g.lineTo(x + 10, by - 2 * v("browInnerUp") * (side === "Left" ? 1 : -1)); g.stroke();
+  }
+  const mw = 16 * (1 + 0.5 * (v("mouthSmileLeft") + v("mouthSmileRight")) / 2 + 0.4 * (v("mouthStretchLeft") + v("mouthStretchRight")) / 2 - 0.5 * v("mouthPucker"));
+  const mo = 2 + 22 * v("jawOpen"), lift = 7 * ((v("mouthSmileLeft") + v("mouthSmileRight")) / 2 - (v("mouthFrownLeft") + v("mouthFrownRight")) / 2);
+  g.beginPath(); g.moveTo(W / 2 - mw, 84 - lift); g.quadraticCurveTo(W / 2, 84 + mo, W / 2 + mw, 84 - lift); g.quadraticCurveTo(W / 2, 84 - mo * 0.3, W / 2 - mw, 84 - lift); g.stroke();
+  g.globalAlpha = 1;
+  const top = p.face.names.map((n, i) => [n, c[i]]).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  $("faceBars").innerHTML = (ok ? "" : '<div style="color:#ff9b6b">sin cara detectada en este fotograma</div>') +
+    top.map(([n, x]) => `<div>${n}<div style="height:4px;background:#2a2e34;border-radius:2px"><div style="width:${(x * 100).toFixed(0)}%;height:4px;background:${p.color};border-radius:2px"></div></div></div>`).join("");
+}
+
+// ------------------------------------------------------------------ editing
+const frameNow = () => Math.min(data.frames - 1, Math.floor(video.currentTime * data.fps + 1e-3));
+let dragBase = null;
+function findEdit(p, op, joint, f) {
+  return p.edits.findIndex(e => e.op === op && (op !== "rotate" || e.joint === joint) && e.frames[0] === f && e.frames[1] === f);
+}
+function beginDrag() {
+  const p = data.people[selected.pi], f = frameNow() - p.frame_start, r = fk(p, f);
+  const joint = p.names[selected.j], isMove = gizmo.mode === "translate";
+  const idx = findEdit(p, isMove ? "offset_root" : "rotate", joint, f);
+  dragBase = { p, f, joint, isMove, idx,
+    G0: r.rot[selected.j].clone(), P0: r.pos[selected.j].clone(),
+    dq0: idx >= 0 && !isMove ? Q(p.edits[idx].quat) : new THREE.Quaternion(),
+    d0: idx >= 0 && isMove ? new THREE.Vector3(...p.edits[idx].delta_m) : new THREE.Vector3() };
+}
+function applyDrag() {
+  const b = dragBase, falloff = +$("falloff").value || 0;
+  let e;
+  if (b.isMove) {
+    const d = gizmoTarget.position.clone().sub(b.P0).add(b.d0);
+    e = { op: "offset_root", frames: [b.f, b.f], delta_m: d.toArray().map(v => +v.toFixed(5)), falloff };
+  } else {
+    const d = b.G0.clone().invert().multiply(gizmoTarget.quaternion);   // rotation in the joint's own frame
+    e = { op: "rotate", joint: b.joint, frames: [b.f, b.f], quat: W(b.dq0.clone().multiply(d)).map(v => +v.toFixed(6)), falloff, space: "local" };
+  }
+  if (b.idx >= 0) b.p.edits[b.idx] = e; else { b.p.edits.push(e); b.idx = b.p.edits.length - 1; }
+  dirty = true; refreshEdits(); cache.f = -1;
+}
+function select(pi, j) {
+  selected = pi === null ? null : { pi, j };
+  if (!selected) { gizmo.detach(); $("sel").textContent = "Ninguna articulación seleccionada."; cache.f = -1; return; }
+  video.pause(); gizmo.attach(gizmoTarget);
+  const p = data.people[pi], isRoot = p.parents[j] < 0;
+  if (!isRoot && gizmo.mode === "translate") setMode("rotate");
+  $("sel").innerHTML = `<b style="color:${p.color}">${p.name}</b> · ${p.names[j]}<br><span style="color:var(--dim)">fotograma ${frameNow()}${isRoot ? " · raíz: se puede mover" : ""}</span>`;
+  cache.f = -1;
+}
+function setMode(m) {
+  if (m === "translate" && !(selected && data.people[selected.pi].parents[selected.j] < 0)) return;
+  gizmo.setMode(m); $("modeRot").classList.toggle("on", m === "rotate"); $("modeMove").classList.toggle("on", m === "translate");
+}
+$("modeRot").onclick = () => setMode("rotate");
+$("modeMove").onclick = () => setMode("translate");
+
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let downAt = null;
+canvas.addEventListener("pointerdown", e => downAt = [e.clientX, e.clientY]);
+canvas.addEventListener("pointerup", e => {
+  if (!downAt || dragging || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
+  const r = canvas.getBoundingClientRect();
+  mouse.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObjects(pickables.filter(s => s.parent.visible))[0];
+  if (hit) select(hit.object.userData.pi, hit.object.userData.j);
+});
+
+function refreshEdits() {
+  const list = $("edits"); list.innerHTML = "";
+  data.people.forEach((p, pi) => p.edits.forEach((e, k) => {
+    const d = document.createElement("div"); d.className = "edit";
+    const what = e.op === "rotate" ? e.joint : e.op === "offset_root" ? "cadera (mover)" : e.op;
+    d.innerHTML = `<span><b style="color:${p.color}">f${e.frames[0] + p.frame_start}</b> · ${what} <span style="color:var(--dim)">±${e.falloff ?? 0}</span></span><span class="x" title="borrar">✕</span>`;
+    d.onclick = ev => {
+      if (ev.target.classList.contains("x")) { p.edits.splice(k, 1); dirty = true; refreshEdits(); cache.f = -1; return; }
+      video.pause(); video.currentTime = (e.frames[0] + p.frame_start + .5) / data.fps;
+      if (e.joint) select(pi, p.names.indexOf(e.joint)); else select(pi, 0);
+    };
+    list.appendChild(d);
+  }));
+  if (!list.children.length) list.innerHTML = '<span style="color:var(--dim)">Aún no hay ediciones. Selecciona una articulación y gírala con el gizmo.</span>';
+  drawTicks();
+  $("status").textContent = dirty ? "Cambios sin guardar" : "";
+}
+function drawTicks() {
+  const c = $("ticks"), w = c.clientWidth; c.width = w * devicePixelRatio; c.height = 8 * devicePixelRatio;
+  const g = c.getContext("2d"); g.scale(devicePixelRatio, devicePixelRatio);
+  data.people.forEach(p => p.edits.forEach(e => {
+    g.fillStyle = p.color; const x = (e.frames[0] + p.frame_start) / Math.max(1, data.frames - 1) * w; g.fillRect(x - 1, 0, 3, 8);
+  }));
+}
+const history = [];
+$("undo").onclick = () => {
+  for (let pi = data.people.length - 1; pi >= 0; pi--) if (data.people[pi].edits.length) { data.people[pi].edits.pop(); break; }
+  dirty = true; refreshEdits(); cache.f = -1;
+};
+$("save").onclick = async () => {
+  $("status").textContent = "Guardando…";
+  try {
+    for (const p of data.people) {
+      const r = await fetch("/api/edits", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ track: p.track, edits: p.edits }) });
+      const j = await r.json(); if (!j.ok) throw new Error(j.error);
+    }
+    dirty = false; $("status").textContent = "Guardado: edits.json + edited.bvh en cada persona";
+  } catch (err) { $("status").textContent = "Error al guardar: " + err.message; }
+};
+addEventListener("beforeunload", e => { if (dirty) e.preventDefault(); });
+
+// ------------------------------------------------------------------ people chips, transport
+data.people.forEach((p, i) => {
+  const c = document.createElement("div"); c.className = "chip";
+  c.innerHTML = `<i style="background:${p.color}"></i>${p.name} <span style="color:var(--dim)">f${p.frame_start}-${p.frame_end}</span>`;
+  c.onclick = () => { visible[i] = !visible[i]; c.classList.toggle("off", !visible[i]); cache.f = -1; };
+  $("people").appendChild(c);
+});
+const playBtn = $("play");
+playBtn.onclick = () => video.paused ? video.play() : video.pause();
+video.onplay = () => { playBtn.textContent = "❚❚"; };
+video.onpause = () => { playBtn.textContent = "▶︎"; };
+const speeds = [1, .5, .25];
+$("speed").onclick = e => { const s = speeds[(speeds.indexOf(video.playbackRate) + 1) % 3]; video.playbackRate = s; e.target.textContent = `${s}×`; };
+$("seek").oninput = () => { video.pause(); video.currentTime = (+$("seek").value + .5) / data.fps; };
+addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" && e.target.type === "number") return;
+  if (e.code === "Space") { e.preventDefault(); playBtn.click(); }
+  else if (e.code === "ArrowRight" || e.code === "ArrowLeft") {
+    video.pause(); video.currentTime = Math.max(0, (frameNow() + (e.code === "ArrowRight" ? 1 : -1) + .5) / data.fps);
+  }
+  else if (e.code === "KeyR") setMode("rotate");
+  else if (e.code === "KeyT") setMode("translate");
+  else if (e.code === "Escape") select(null);
+  else if (e.code === "KeyZ" && (e.ctrlKey || e.metaKey)) $("undo").click();
+});
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); drawTicks();
+}
+addEventListener("resize", resize);
+video.onloadedmetadata = () => { resize(); refreshEdits(); };
+(function loop() {
+  const f = frameNow();
+  if (f !== cache.f || dragging) { cache = { f, res: solveAll(f) }; }
+  $("seek").value = f;
+  $("info").textContent = `fotograma ${f} / ${data.frames - 1} · ${video.currentTime.toFixed(2)} s`;
+  draw3d(f, cache.res); draw2d(cache.res); drawFace(cache.res);
+  orbit.update(); renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
