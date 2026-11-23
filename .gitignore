@@ -100,3 +100,6 @@ tools/blender/*bella*
 build/
 __pycache__/
 *.pyc
+tools/video2mocap/.venv/
+humanizer/
+addons/humanizer/
