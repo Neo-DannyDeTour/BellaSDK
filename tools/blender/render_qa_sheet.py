@@ -488,7 +488,7 @@ def run_face(glb_path: Path, out_path: Path, tile_size: int) -> None:
             0.0,
             2.0,
             {"eyeBlinkLeft": 1.0, "eyeBlinkRight": 0.0},
-            ("Bella_Head", "Bella_Eyelashes"),
+            None,
             0.0,
             20.0,
         ),

@@ -54,6 +54,7 @@ DEFAULT_IN_PLACE_CLIPS: Set[str] = {
     "shelf_push_aside",
     "shelf_topple",
     "air_hump",
+    "boogie",
     "booty_slap",
 }
 
@@ -76,6 +77,7 @@ GROUNDED_CLIPS: Set[str] = {
     "sidestep_left",
     "sidestep_right",
     "air_hump",
+    "boogie",
     "booty_slap",
     "shelf_push_aside",
     "shelf_topple",
@@ -107,6 +109,7 @@ DEFAULT_LOOP_CLIPS: Set[str] = {
     "turn_left",
     "turn_right",
     "air_hump",
+    "boogie",
     "booty_slap",
 }
 
