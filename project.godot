@@ -8,6 +8,50 @@
 
 config_version=5
 
+[addons]
+
+humanizer/cache_equipment_weights=true
+humanizer/slots={
+&"Body Parts": {
+&"body": "Body",
+&"hair": "Hair",
+&"lefteye": "Left Eye",
+&"lefteyebrow": "Left Eyebrow",
+&"lefteyelash": "Left Eyelash",
+&"righteye": "Right Eye",
+&"righteyebrow": "Right Eyebrow",
+&"righteyelash": "Right Eyelash",
+&"teeth": "Teeth",
+&"tongue": "Tongue"
+},
+&"Clothing": {
+&"armsclothes": "Arms",
+&"eyesclothes": "Eyes",
+&"feetclothes": "Feet",
+&"handsclothes": "Hands",
+&"headclothes": "Head",
+&"legsclothes": "Legs",
+&"mouthclothes": "Mouth",
+&"torsoclothes": "Torso"
+}
+}
+humanizer/asset_import_paths=PackedStringArray("res://addons/humanizer/data/assets/", "res://addons/humanizer_assets/", "user://humanizer/", "res://humanizer/")
+humanizer/human_export_path="res://data/humans/"
+humanizer/default_characterbody_script="res://addons/humanizer/scripts/utils/human_controller.gd"
+humanizer/default_rigidbody_script=""
+humanizer/default_staticbody_script=""
+humanizer/default_area_script=""
+humanizer/default_skeleton="game_engine-RETARGETED"
+humanizer/default_animation_tree="res://addons/humanizer/data/animations/animation_tree.tscn"
+humanizer/default_baked_root_node="CharacterBody3D"
+humanizer/character_physics_layers=2
+humanizer/character_physics_mask=3
+humanizer/staticbody_physics_layers=1
+humanizer/physical_bone_layers=4
+humanizer/physical_bone_mask=5
+humanizer/character_render_layers=1
+humanizer/atlas_resolution=2048
+
 [application]
 
 config/name="BellaSDK"
@@ -51,6 +95,8 @@ SmokeManager="*uid://cux76orvhr6t8"
 BloodManager="*uid://bbth1832rodw7"
 ImpactManager="*res://vfx/impact_manager.gd"
 SpikeForensics="*res://core/spike_forensics.gd"
+HumanizerAPI="*uid://dsrnmyw7n7drw"
+ARKitSingleton="*res://addons/godot_arkit/arkit_autoload.gd"
 
 [debug]
 
@@ -76,7 +122,7 @@ project/assembly_name="FPS_Test"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/SunshineClouds2/plugin.cfg", "res://addons/csg_toolkit/plugin.cfg", "res://addons/detour_event_sequencer/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
+enabled=PackedStringArray("res://addons/SunshineClouds2/plugin.cfg", "res://addons/csg_toolkit/plugin.cfg", "res://addons/detour_event_sequencer/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/godot_arkit/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/humanizer/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
 
 [filesystem]
 
