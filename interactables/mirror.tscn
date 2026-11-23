@@ -11,20 +11,14 @@ resource_local_to_scene = true
 render_priority = 0
 shader = ExtResource("2_mirror_shader")
 shader_parameter/reflection_texture = SubResource("ViewportTexture_refl")
-shader_parameter/glass_tint = Color(0.88, 0.94, 0.92, 1)
-shader_parameter/cage_color = Color(0.18, 0.2, 0.22, 1)
-shader_parameter/cage_density = 22.0
-shader_parameter/cage_thickness = 0.055
-shader_parameter/cage_depth = 0.012
-shader_parameter/crack_refraction = 0.028
-shader_parameter/base_roughness = 0.04
+shader_parameter/glass_tint = Color(1, 1, 1, 1)
 
 [sub_resource type="QuadMesh" id="QuadMesh_mirror"]
 resource_local_to_scene = true
 material = SubResource("ShaderMaterial_mirror")
 size = Vector2(1.5, 2)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_armor"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_mirror"]
 resource_local_to_scene = true
 size = Vector3(1.5, 2, 0.06)
 
@@ -58,9 +52,9 @@ far = 40.0
 [node name="MirrorVisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="."]
 aabb = AABB(-0.75, -1, -0.05, 1.5, 2, 0.1)
 
-[node name="ArmorBody" type="StaticBody3D" parent="."]
-collision_layer = 4
+[node name="MirrorBody" type="StaticBody3D" parent="."]
+collision_layer = 1
 collision_mask = 0
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="ArmorBody"]
-shape = SubResource("BoxShape3D_armor")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MirrorBody"]
+shape = SubResource("BoxShape3D_mirror")

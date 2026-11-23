@@ -1,0 +1,85 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://interactables/destructible_glass.gd" id="1_glass_script"]
+[ext_resource type="Shader" path="res://interactables/destructible_glass.gdshader" id="2_glass_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_glass"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("2_glass_shader")
+shader_parameter/glass_tint = Color(0.84, 0.93, 0.96, 0.28)
+shader_parameter/fresnel_power = 3.0
+shader_parameter/fresnel_strength = 0.55
+shader_parameter/cage_color = Color(0.18, 0.2, 0.22, 1)
+shader_parameter/cage_density = 22.0
+shader_parameter/cage_thickness = 0.055
+shader_parameter/cage_depth = 0.012
+shader_parameter/base_roughness = 0.06
+
+[sub_resource type="QuadMesh" id="QuadMesh_glass"]
+resource_local_to_scene = true
+material = SubResource("ShaderMaterial_glass")
+size = Vector2(1.5, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_glass"]
+resource_local_to_scene = true
+size = Vector3(1.5, 2, 0.04)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_impact"]
+resource_local_to_scene = true
+size = Vector3(1.5, 2, 0.14)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_shards"]
+emission_shape = 3
+emission_box_extents = Vector3(0.75, 1, 0.02)
+direction = Vector3(0, 0, 1)
+spread = 65.0
+initial_velocity_min = 2.0
+initial_velocity_max = 6.0
+angular_velocity_min = -360.0
+angular_velocity_max = 360.0
+gravity = Vector3(0, -14, 0)
+scale_min = 0.4
+scale_max = 1.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shard"]
+transparency = 1
+albedo_color = Color(0.84, 0.93, 0.96, 0.55)
+metallic = 0.1
+roughness = 0.08
+
+[sub_resource type="BoxMesh" id="BoxMesh_shard"]
+material = SubResource("StandardMaterial3D_shard")
+size = Vector3(0.08, 0.1, 0.015)
+
+[node name="DestructibleGlass" type="Node3D"]
+script = ExtResource("1_glass_script")
+
+[node name="Quad" type="MeshInstance3D" parent="."]
+layers = 4
+cast_shadow = 0
+mesh = SubResource("QuadMesh_glass")
+
+[node name="GlassBody" type="StaticBody3D" parent="."]
+collision_layer = 4
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GlassBody"]
+shape = SubResource("BoxShape3D_glass")
+
+[node name="ImpactArea" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 14
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ImpactArea"]
+shape = SubResource("BoxShape3D_impact")
+
+[node name="ShardParticles" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 36
+lifetime = 1.2
+one_shot = true
+explosiveness = 0.95
+process_material = SubResource("ParticleProcessMaterial_shards")
+draw_pass_1 = SubResource("BoxMesh_shard")

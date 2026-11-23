@@ -1,17 +1,8 @@
 @tool
-## Coordinator for armored planar mirror reflection, oblique frustum projection,
-## visibility/distance gating, and per-instance fracture state.
+## Coordinator for clean planar mirror reflection, oblique frustum projection,
+## and visibility/distance gating.
 class_name Mirror
 extends Node3D
-
-## Emitted when the armored mirror glass takes impact damage and updates fracture state.
-signal mirror_cracked(impact_uv: Vector2, intensity: float)
-
-## Per-instance shader uniform controlling crack propagation [0.0..1.0].
-const PARAM_CRACK_INTENSITY: StringName = &"crack_intensity"
-
-## Per-instance shader uniform storing normalized UV coordinates of impact.
-const PARAM_IMPACT_UV: StringName = &"impact_uv"
 
 ## Group tag excluding mirror [SubViewport] from global post-processing overrides.
 const GROUP_IGNORE_SETTINGS: StringName = &"ignore_global_video_settings"
@@ -23,13 +14,10 @@ const REFLECTION_CULL_MASK: int = (
 	| CollisionLayers.RENDER_MASK_INTERACTIVE
 )
 
-## Shared stripped environment resource eliminating per-instance heap allocations.
-static var _shared_mirror_env: Environment = null
-
 ## Shared empty compositor resource bypassing global compute passes.
 static var _shared_empty_compositor: Compositor = null
 
-## Dimensions of the armored mirror surface in world units.
+## Dimensions of the mirror surface in world units.
 @export var size: Vector2 = Vector2(1.5, 2.0):
 	set(value):
 		size = value.clamp(Vector2(0.1, 0.1), Vector2(16.0, 16.0))
@@ -68,19 +56,10 @@ var _last_cam_transform: Transform3D = Transform3D.IDENTITY
 ## Precalculated squared maximum update distance.
 var _max_dist_sq: float = 225.0
 
-## Current normalized fracture intensity in range [0.0, 1.0].
-var _crack_intensity: float = 0.0
-
-## Current normalized UV coordinates of the latest impact point.
-var _impact_uv: Vector2 = Vector2(0.5, 0.5)
-
-## Active [Tween] interpolating fracture shader parameter.
-var _crack_tween: Tween = null
-
 ## Cached root [Viewport] providing the active scene camera.
 var _viewport: Viewport = null
 
-## Quad mesh instance displaying the armored reflection shader.
+## Quad mesh instance displaying the planar reflection shader.
 @onready var _mirror_quad: MeshInstance3D = $Quad as MeshInstance3D
 
 ## Reflection [SubViewport] rendering the off-axis camera view.
@@ -93,8 +72,8 @@ var _viewport: Viewport = null
 @onready
 var _notifier: VisibleOnScreenNotifier3D = $MirrorVisibilityNotifier as VisibleOnScreenNotifier3D
 
-## Box collider shape on the static armor body.
-@onready var _collision_shape: CollisionShape3D = $ArmorBody/CollisionShape3D as CollisionShape3D
+## Box collider shape on the static mirror body.
+@onready var _collision_shape: CollisionShape3D = $MirrorBody/CollisionShape3D as CollisionShape3D
 
 
 ## Validates child nodes, caches root [Viewport], configures [SubViewport], and gates [_process].
@@ -110,9 +89,6 @@ func _ready() -> void:
 	_configure_viewport()
 	_resize_resources()
 
-	_mirror_quad.set_instance_shader_parameter(PARAM_CRACK_INTENSITY, _crack_intensity)
-	_mirror_quad.set_instance_shader_parameter(PARAM_IMPACT_UV, _impact_uv)
-
 	if Engine.is_editor_hint():
 		set_physics_process(false)
 		set_process(true)
@@ -124,9 +100,8 @@ func _ready() -> void:
 	set_process(_notifier.is_on_screen())
 
 
-## Disconnects notifier signals and kills active [Tween] on tree exit.
+## Disconnects notifier signals on tree exit.
 func _exit_tree() -> void:
-	Utilities.safe_kill_tween(_crack_tween)
 	if not Engine.is_editor_hint() and is_instance_valid(_notifier):
 		if _notifier.screen_entered.is_connected(_on_screen_entered):
 			_notifier.screen_entered.disconnect(_on_screen_entered)
@@ -163,48 +138,7 @@ func _process(_delta: float) -> void:
 	_update_reflection(main_cam, quad_xform, mirror_normal, signed_dist)
 
 
-## Routes weapon and melee damage hits into localized fracture impacts.
-func take_damage(
-	amount: float, hit_position: Vector3 = Vector3.ZERO, _hit_dir: Vector3 = Vector3.ZERO
-) -> void:
-	var impact_pos: Vector3 = (
-		global_position if hit_position.is_equal_approx(Vector3.ZERO) else hit_position
-	)
-	var delta_intensity: float = clampf(amount / 100.0, 0.15, 0.5)
-	apply_impact(impact_pos, delta_intensity)
-
-
-## Applies localized fracture impact at [param world_pos] without shattering embedded wire cage.
-func apply_impact(world_pos: Vector3, intensity_delta: float = 0.35) -> void:
-	if not is_instance_valid(_mirror_quad):
-		return
-	var local_hit: Vector3 = _mirror_quad.to_local(world_pos)
-	var uv_x: float = clampf((local_hit.x / maxf(size.x, 0.001)) + 0.5, 0.05, 0.95)
-	var uv_y: float = clampf(0.5 - (local_hit.y / maxf(size.y, 0.001)), 0.05, 0.95)
-	_impact_uv = Vector2(uv_x, uv_y)
-	var target_crack: float = clampf(_crack_intensity + intensity_delta, 0.0, 1.0)
-
-	_mirror_quad.set_instance_shader_parameter(PARAM_IMPACT_UV, _impact_uv)
-	_crack_tween = Utilities.reset_tween_ext(self, _crack_tween, Tween.TRANS_EXPO, Tween.EASE_OUT)
-	if is_instance_valid(_crack_tween):
-		_crack_tween.tween_method(_set_crack_level, _crack_intensity, target_crack, 0.18)
-	_crack_intensity = target_crack
-	_last_cam_transform = Transform3D.IDENTITY
-	print("ArmoredMirror: impact at UV=", _impact_uv, " crack=", _crack_intensity)
-	mirror_cracked.emit(_impact_uv, _crack_intensity)
-
-
-## Resets glass fracture state back to intact armored glass.
-func repair_mirror() -> void:
-	Utilities.safe_kill_tween(_crack_tween)
-	_crack_intensity = 0.0
-	if is_instance_valid(_mirror_quad):
-		_mirror_quad.set_instance_shader_parameter(PARAM_CRACK_INTENSITY, 0.0)
-	_last_cam_transform = Transform3D.IDENTITY
-	print("ArmoredMirror: repaired")
-
-
-## Configures [SubViewport] shadow, AA, LOD, stripped environment, and render layer settings.
+## Configures [SubViewport] shadow, AA, LOD, empty compositor, and render layer settings.
 func _configure_viewport() -> void:
 	if not is_instance_valid(_sub_viewport) or not is_instance_valid(_mirror_camera):
 		return
@@ -227,21 +161,7 @@ func _configure_viewport() -> void:
 		_shared_empty_compositor = Compositor.new()
 		_shared_empty_compositor.compositor_effects = []
 	_mirror_camera.compositor = _shared_empty_compositor
-
-	if _shared_mirror_env == null:
-		var env: Environment = Environment.new()
-		env.volumetric_fog_enabled = false
-		env.sdfgi_enabled = false
-		env.ssao_enabled = false
-		env.ssil_enabled = false
-		env.glow_enabled = false
-		env.ssr_enabled = false
-		env.fog_enabled = false
-		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		env.ambient_light_color = Color(0.2, 0.22, 0.28, 1.0)
-		env.ambient_light_energy = 1.0
-		_shared_mirror_env = env
-	_mirror_camera.environment = _shared_mirror_env
+	_mirror_camera.environment = null
 
 
 ## Resizes quad mesh, notifier AABB, physics collider, and [SubViewport] resolution.
@@ -306,12 +226,6 @@ func _update_editor_preview() -> void:
 	var signed_dist: float = (editor_cam.global_position - quad_xform.origin).dot(mirror_normal)
 	if signed_dist > cull_near:
 		_update_reflection(editor_cam, quad_xform, mirror_normal, signed_dist)
-
-
-## Callback for [Tween] interpolation of per-instance shader fracture uniform.
-func _set_crack_level(val: float) -> void:
-	if is_instance_valid(_mirror_quad):
-		_mirror_quad.set_instance_shader_parameter(PARAM_CRACK_INTENSITY, val)
 
 
 ## Enables [_process] and triggers immediate refresh when mirror enters screen frustum.
