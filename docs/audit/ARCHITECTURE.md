@@ -64,7 +64,6 @@ BellaSDK is a Godot `4.7.1` (`Forward Plus` renderer, `Jolt Physics` 3D engine, 
 | 7 | `GlobalSettings` | `project.godot:34` | `res://core/global_settings.gd` (`1-464`) | `core/` | `user://settings.cfg` persistence, font/palette/filter registries, boot settings applier |
 | 8 | `HighContrastManager` | `project.godot:35` | `res://ui/HighContrastManager.gd` (`1-76`) | `ui/` | Applies high-contrast materials to `high_contrast_enemy`/`item`/`hazard` groups |
 | 9 | `VisionAssistManager` | `project.godot:36` | `res://ui/VisionAssistManager.gd` (`1-266`) | `ui/` | Applies `ui/VisionAssist.gdshader` variants via `MaterialCache.get_variant()` (`L253`) |
-| 10 | `CsgToolkitAutoload` | `project.godot:37` | `res://addons/csg_toolkit/scripts/csg_toolkit_config.gd` | `addons/` | Editor CSG toolkit configuration |
 | 11 | `SonarManager` | `project.godot:38` | `res://core/audio/sonar_manager.tscn` (`core/audio/sonar_manager.gd:1-353`) | `core/` | 360-degree physics shape-cast echolocation + sequential 2D harmonic pings |
 | 12 | `TTSManager` | `project.godot:39` | `res://addons/piper_tts_extension/tts_manager.tscn` | `addons/` | Neural text-to-speech synthesis manager |
 | 13 | `SpatialDescriber` | `project.godot:40` | `res://core/audio/spatial_describer.tscn` (`core/audio/spatial_describer.gd:1-547`) | `core/` | 3D sphere query + LOS raycast + semantic clustering + TTS announcement |

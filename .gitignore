@@ -14,7 +14,6 @@ levels/bakes/
 .godot/
 
 addons/gemini_copilot/
-addons/csg_toolkit/
 
 .vscode/
 .env
@@ -58,7 +57,6 @@ assets/videos/
 
 gemini_pipe.py
 
-addons/terrain_3d/
 
 demo/
 venv/

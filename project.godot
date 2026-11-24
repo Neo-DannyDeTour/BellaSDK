@@ -78,7 +78,6 @@ GlobalSettings="*uid://c1qd5kgpbvddv"
 GraphicsManager="*uid://c165uw26ca5hj"
 HighContrastManager="*uid://dsoaonf445p5r"
 VisionAssistManager="*uid://clh0dnaj1r33x"
-CsgToolkitAutoload="*uid://w8ad8q4lneis"
 SonarManager="*uid://byxvdd1kf32wk"
 TTSManager="*uid://crey6jf4gwjv6"
 SpatialDescriber="*uid://bhdfhlh5ba34i"
@@ -94,6 +93,7 @@ SceneTransition="*res://core/scene_transition.gd"
 SmokeManager="*uid://cux76orvhr6t8"
 BloodManager="*uid://bbth1832rodw7"
 ImpactManager="*res://vfx/impact_manager.gd"
+DebrisBudget="*res://core/debris_budget.gd"
 SpikeForensics="*res://core/spike_forensics.gd"
 HumanizerAPI="*uid://dsrnmyw7n7drw"
 ARKitSingleton="*res://addons/godot_arkit/arkit_autoload.gd"
@@ -122,7 +122,7 @@ project/assembly_name="FPS_Test"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/SunshineClouds2/plugin.cfg", "res://addons/csg_toolkit/plugin.cfg", "res://addons/detour_event_sequencer/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/godot_arkit/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/humanizer/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
+enabled=PackedStringArray("res://addons/SunshineClouds2/plugin.cfg", "res://addons/detour_event_sequencer/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/godot_arkit/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/humanizer/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
 
 [filesystem]
 
