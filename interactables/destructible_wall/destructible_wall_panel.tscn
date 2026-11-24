@@ -1,0 +1,62 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://interactables/destructible_wall/destructible_wall_panel.gd" id="1_panel_script"]
+[ext_resource type="Resource" path="res://interactables/destructible_wall/models/wall_panel_2x3_data.tres" id="2_panel_data"]
+[ext_resource type="Script" path="res://interactables/destructible_wall/wall_rebar_body.gd" id="3_rebar_script"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_impact"]
+size = Vector3(2.06, 3.06, 0.37)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dust"]
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.5
+initial_velocity_max = 2.0
+gravity = Vector3(0, -6.5, 0)
+scale_min = 0.5
+scale_max = 1.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dust"]
+albedo_color = Color(0.55, 0.53, 0.5, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="BoxMesh_dust"]
+material = SubResource("StandardMaterial3D_dust")
+size = Vector3(0.06, 0.06, 0.06)
+
+[node name="DestructibleWallPanel" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_panel_script")
+panel_data = ExtResource("2_panel_data")
+
+[node name="WallMesh" type="MeshInstance3D" parent="."]
+layers = 1
+
+[node name="RebarBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("3_rebar_script")
+
+[node name="RebarMesh" type="MeshInstance3D" parent="RebarBody"]
+layers = 1
+
+[node name="RebarCollider" type="CollisionShape3D" parent="RebarBody"]
+
+[node name="ImpactSensor" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 4
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ImpactSensor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("BoxShape3D_impact")
+
+[node name="DustParticles" type="GPUParticles3D" parent="."]
+layers = 1
+emitting = false
+amount = 48
+lifetime = 0.85
+one_shot = false
+process_material = SubResource("ParticleProcessMaterial_dust")
+draw_pass_1 = SubResource("BoxMesh_dust")

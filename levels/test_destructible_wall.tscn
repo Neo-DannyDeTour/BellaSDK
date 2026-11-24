@@ -1,0 +1,147 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://assets/weapons/revolver.tscn" id="2_revolver"]
+[ext_resource type="PackedScene" path="res://assets/weapons/ammo_box.tscn" id="3_ammo_box"]
+[ext_resource type="PackedScene" path="res://interactables/destructible_wall/destructible_wall_panel.tscn" id="4_wall_panel"]
+[ext_resource type="PackedScene" path="res://interactables/heavy_pickable_box.tscn" id="5_heavy_box"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.2, 0.45, 0.7, 1)
+sky_horizon_color = Color(0.65, 0.75, 0.85, 1)
+ground_bottom_color = Color(0.12, 0.12, 0.14, 1)
+ground_horizon_color = Color(0.3, 0.35, 0.4, 1)
+
+[sub_resource type="Sky" id="Sky_env"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_world"]
+background_mode = 2
+sky = SubResource("Sky_env")
+ambient_light_source = 3
+reflected_light_source = 2
+tonemap_mode = 2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(40, 1, 40)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.24, 0.27, 0.31, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(40, 1, 40)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_backdrop"]
+size = Vector3(16, 5, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_backdrop"]
+albedo_color = Color(0.95, 0.36, 0.14, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="BoxMesh_backdrop"]
+material = SubResource("StandardMaterial3D_backdrop")
+size = Vector3(16, 5, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pedestal"]
+size = Vector3(1.6, 0.8, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pedestal"]
+albedo_color = Color(0.36, 0.38, 0.42, 1)
+roughness = 0.7
+
+[sub_resource type="BoxMesh" id="BoxMesh_pedestal"]
+material = SubResource("StandardMaterial3D_pedestal")
+size = Vector3(1.6, 0.8, 0.8)
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ramp"]
+friction = 0.0
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ramp"]
+size = Vector3(3.6, 0.3, 5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ramp"]
+albedo_color = Color(0.3, 0.42, 0.55, 1)
+roughness = 0.6
+
+[sub_resource type="BoxMesh" id="BoxMesh_ramp"]
+material = SubResource("StandardMaterial3D_ramp")
+size = Vector3(3.6, 0.3, 5)
+
+[node name="TestDestructibleWall" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_world")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="BackdropWall" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.5, -4)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BackdropWall"]
+shape = SubResource("BoxShape3D_backdrop")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BackdropWall"]
+mesh = SubResource("BoxMesh_backdrop")
+
+[node name="Pedestal" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 3.8)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Pedestal"]
+shape = SubResource("BoxShape3D_pedestal")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Pedestal"]
+mesh = SubResource("BoxMesh_pedestal")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 6)
+
+[node name="Revolver" parent="." instance=ExtResource("2_revolver")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 0.82, 3.8)
+
+[node name="AmmoBox" parent="." instance=ExtResource("3_ammo_box")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 1.05, 3.8)
+ammo_amount = 24
+
+[node name="DestructibleWallPanelA" parent="." instance=ExtResource("4_wall_panel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
+
+[node name="DestructibleWallPanelB" parent="." instance=ExtResource("4_wall_panel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+
+[node name="DestructibleWallPanelC" parent="." instance=ExtResource("4_wall_panel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, 0)
+
+[node name="ImpactRamp" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.939373, 0.342898, 0, -0.342898, 0.939373, 4.5, 1.35, 3.2)
+collision_layer = 1
+collision_mask = 0
+physics_material_override = SubResource("PhysicsMaterial_ramp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ImpactRamp"]
+shape = SubResource("BoxShape3D_ramp")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ImpactRamp"]
+mesh = SubResource("BoxMesh_ramp")
+
+[node name="HeavyPickableBox" parent="." instance=ExtResource("5_heavy_box")]
+transform = Transform3D(1, 0, 0, 0, 0.939373, 0.342898, 0, -0.342898, 0.939373, 4.5, 2.145, 2.697)
+physics_material_override = SubResource("PhysicsMaterial_ramp")
