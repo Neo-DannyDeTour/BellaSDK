@@ -48,6 +48,19 @@ from bl_ext.blender_org.mpfb.services.humanservice import HumanService
 from bl_ext.blender_org.mpfb.services.locationservice import LocationService
 from bl_ext.blender_org.mpfb.services.targetservice import TargetService
 from common.exporter import clean_scene, export_godot_glb
+from ghost_girl_hair_outfit import (
+    build_boots,
+    build_croptop,
+    build_ghost_cape,
+    build_ghost_hood,
+    build_gloves,
+    build_sculpted_lavender_hair,
+    build_skirt,
+    paint_cape_texture,
+    paint_gloves_textures,
+    sculpt_clean_mpfb2_humanizer_base,
+)
+from ghost_girl_head import apply_anime_face_normals, build_anime_head_package
 
 SDK_ROOT = Path(__file__).resolve().parents[2]
 MODEL_DIR = SDK_ROOT / "assets" / "models" / "ghost_girl"
@@ -377,121 +390,28 @@ def _spawn_and_sculpt_anime_base() -> Tuple[bpy.types.Object, List[Vector]]:
     z_neck_top = z_crown_raw - 0.210
     neck_pivot = Vector((0.0, 0.5 * (l_eye_c.y + mouth_c.y) + 0.045, z_neck_base))
 
-    # 3. Sculpt anime body + head proportions (~1:6.2 head-to-body ratio, slender torso/legs,
-    #    tapered V-chin, enlarged anime eye orbits, petite nose/mouth) across ALL 19,158 verts
-    #    so skin AND helper-* geometry deform in exact lockstep!
-    eye_helpers_l = _vg_indices(bm_obj, ("helper-l-eye", "helper-l-eyelashes-1", "helper-l-eyelashes-2", "joint-l-eye", "joint-l-upperlid", "joint-l-lowerlid"))
-    eye_helpers_r = _vg_indices(bm_obj, ("helper-r-eye", "helper-r-eyelashes-1", "helper-r-eyelashes-2", "joint-r-eye", "joint-r-upperlid", "joint-r-lowerlid"))
-
+    # 3. Sculpt slender anime body proportions across torso/hips/legs; head is refined via
+    #    sculpt_clean_mpfb2_humanizer_base() after 1.58m normalization for clean Humanizer mode.
     for v in verts:
         p = v.co.copy()
         z = p.z
         ax = abs(p.x)
 
-        # Slender anime torso/hips/waist calibration
         if z < z_neck_base and ax < 0.20:
             w_waist = _gauss(z - (z_crown_raw * 0.625), 0.075)
             if w_waist > 1e-3:
                 p.x *= 1.0 - 0.075 * w_waist
                 p.y *= 1.0 - 0.045 * w_waist
-            # Smooth bust apex cones slightly
             if p.y < -0.05 and (z_crown_raw * 0.70) <= z <= (z_crown_raw * 0.80) and ax < 0.13:
                 w_apex = _gauss(ax - 0.072, 0.024) * _gauss(z - (z_crown_raw * 0.745), 0.025)
                 p.y += 0.008 * w_apex
-            # Subtle slender legs
             if z < z_crown_raw * 0.52:
                 w_leg = _smoothstep(z_crown_raw * 0.52, z_crown_raw * 0.12, z)
                 p.x *= 1.0 - 0.03 * w_leg
                 p.y *= 1.0 - 0.03 * w_leg
-
-        # Anime head scale (~1.10x larger head for ~1:6.2 head-to-body ratio)
-        w_head = _smoothstep(z_neck_base - 0.02, z_neck_top + 0.02, z)
-        if w_head > 1e-4:
-            rel_h = p - neck_pivot
-            head_scaled = neck_pivot + Vector((rel_h.x * 1.11, rel_h.y * 1.09, rel_h.z * 1.11))
-            p = p.lerp(head_scaled, w_head)
-
-            # Tapered anime V-chin & soft narrow lower jaw
-            if z < l_eye_c.z - 0.015 and p.y < 0.015:
-                w_jaw = _smoothstep(l_eye_c.z - 0.015, z_neck_top + 0.01, z) * _smoothstep(0.015, -0.08, p.y)
-                p.x *= 1.0 - 0.135 * w_jaw
-                # Soften chin point forward/up slightly
-                w_chin = _gauss(ax, 0.030) * _gauss(z - (mouth_c.z - 0.032), 0.020) * _smoothstep(0.0, -0.08, p.y)
-                p.z += 0.0065 * w_chin
-                p.y += 0.0035 * w_chin
-
-            # Petite anime nose (narrow sleek bridge, dainty button tip, soft philtrum)
-            if p.y < -0.095 and ax < 0.030 and (mouth_c.z + 0.008) < z < (l_eye_c.z + 0.008):
-                w_nose = _gauss(ax, 0.018) * _gauss(z - (l_eye_c.z - 0.019), 0.015)
-                p.x *= 1.0 - 0.28 * w_nose
-                p.y += 0.0068 * w_nose
-
-            # Petite anime mouth (narrow delicate lips, slim profile protrusion)
-            if p.y < -0.090 and ax < 0.036 and abs(z - mouth_c.z) < 0.024:
-                w_m = _gauss(ax, 0.024) * _gauss(z - mouth_c.z, 0.014)
-                p.x *= 1.0 - 0.24 * w_m
-                p.y += 0.0055 * w_m
-
         v.co = p
 
     bm_obj.data.update()
-
-    # Re-measure eye centers after head scale and enlarge anime eye orbits cleanly (~1.5x tall anime eyes)
-    l_eye_c2 = sum((verts[i].co for i in l_eye_helper), Vector((0.0, 0.0, 0.0))) / float(len(l_eye_helper))
-    r_eye_c2 = sum((verts[i].co for i in r_eye_helper), Vector((0.0, 0.0, 0.0))) / float(len(r_eye_helper))
-
-    for idx, v in enumerate(verts):
-        p = v.co.copy()
-        for eye_c, helper_set, sx_sign in (
-            (l_eye_c2, eye_helpers_l, 1.0),
-            (r_eye_c2, eye_helpers_r, -1.0),
-        ):
-            rel = p - eye_c
-            # Only affect anterior orbital region around this eye
-            if p.x * sx_sign < -0.004:
-                continue
-            d_orbit = math.sqrt((rel.x / 0.030) ** 2 + (rel.z / 0.026) ** 2 + (rel.y / 0.032) ** 2)
-            is_eye_helper = idx in helper_set
-            if is_eye_helper:
-                # Tall expressive anime eyeballs, tucked cleanly in socket so +20deg yaw never pokes outer cheek
-                new_rel = Vector((
-                    rel.x * 1.32 + sx_sign * 0.0012,
-                    rel.y * 0.76 - 0.0004,
-                    rel.z * 1.72,
-                ))
-                p = eye_c + new_rel
-                break
-            elif d_orbit < 1.65 and p.y < eye_c.y + 0.030:
-                # Wide open tall round-oval anime eye aperture (trigger 100% right at ±4.5mm eyelid rim!)
-                w_orb = math.exp(-0.55 * (d_orbit ** 2))
-                dz_open = (0.0145 if rel.z >= 0.0 else -0.0105) * _smoothstep(0.0005, 0.0045, abs(rel.z))
-                dx_open = sx_sign * 0.0048 * _smoothstep(0.001, 0.012, abs(rel.x))
-                dy_flat = -0.0028 if abs(rel.z) < 0.018 else 0.0014
-                p += Vector((dx_open * w_orb, dy_flat * w_orb, dz_open * w_orb))
-                # Gently lift recessed under-eye tear-trough hollow so cheeks read smooth anime
-                if -0.028 < rel.z < -0.012 and abs(rel.x) < 0.028:
-                    w_trough = _gauss(rel.z + 0.018, 0.007) * _gauss(rel.x, 0.018)
-                    p.y -= 0.0024 * w_trough
-                break
-        v.co = p
-
-    # Smooth ONLY lower cheek/jaw/forehead transitions (STRICTLY preserve wide open eye sockets & eyelids!)
-    bm_sm = bmesh.new()
-    bm_sm.from_mesh(bm_obj.data)
-    bm_sm.verts.ensure_lookup_table()
-    face_smooth_vs = [
-        v
-        for v in bm_sm.verts
-        if v.index in body_vs
-        and v.co.z > z_neck_top + 0.02
-        and v.co.y < l_eye_c2.y + 0.015
-        and not (abs(v.co.z - l_eye_c2.z) < 0.024 and abs(abs(v.co.x) - abs(l_eye_c2.x)) < 0.032)
-        and abs(v.co.z - mouth_c.z) > 0.009
-    ]
-    for _ in range(4):
-        bmesh.ops.smooth_vert(bm_sm, verts=face_smooth_vs, factor=0.40, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-    bm_sm.to_mesh(bm_obj.data)
-    bm_sm.free()
 
     # 4. Uniformly scale canonical mesh to TARGET_HEIGHT_M = 1.58m with body feet at Z=0
     min_bz = min(verts[i].co.z for i in body_vs)
@@ -511,6 +431,9 @@ def _spawn_and_sculpt_anime_base() -> Tuple[bpy.types.Object, List[Vector]]:
         v.co.y = (v.co.y - mid_y) * scale_f
         v.co.z = (v.co.z - min_bz) * scale_f
     bm_obj.data.update()
+
+    # 5. Refine MPFB2 Humanizer face/neck cleanly without breaking vertex correspondence
+    sculpt_clean_mpfb2_humanizer_base(bm_obj)
 
     final_min_z = min(verts[i].co.z for i in body_vs)
     final_max_z = max(verts[i].co.z for i in body_vs)
@@ -762,9 +685,9 @@ def _export_mhclo_asset(
 
 def _measure_canonical_landmarks(
     bm_obj: bpy.types.Object,
-    eyes_obj: bpy.types.Object,
+    eyes_obj: Optional[bpy.types.Object] = None,
 ) -> Dict[str, Vector]:
-    """Measure key facial and body landmarks on sculpted 1.58m canonical or head mesh."""
+    """Measure key facial and body landmarks on sculpted 1.58m canonical MPFB2 mesh."""
     verts = bm_obj.data.vertices
     body_vs = _vg_indices(bm_obj, ("body",))
     if not body_vs:
@@ -778,8 +701,17 @@ def _measure_canonical_landmarks(
     y_min = min(v.y for v in pts)
     y_max = max(v.y for v in pts)
 
-    l_eye_pts = [v.co for v in eyes_obj.data.vertices if v.co.x >= 0.0]
-    r_eye_pts = [v.co for v in eyes_obj.data.vertices if v.co.x < 0.0]
+    l_eye_h = _vg_indices(bm_obj, ("helper-l-eye",))
+    r_eye_h = _vg_indices(bm_obj, ("helper-r-eye",))
+    if l_eye_h and r_eye_h:
+        l_eye_pts = [verts[i].co for i in l_eye_h]
+        r_eye_pts = [verts[i].co for i in r_eye_h]
+    elif eyes_obj is not None:
+        l_eye_pts = [v.co for v in eyes_obj.data.vertices if v.co.x >= 0.0]
+        r_eye_pts = [v.co for v in eyes_obj.data.vertices if v.co.x < 0.0]
+    else:
+        l_eye_pts = [Vector((0.035, -0.105, z_max - 0.140))]
+        r_eye_pts = [Vector((-0.035, -0.105, z_max - 0.140))]
     l_eye_c = sum(l_eye_pts, Vector((0.0, 0.0, 0.0))) / float(max(len(l_eye_pts), 1))
     r_eye_c = sum(r_eye_pts, Vector((0.0, 0.0, 0.0))) / float(max(len(r_eye_pts), 1))
     ex = 0.5 * (abs(l_eye_c.x) + abs(r_eye_c.x))
@@ -903,8 +835,8 @@ def _build_anime_skin_texture(
         ear_map[min_y + iy, min_x + ix] = b0[:, 0] * ear_w[v_idx[0]] + b1[:, 0] * ear_w[v_idx[1]] + b2[:, 0] * ear_w[v_idx[2]]
         cov_map[min_y + iy, min_x + ix] = 1
 
-    # Soft peach-fair anime base skin (#FDE6DA) with zero dark under-eye rings
-    base_col = np.array([0.990, 0.902, 0.855], dtype=np.float32)
+    # Soft peach-fair anime base skin (#FDE6DA) matching ghost_girl_head_albedo.png identically
+    base_col = np.array([0.9922, 0.9020, 0.8549], dtype=np.float32)
     blush_col = np.array([0.970, 0.755, 0.730], dtype=np.float32)
     shadow_col = np.array([0.920, 0.775, 0.740], dtype=np.float32)
     lash_col = np.array([0.115, 0.088, 0.165], dtype=np.float32)
@@ -1000,7 +932,9 @@ def _build_anime_skin_texture(
     albedo = np.clip(dil, 0.0, 1.0)
 
     _save_image(alb_path, albedo)
-    _save_image(hum_skin_path, albedo)
+    # Warm/deepen Humanizer Body-Default skin slightly (~0.93, 0.78, 0.71) so StandardMaterial3D doesn't blow out white
+    hum_albedo = np.clip(albedo * np.array([0.935, 0.862, 0.828], dtype=np.float32), 0.0, 1.0)
+    _save_image(hum_skin_path, hum_albedo)
 
     # Smooth flat-clean anime normal map & ORM (roughness=0.64 matte cel skin)
     flat_nrm = np.zeros((tex_size, tex_size, 3), dtype=np.float32)
@@ -2904,15 +2838,14 @@ def _straighten_arms_to_tpose(
     obj.data.update()
 
 
-def _strip_helpers_and_split_head_body(
+def _strip_helpers_and_build_body(
     bm_obj: bpy.types.Object,
     skin_alb: Path,
     skin_nrm: Path,
     skin_orm: Path,
-    lm: Dict[str, Vector],
-) -> Tuple[bpy.types.Object, bpy.types.Object]:
-    """Strip MakeHuman helper faces, hide feet inside boots, and split at neck collar into Head & Body."""
-    # Sample exact MakeHuman joint centers from JointCubes BEFORE deleting helper vertices
+    z_neck_cut: float,
+) -> bpy.types.Object:
+    """Strip MakeHuman helper faces, hide feet/neck core inside boots/collar, and straighten arms to T-pose."""
     joints: Dict[str, Vector] = {}
     for key, vgn in (
         ("sh_l", "joint-l-shoulder"),
@@ -2938,59 +2871,19 @@ def _strip_helpers_and_split_head_body(
     bm_clean.free()
     bm_obj.data.update()
 
-    # Straighten arms to T-pose cleanly around exact MakeHuman humeral pivots
     _straighten_arms_to_tpose(bm_obj, joints)
-
-    # Split inside black turtleneck collar cleanly below chin
-    z_cut = min(TARGET_HEIGHT_M - 0.255, lm["chin"].z - 0.036)
-
-    head_obj = bm_obj.copy()
-    head_obj.data = bm_obj.data.copy()
-    head_obj.name = "GhostGirl_Head"
-    head_obj.data.name = "GhostGirl_Head"
-    bpy.context.collection.objects.link(head_obj)
 
     body_obj = bm_obj
     body_obj.name = "GhostGirl_Body"
     body_obj.data.name = "GhostGirl_Body"
 
-    bm_h = bmesh.new()
-    bm_h.from_mesh(head_obj.data)
-    # Apply |x| width guard only in the lower collar band so ears/temples above z_cut+0.04 stay on Head
-    del_fh = [
-        f
-        for f in bm_h.faces
-        if (c := f.calc_center_median()).z < z_cut - 0.012
-        or (c.z < z_cut + 0.04 and abs(c.x) > 0.088)
-    ]
-    bmesh.ops.delete(bm_h, geom=del_fh, context="FACES")
-    loose_h = [v for v in bm_h.verts if not v.link_faces]
-    if loose_h:
-        bmesh.ops.delete(bm_h, geom=loose_h, context="VERTS")
-    # Push strictly central interior mouth-sock back wall backward (NEVER touching exterior cheek/chin corners)
-    mc_h = lm["mouth"]
-    for v in bm_h.verts:
-        if (
-            abs(v.co.x) < 0.014
-            and (mc_h.z - 0.006) <= v.co.z <= (mc_h.z + 0.008)
-            and (mc_h.y + 0.012) < v.co.y < (mc_h.y + 0.055)
-        ):
-            w_bag = _smoothstep(mc_h.y + 0.012, mc_h.y + 0.018, v.co.y)
-            v.co.y += 0.028 * w_bag
-    for f in bm_h.faces:
-        f.smooth = True
-    bm_h.to_mesh(head_obj.data)
-    bm_h.free()
-    head_obj.data.update()
-
     bm_b = bmesh.new()
     bm_b.from_mesh(body_obj.data)
-    # Remove all head/ear faces (z >= z_cut+0.04), neck collar core, and hidden foot faces inside boots (z < 0.145)
     del_fb = [
         f
         for f in bm_b.faces
-        if (c := f.calc_center_median()).z >= z_cut + 0.04
-        or (c.z >= z_cut - 0.008 and abs(c.x) <= 0.085)
+        if (c := f.calc_center_median()).z >= z_neck_cut + 0.035
+        or (c.z >= z_neck_cut + 0.002 and abs(c.x) <= 0.052)
         or c.z < 0.145
     ]
     bmesh.ops.delete(bm_b, geom=del_fb, context="FACES")
@@ -3003,14 +2896,6 @@ def _strip_helpers_and_split_head_body(
     bm_b.free()
     body_obj.data.update()
 
-    face_mat = _make_pbr_material(
-        "M_ghost_girl_face",
-        albedo_path=skin_alb,
-        normal_path=skin_nrm,
-        orm_path=skin_orm,
-        roughness=0.64,
-        sss=0.0,
-    )
     body_mat = _make_pbr_material(
         "M_ghost_girl_body_skin",
         albedo_path=skin_alb,
@@ -3019,11 +2904,9 @@ def _strip_helpers_and_split_head_body(
         roughness=0.64,
         sss=0.0,
     )
-    head_obj.data.materials.clear()
-    head_obj.data.materials.append(face_mat)
     body_obj.data.materials.clear()
     body_obj.data.materials.append(body_mat)
-    return head_obj, body_obj
+    return body_obj
 
 
 def _bake_arkit_52_shape_keys(
@@ -3277,55 +3160,57 @@ def main() -> None:
     TEX_DIR.mkdir(parents=True, exist_ok=True)
     HUMANIZER_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 1. Spawn un-morphed MPFB2 base mesh, capture basis, sculpt anime Ghost Girl at 1.58m
+    # 1. Spawn un-morphed MPFB2 base mesh, capture basis, sculpt clean Humanizer base at 1.58m
     bm_obj, basis_coords = _spawn_and_sculpt_anime_base()
 
-    # 2. Fit official MPFB2 eyes, eyelashes, teeth, tongue on sculpted canonical pose
-    mhclo_specs = (
-        ("eyes", "high-poly/high-poly.mhclo"),
-        ("eyelashes", "eyelashes01/eyelashes01.mhclo"),
-        ("teeth", "teeth_base/teeth_base.mhclo"),
-        ("tongue", "tongue01/tongue01.mhclo"),
+    # 2. Build dedicated anime head package (GhostGirl_Head, Eyes, Eyelashes, Teeth, Tongue, 52+6 ARKit)
+    z_neck_cut = 1.2800
+    body_vs = _vg_indices(bm_obj, ("body",))
+    neck_pts = [
+        bm_obj.data.vertices[i].co
+        for i in body_vs
+        if abs(bm_obj.data.vertices[i].co.z - z_neck_cut) < 0.020 and abs(bm_obj.data.vertices[i].co.x) < 0.085
+    ]
+    neck_cy = sum(p.y for p in neck_pts) / float(len(neck_pts)) if neck_pts else -0.0020
+    collar_center = Vector((0.0, max(-0.012, min(0.010, neck_cy)), z_neck_cut))
+
+    (
+        head_obj,
+        eye_l_obj,
+        eye_r_obj,
+        lash_obj,
+        _teeth_u_obj,
+        _teeth_l_obj,
+        _tongue_obj,
+        head_lm,
+        head_tex_paths,
+    ) = build_anime_head_package(
+        collar_center=collar_center,
+        z_neck_cut=z_neck_cut,
+        tex_dir=TEX_DIR,
     )
-    fitted: Dict[str, bpy.types.Object] = {}
-    for subdir, frag in mhclo_specs:
-        apath = AssetService.find_asset_absolute_path(frag, subdir)
-        if not apath:
-            raise RuntimeError(f"Missing MPFB2 system asset: {subdir}/{frag}")
-        asset_obj = HumanService.add_mhclo_asset(apath, bm_obj, asset_type=subdir.capitalize(), subdiv_levels=0)
-        fitted[subdir] = asset_obj
 
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    for obj in list(fitted.values()):
-        eval_obj = obj.evaluated_get(depsgraph)
-        clean_mesh = bpy.data.meshes.new_from_object(eval_obj)
-        old_mesh = obj.data
-        obj.modifiers.clear()
-        obj.shape_key_clear()
-        obj.parent = None
-        obj.matrix_world = Matrix.Identity(4)
-        obj.data = clean_mesh
-        bpy.data.meshes.remove(old_mesh)
-        obj.data.update()
-
-    # 3. Export Humanizer .target + metadata BEFORE splitting head/body or straightening arms
+    # 3. Export Humanizer .target + metadata & body skin atlas BEFORE stripping helpers or straightening arms
     b_min, b_max, s_min, s_max = _export_humanizer_target(bm_obj, basis_coords)
-    lm = _measure_canonical_landmarks(bm_obj, fitted["eyes"])
-    skin_alb, skin_nrm, skin_orm = _build_anime_skin_texture(bm_obj, lm, tex_size=2048)
+    lm_body = _measure_canonical_landmarks(bm_obj, eye_l_obj)
+    skin_alb, skin_nrm, skin_orm = _build_anime_skin_texture(bm_obj, lm_body, tex_size=2048)
 
-    # 4. Build all modular meshes aligned to canonical MPFB2 pose
-    eye_l_obj, eye_r_obj, eye_alb = _build_anime_eyes(fitted["eyes"])
-    lash_obj, lash_alb = _build_anime_eyelashes(fitted["eyelashes"])
-    _build_mouth_from_mpfb(fitted["teeth"], fitted["tongue"], lm)
-    cap_obj, cards_obj, hair_alb = _build_lavender_hair(bm_obj, lm)
-    hood_obj, hood_alb = _build_ghost_hood(bm_obj, lm)
-    cape_alb, cape_orm = _paint_cape_texture()
-    cape_canon = _build_ghost_cape(bm_obj, cape_alb, cape_orm, is_tpose=False)
-    croptop_obj, croptop_alb = _build_croptop(bm_obj, lm)
-    skirt_obj, skirt_alb = _build_skirt(bm_obj)
-    gloves_alb, gloves_orm = _paint_gloves_textures()
-    gloves_canon = _build_gloves(bm_obj, gloves_alb, gloves_orm)
-    boots_obj, boots_alb = _build_boots(bm_obj)
+    # 4. Build sculpted hair, ghost hood, and outfit aligned to head_lm / MPFB2 canonical body
+    _cap_obj, cards_obj, hair_alb, _cap_alb, _hair_orm = build_sculpted_lavender_hair(
+        head_obj, head_lm=head_lm, tex_dir=TEX_DIR
+    )
+    hood_obj, hood_alb, _hood_orm = build_ghost_hood(head_obj, head_lm=head_lm, tex_dir=TEX_DIR)
+    cape_alb, cape_orm = paint_cape_texture(TEX_DIR)
+    cape_canon = build_ghost_cape(
+        bm_obj, cape_alb, cape_orm, is_tpose=False, hood_obj=hood_obj, lm=head_lm
+    )
+    croptop_obj, croptop_alb = build_croptop(
+        bm_obj, lm=head_lm, tex_dir=TEX_DIR, head_obj=head_obj
+    )
+    skirt_obj, skirt_alb = build_skirt(bm_obj, tex_dir=TEX_DIR)
+    gloves_alb, gloves_orm = paint_gloves_textures(TEX_DIR)
+    gloves_canon = build_gloves(bm_obj, gloves_alb, gloves_orm)
+    boots_obj, boots_alb = build_boots(bm_obj, tex_dir=TEX_DIR)
 
     # 5. Export all 10 modular Humanizer assets (.mhclo + .obj + _albedo.png)
     eye_l_helpers = ("helper-l-eye",)
@@ -3333,18 +3218,40 @@ def main() -> None:
     lash_helpers = ("helper-l-eyelashes-1", "helper-l-eyelashes-2", "helper-r-eyelashes-1", "helper-r-eyelashes-2")
     body_group = ("body",)
 
+    eye_alb = head_tex_paths["eye_albedo"]
+    lash_alb = head_tex_paths["lash_albedo"]
+
+    # Build temporary MPFB2-socket-aligned copies of Eye_L/R & Eyelashes ONLY for Humanizer .mhclo export
+    l_shift = lm_body["left_eye"] - head_lm["left_eye"]
+    r_shift = lm_body["right_eye"] - head_lm["right_eye"]
+
+    def _copy_shifted(src: bpy.types.Object, suffix: str, is_split_lr: bool = False) -> bpy.types.Object:
+        cp = src.copy()
+        cp.data = src.data.copy()
+        cp.name = f"{src.name}_{suffix}"
+        bpy.context.collection.objects.link(cp)
+        for v in cp.data.vertices:
+            sh = (l_shift if v.co.x >= 0.0 else r_shift) if is_split_lr else (l_shift if "Eye_L" in src.name else r_shift)
+            v.co += sh
+        cp.data.update()
+        return cp
+
+    eye_l_hum = _copy_shifted(eye_l_obj, "HumTmp")
+    eye_r_hum = _copy_shifted(eye_r_obj, "HumTmp")
+    lash_hum = _copy_shifted(lash_obj, "HumTmp", is_split_lr=True)
+
     hum_assets_meta: List[Dict[str, object]] = []
     export_specs = (
-        ("GhostGirl_Hair_Cards", cards_obj, hair_alb, body_group, "Head", 60, "hair", "CLIP", True, None),
+        ("GhostGirl_Hair_Cards", cards_obj, hair_alb, body_group, "Head", 60, "hair", "OPAQUE", False, None),
         ("GhostGirl_Hood", hood_obj, hood_alb, body_group, "Head", 70, "headclothes", "OPAQUE", True, None),
         ("GhostGirl_Cape", cape_canon, cape_alb, body_group, "Torso", 80, "armsclothes", "BLEND", True, None),
         ("GhostGirl_CropTop", croptop_obj, croptop_alb, body_group, "Torso", 50, "torsoclothes", "OPAQUE", True, None),
         ("GhostGirl_Skirt", skirt_obj, skirt_alb, body_group, "Torso", 55, "legsclothes", "OPAQUE", True, None),
         ("GhostGirl_Gloves", gloves_canon, gloves_alb, body_group, "Hand", 50, "handsclothes", "OPAQUE", False, None),
         ("GhostGirl_Boots", boots_obj, boots_alb, body_group, "Foot", 50, "feetclothes", "OPAQUE", False, None),
-        ("GhostGirl_Eye_L", eye_l_obj, eye_alb, eye_l_helpers, "Eye", 10, "lefteye", "OPAQUE", False, None),
-        ("GhostGirl_Eye_R", eye_r_obj, eye_alb, eye_r_helpers, "Eye", 10, "righteye", "OPAQUE", False, None),
-        ("GhostGirl_Eyelashes", lash_obj, lash_alb, lash_helpers, "Head", 20, "lefteyelash", "CLIP", True, None),
+        ("GhostGirl_Eye_L", eye_l_hum, eye_alb, eye_l_helpers, "Head", 10, "lefteye", "OPAQUE", False, None),
+        ("GhostGirl_Eye_R", eye_r_hum, eye_alb, eye_r_helpers, "Head", 10, "righteye", "OPAQUE", False, None),
+        ("GhostGirl_Eyelashes", lash_hum, lash_alb, body_group, "Head", 20, "lefteyelash", "CLIP", True, None),
     )
     for (a_name, g_obj, a_alb, b_groups, sc_part, z_d, slot, alpha_m, dbl, del_g) in export_specs:
         meta = _export_mhclo_asset(
@@ -3375,24 +3282,29 @@ def main() -> None:
     }
     (HUMANIZER_DIR / "export_meta.json").write_text(json.dumps(export_meta, indent=2), encoding="utf-8")
 
-    # Remove canonical A-pose cape & gloves objects + mesh datablocks before building T-pose counterparts
-    for canon_obj in (cape_canon, gloves_canon):
+    # Remove temporary Humanizer socket copies + canonical A-pose cape & gloves objects
+    for canon_obj in (eye_l_hum, eye_r_hum, lash_hum, cape_canon, gloves_canon):
         canon_mesh = canon_obj.data
         bpy.data.objects.remove(canon_obj, do_unlink=True)
         bpy.data.meshes.remove(canon_mesh)
 
-    # 6. Strip helpers, straighten arms to T-pose, split Head & Body, build T-pose Cape & Gloves
-    head_obj, body_obj = _strip_helpers_and_split_head_body(bm_obj, skin_alb, skin_nrm, skin_orm, lm)
-    _build_ghost_cape(body_obj, cape_alb, cape_orm, is_tpose=True)
-    _build_gloves(body_obj, gloves_alb, gloves_orm)
+    # 6. Strip helpers, straighten arms to T-pose, trim Body collar, build T-pose Cape & Gloves
+    body_obj = _strip_helpers_and_build_body(bm_obj, skin_alb, skin_nrm, skin_orm, z_neck_cut)
+    build_ghost_cape(body_obj, cape_alb, cape_orm, is_tpose=True, hood_obj=hood_obj, lm=head_lm)
+    build_gloves(body_obj, gloves_alb, gloves_orm)
 
-    # 7. Bake 52 ARKit blendshapes on GhostGirl_Head + 6 eyelid keys on GhostGirl_Eyelashes
-    _bake_arkit_52_shape_keys(head_obj, lash_obj, eye_l_obj, lm)
-
-    # 8. Validate exact 16 modular meshes and export standalone GLB
+    # 7. Validate exact 16 modular meshes, verify custom normals, and export standalone GLB
     _purge_stray_objects()
-    export_godot_glb(str(TARGET_GLB), export_animations=False)
-    print(f"[build_ghost_girl] Exported 16-mesh Ghost Girl -> {TARGET_GLB}")
+    if not head_obj.data.has_custom_normals:
+        apply_anime_face_normals(head_obj, head_lm)
+    assert head_obj.data.has_custom_normals, "GhostGirl_Head lost custom split normals prior to export"
+    export_godot_glb(
+        str(TARGET_GLB),
+        export_animations=False,
+        export_morph=True,
+        export_morph_normal=False,
+    )
+    print(f"[build_ghost_girl] Exported 16-mesh Ghost Girl (custom_normals={head_obj.data.has_custom_normals}) -> {TARGET_GLB}")
 
 
 if __name__ == "__main__":

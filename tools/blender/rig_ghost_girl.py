@@ -30,6 +30,7 @@ from common.armature import (
     push_action_to_nla,
 )
 from common.exporter import clean_scene, export_godot_glb
+from ghost_girl_head import apply_anime_face_normals
 
 FPS: int = 60
 TARGET_HEIGHT_M: float = 1.58
@@ -250,10 +251,13 @@ def _measure_landmarks(classified: Dict[str, List[bpy.types.Object]]) -> Dict[st
     y_arm_wr, z_arm_wr = _arm_yz(x_wrist, y_arm_el - 0.005, z_arm_el - 0.005)
     y_arm_hd, z_arm_hd = _arm_yz(x_hand_tip, y_arm_wr, z_arm_wr)
 
+    # Compute chin before z_neck_top so Neck/Head joint sits at C1/atlas behind chin (~1.332m)
+    # and the entire face/chin remains rigid on Head
+    chin_z = min((v.z for v in head_verts if abs(v.x) < 0.025 and v.y < y_head), default=z_min + 0.842 * h)
     z_hips = z_min + 0.520 * h
     z_spine_top = z_min + 0.650 * h
     z_chest_top = z_min + 0.818 * h
-    z_neck_top = z_min + 0.865 * h
+    z_neck_top = min(z_min + 0.865 * h, chin_z + 0.002)
     z_head_top = z_head_max - 0.025
     z_knee = z_min + 0.285 * h
     z_ankle = z_min + 0.055 * h
@@ -268,8 +272,7 @@ def _measure_landmarks(classified: Dict[str, List[bpy.types.Object]]) -> Dict[st
     l_eye_head = Vector((eye_x, eye_y, eye_z))
     r_eye_head = Vector((-eye_x, eye_y, eye_z))
 
-    # Jaw pivot matched to build_ghost_girl.py
-    chin_z = min((v.z for v in head_verts if abs(v.x) < 0.025 and v.y < y_head), default=z_neck_top + 0.015)
+    # Jaw pivot matched to ghost_girl_head.py
     jaw_head = Vector((0.0, y_head - 0.016, eye_z - 0.035))
     jaw_tail = Vector((0.0, y_head - 0.082, chin_z + 0.015))
 
@@ -1227,15 +1230,30 @@ def run_pipeline(src_glb: Path, out_glb: Path) -> None:
                 kb.value = 0.0
     bpy.context.view_layer.update()
 
+    # Re-verify & re-apply custom ellipsoidal anime split normals on GhostGirl_Head before GLB export
+    for h_obj in classified["head"]:
+        normal_lm = {
+            "left_eye": lm["l_eye_head"],
+            "chin": Vector((0.0, -0.1125, lm["neck_tail"].z - 0.002)),
+            "mouth": Vector((0.0, -0.1244, lm["l_eye_head"].z - 0.074)),
+            "ear_y": Vector((0.100, -0.012, lm["l_eye_head"].z - 0.023)),
+        }
+        apply_anime_face_normals(h_obj, normal_lm)
+        assert h_obj.data.has_custom_normals, f"{h_obj.name} missing custom normals before rigged export"
+
     export_godot_glb(
         filepath=out_glb,
         export_animations=True,
         apply_modifiers=False,
         export_morph=True,
-        export_morph_normal=True,
+        export_morph_normal=False,
         save_blend=False,
     )
-    print(f"[rig_ghost_girl] Exported rigged GLB -> {out_glb} ({len(arm_obj.data.bones)} bones)")
+    head_has_nrm = all(o.data.has_custom_normals for o in classified["head"])
+    print(
+        f"[rig_ghost_girl] Exported rigged GLB -> {out_glb} "
+        f"({len(arm_obj.data.bones)} bones, head_custom_normals={head_has_nrm})"
+    )
 
 
 def _parse_args() -> argparse.Namespace:
