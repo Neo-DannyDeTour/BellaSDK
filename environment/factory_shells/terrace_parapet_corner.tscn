@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" uid="uid://db3lbv5hr316q" path="res://assets/models/factory_shells/terrace_parapet_corner.glb" id="1_glb"]
+[ext_resource type="Material" uid="uid://ccsqgtfcladmq" path="res://assets/materials/factory_stained_concrete/factory_stained_concrete.tres" id="2_concrete"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leg_a"]
+size = Vector3(1, 1.15, 0.38)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leg_b"]
+size = Vector3(0.38, 1.15, 0.65)
+
+[node name="TerraceParapetCorner" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="terrace_parapet_corner" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_concrete")
+surface_material_override/1 = ExtResource("3_steel")
+
+[node name="LegACollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.575, -0.325)
+shape = SubResource("BoxShape3D_leg_a")
+
+[node name="LegBCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.325, 0.575, 0.175)
+shape = SubResource("BoxShape3D_leg_b")
+
+[editable path="Model"]

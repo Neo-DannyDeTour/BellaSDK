@@ -1,0 +1,27 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" uid="uid://c07cf2qs08hm5" path="res://assets/models/factory_shells/door_exit.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/painted_industrial_metal/painted_industrial_metal.tres" id="2_painted_metal"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+[ext_resource type="Material" path="res://assets/materials/factory_grimy_glass/factory_grimy_glass.tres" id="4_glass"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leaf"]
+size = Vector3(1, 2.15, 0.08)
+
+[node name="DoorExit" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="door_exit" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_painted_metal")
+surface_material_override/1 = ExtResource("3_steel")
+surface_material_override/2 = ExtResource("4_glass")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.075, 0)
+shape = SubResource("BoxShape3D_leaf")
+
+[editable path="Model"]

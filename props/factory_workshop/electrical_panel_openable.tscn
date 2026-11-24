@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" uid="uid://w8ge47hk57li" path="res://assets/models/props/factory_workshop/electrical_panel_openable.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/painted_industrial_metal/painted_industrial_metal.tres" id="2_painted"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+[ext_resource type="Material" path="res://assets/materials/tarnished_brass/tarnished_brass.tres" id="4_brass"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_panel"]
+size = Vector3(0.75, 1.05, 0.28)
+
+[node name="ElectricalPanelOpenable" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="cabinet" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_painted")
+surface_material_override/1 = ExtResource("3_steel")
+surface_material_override/2 = ExtResource("4_brass")
+
+[node name="door" parent="Model" index="1"]
+layers = 1
+surface_material_override/0 = ExtResource("2_painted")
+surface_material_override/1 = ExtResource("3_steel")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.525, 0.14)
+shape = SubResource("BoxShape3D_panel")
+
+[editable path="Model"]

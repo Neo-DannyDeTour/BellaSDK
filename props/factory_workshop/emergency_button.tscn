@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" uid="uid://sntqr64nhhtj" path="res://assets/models/props/factory_workshop/emergency_button.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="2_steel"]
+[ext_resource type="Material" path="res://assets/materials/tarnished_brass/tarnished_brass.tres" id="3_brass"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_estop"]
+size = Vector3(0.18, 0.22, 0.14)
+
+[node name="EmergencyButton" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="button_cap" parent="Model" index="0"]
+layers = 1
+surface_material_override/1 = ExtResource("3_brass")
+
+[node name="housing" parent="Model" index="1"]
+layers = 1
+surface_material_override/1 = ExtResource("2_steel")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.11, 0.07)
+shape = SubResource("BoxShape3D_estop")
+
+[editable path="Model"]

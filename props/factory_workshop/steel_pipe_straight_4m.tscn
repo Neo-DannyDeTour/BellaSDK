@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" uid="uid://dcvu6r7yl6ysf" path="res://assets/models/props/factory_workshop/steel_pipe_straight_4m.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/painted_industrial_metal/painted_industrial_metal.tres" id="2_painted"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pipe"]
+size = Vector3(4, 0.5, 0.24)
+
+[node name="SteelPipeStraight4m" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="steel_pipe_straight_4m" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_painted")
+surface_material_override/1 = ExtResource("3_steel")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("BoxShape3D_pipe")
+
+[editable path="Model"]

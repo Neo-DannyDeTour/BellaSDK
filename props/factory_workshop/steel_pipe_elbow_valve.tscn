@@ -1,0 +1,36 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" uid="uid://ccebv6bfoigy1" path="res://assets/models/props/factory_workshop/steel_pipe_elbow_valve.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/painted_industrial_metal/painted_industrial_metal.tres" id="2_painted"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+[ext_resource type="Material" path="res://assets/materials/tarnished_brass/tarnished_brass.tres" id="4_brass"]
+[ext_resource type="Material" path="res://assets/materials/factory_grimy_glass/factory_grimy_glass.tres" id="5_glass"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leg_x"]
+size = Vector3(0.645, 0.72, 0.36)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leg_z"]
+size = Vector3(0.36, 0.72, 0.645)
+
+[node name="SteelPipeElbowValve" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="steel_pipe_elbow_valve" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_painted")
+surface_material_override/1 = ExtResource("3_steel")
+surface_material_override/2 = ExtResource("4_brass")
+surface_material_override/4 = ExtResource("5_glass")
+
+[node name="LegXCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1775, 0.36, 0)
+shape = SubResource("BoxShape3D_leg_x")
+
+[node name="LegZCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0.1775)
+shape = SubResource("BoxShape3D_leg_z")
+
+[editable path="Model"]

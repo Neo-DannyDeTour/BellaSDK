@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" uid="uid://du15g2iy3hd82" path="res://assets/models/factory_shells/steel_beam_4m.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="2_steel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_beam"]
+size = Vector3(4, 0.3, 0.22)
+
+[node name="SteelBeam4m" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="steel_beam_4m" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_steel")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+shape = SubResource("BoxShape3D_beam")
+
+[editable path="Model"]

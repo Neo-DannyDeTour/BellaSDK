@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" uid="uid://bpk6yjw8rbx0t" path="res://assets/models/factory_shells/boundary_wall.glb" id="1_glb"]
+[ext_resource type="Material" uid="uid://ccsqgtfcladmq" path="res://assets/materials/factory_stained_concrete/factory_stained_concrete.tres" id="2_concrete"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(4, 3, 0.38)
+
+[node name="BoundaryWall" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="boundary_wall" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_concrete")
+surface_material_override/1 = ExtResource("3_steel")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("BoxShape3D_wall")
+
+[editable path="Model"]

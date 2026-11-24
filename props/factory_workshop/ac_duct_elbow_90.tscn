@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" uid="uid://cbkkdtnkxxdir" path="res://assets/models/props/factory_workshop/ac_duct_elbow_90.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/conduit_ribbed_metal/conduit_ribbed_metal.tres" id="2_conduit"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leg_x"]
+size = Vector3(0.75, 0.46, 0.56)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leg_z"]
+size = Vector3(0.56, 0.46, 0.75)
+
+[node name="AcDuctElbow90" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="ac_duct_elbow_90" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_conduit")
+surface_material_override/1 = ExtResource("3_steel")
+
+[node name="LegX" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.125, 0.23, 0)
+shape = SubResource("BoxShape3D_leg_x")
+
+[node name="LegZ" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.23, 0.125)
+shape = SubResource("BoxShape3D_leg_z")
+
+[editable path="Model"]

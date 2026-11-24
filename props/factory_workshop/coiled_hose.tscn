@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" uid="uid://t23fg2cqtr7h" path="res://assets/models/props/factory_workshop/coiled_hose.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/tarnished_brass/tarnished_brass.tres" id="2_brass"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_steel"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_hose"]
+height = 0.26
+radius = 0.4
+
+[node name="CoiledHose" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="coiled_hose" parent="Model" index="0"]
+layers = 1
+surface_material_override/1 = ExtResource("2_brass")
+surface_material_override/2 = ExtResource("3_steel")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13, 0)
+shape = SubResource("CylinderShape3D_hose")
+
+[editable path="Model"]
