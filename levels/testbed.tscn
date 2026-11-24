@@ -95,15 +95,25 @@
 [ext_resource type="Texture2D" uid="uid://duvkgxn7r0u8m" path="res://assets/textures/raindrops_normals/rain_droplets_projector.png" id="89_t8rc7"]
 [ext_resource type="Script" uid="uid://d1ahs4qg0tibn" path="res://environment/rain.gd" id="90_8ghk5"]
 [ext_resource type="Shader" uid="uid://6nbh24t00hff" path="res://vfx/caustics_shader.gdshader" id="91_by3tm"]
+[ext_resource type="PackedScene" path="res://interactables/destructible_wall/destructible_wall_panel.tscn" id="92_88f6p"]
 [ext_resource type="Texture2D" uid="uid://b2ll75p8sskd2" path="res://assets/textures/raindrops_normals/others_0004_normal_directx_2k.png" id="92_g1gyd"]
+[ext_resource type="PackedScene" path="res://environment/factory_shells/boundary_wall.tscn" id="93_6yofm"]
 [ext_resource type="Shader" uid="uid://bjvrekq4qyfgo" path="res://environment/rainy_window_procedural.gdshader" id="93_itbso"]
+[ext_resource type="PackedScene" path="res://environment/factory_shells/wall_3m.tscn" id="94_ju11g"]
 [ext_resource type="PackedScene" uid="uid://b3nwdm8dlk16p" path="res://triggers/trigger_look.tscn" id="94_srb7l"]
+[ext_resource type="PackedScene" path="res://environment/factory_shells/steel_beam_4m.tscn" id="95_65mqw"]
+[ext_resource type="PackedScene" path="res://environment/factory_shells/roof_arch_wall.tscn" id="96_p40wb"]
 [ext_resource type="Script" uid="uid://cerve38bbxgo8" path="res://player/procedural_spiral_stairs_csg.gd" id="97_476ux"]
+[ext_resource type="PackedScene" path="res://environment/factory_shells/terrace_parapet_4m.tscn" id="97_uxdwr"]
 [ext_resource type="PackedScene" uid="uid://ce2qkw8w155wt" path="res://player/fast_rope.tscn" id="98_7m14b"]
+[ext_resource type="PackedScene" path="res://environment/factory_shells/terrace_parapet_corner.tscn" id="98_rqaaa"]
 [ext_resource type="Script" uid="uid://bpqd8h1qdh25a" path="res://interactables/procedural_ladder.gd" id="99_3hxda"]
 [ext_resource type="Script" uid="uid://bxtxyvoqbohar" path="res://dynamic_ocean/wave_cascade_parameters.gd" id="99_4qx7i"]
+[ext_resource type="PackedScene" path="res://environment/factory_shells/door_exit_frame.tscn" id="99_kxd0e"]
+[ext_resource type="PackedScene" path="res://environment/factory_shells/door_exit.tscn" id="100_2ei8y"]
 [ext_resource type="PackedScene" path="res://interactables/pickable_oil_drum_red.tscn" id="100_bgt7m"]
 [ext_resource type="PackedScene" uid="uid://dkmm4qelgt7gp" path="res://vfx/vfx_smoke_flipbook.tscn" id="101_gh8vw"]
+[ext_resource type="PackedScene" path="res://environment/factory_shells/shutter_perforated_broken.tscn" id="101_i7rcv"]
 [ext_resource type="PackedScene" uid="uid://o1p7fu5ntsjr" path="res://vfx/vfx_blood_burst.tscn" id="102_rjx1h"]
 [ext_resource type="PackedScene" uid="uid://wmyjhovjnea4" path="res://interactables/ladder.tscn" id="103_afiqk"]
 [ext_resource type="AudioStream" uid="uid://76hyigva6yr2" path="res://assets/sounds/SoundscapeCave.wav" id="104_xsorc"]
@@ -349,6 +359,10 @@
 [ext_resource type="PackedScene" uid="uid://ujs23267jbn7" path="res://props/soviet_shelf/soviet_shelf.glb" id="362_a0o38"]
 [ext_resource type="PackedScene" path="res://interactables/destructible_glass.tscn" id="375_ljjne"]
 [ext_resource type="PackedScene" path="res://npcs/ghost_girl/ghost_girl.tscn" id="376_img1v"]
+[ext_resource type="PackedScene" path="res://scenes/textured_glass_preview.tscn" id="377_vpw5b"]
+[ext_resource type="PackedScene" path="res://assets/models/czech_hedgehog/czech_hedgehog.tscn" id="378_27yfn"]
+[ext_resource type="PackedScene" path="res://interactables/washing_machine/washing_machine.tscn" id="379_27yfn"]
+[ext_resource type="PackedScene" path="res://props/cage_light/cage_light.tscn" id="380_qt1sv"]
 [ext_resource type="Shader" uid="uid://hj3ot7oa74a0" path="res://interactables/rusted_horror_metal.gdshader" id="407_118bj"]
 [ext_resource type="Texture2D" uid="uid://b2nj30qinow5l" path="res://interactables/liquid_bottle/noise.png" id="408_t2hl2"]
 [ext_resource type="Texture2D" uid="uid://dn013mtxxijlp" path="res://interactables/liquid_bottle/worley.png" id="409_akrit"]
@@ -2849,6 +2863,36 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 236.73195, 49.989006, -300.80
 
 [node name="ConcreteMetalPillar" parent="Environment" unique_id=1648746099 instance=ExtResource("544_concpillar")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 239.91367, 49.989006, -300.96063)
+
+[node name="DestructibleWallPanel" parent="Environment" unique_id=497649031 instance=ExtResource("92_88f6p")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 208.23294, 52.32863, -301.48053)
+
+[node name="BoundaryWall" parent="Environment" unique_id=1236744980 instance=ExtResource("93_6yofm")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 204.2882, 49.989006, -294.11584)
+
+[node name="Wall3m" parent="Environment" unique_id=790166908 instance=ExtResource("94_ju11g")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 200.34712, 49.989006, -294.53934)
+
+[node name="SteelBeam4m" parent="Environment" unique_id=1529558468 instance=ExtResource("95_65mqw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 196.42392, 49.989002, -294.83914)
+
+[node name="RoofArchWall" parent="Environment" unique_id=1615081284 instance=ExtResource("96_p40wb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 194.91815, 49.989006, -293.44122)
+
+[node name="TerraceParapet4m" parent="Environment" unique_id=1739412928 instance=ExtResource("97_uxdwr")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 193.1705, 49.989006, -292.25952)
+
+[node name="TerraceParapetCorner" parent="Environment" unique_id=1031079204 instance=ExtResource("98_rqaaa")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 192.30568, 49.989006, -294.85025)
+
+[node name="DoorExitFrame" parent="Environment" unique_id=1724060461 instance=ExtResource("99_kxd0e")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 198.09183, 49.989002, -295.78058)
+
+[node name="DoorExit" parent="Environment" unique_id=1002377739 instance=ExtResource("100_2ei8y")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 196.62753, 49.989006, -295.78177)
+
+[node name="ShutterPerforatedBroken" parent="Environment" unique_id=1170812364 instance=ExtResource("101_i7rcv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 194.1416, 49.989006, -297.11728)
 
 [node name="Geometry" type="Node3D" parent="." unique_id=2131234975]
 
@@ -7415,3 +7459,15 @@ steps = Array[ExtResource("223_6vmqi")]([SubResource("Resource_kxd0e")])
 trigger_size = Vector3(1, 1, 1)
 auto_consume_on_entry = false
 trigger_text = "EVENT SEQUENCE"
+
+[node name="TexturedGlassPreview" parent="." unique_id=479975154 instance=ExtResource("377_vpw5b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 216.64388, 50.189003, -299.80234)
+
+[node name="CzechHedgehog" parent="." unique_id=2142360717 instance=ExtResource("378_27yfn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 215.18127, 49.993645, -296.84772)
+
+[node name="WashingMachine" parent="." unique_id=1922309655 instance=ExtResource("379_27yfn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 217.45184, 49.989006, -298.07513)
+
+[node name="CageLight" parent="." unique_id=1965783616 instance=ExtResource("380_qt1sv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 215.90114, 52.322144, -301.26196)
