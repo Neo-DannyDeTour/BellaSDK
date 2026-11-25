@@ -1,0 +1,59 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://interactables/fence_door.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bgv6u4e4pj8bp" path="res://assets/models/fence_door/fence_door.glb" id="2_model"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="3_interact"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jamb"]
+size = Vector3(0.04, 2.1, 0.06)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_header"]
+size = Vector3(0.92, 0.04, 0.06)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leaf"]
+size = Vector3(0.904, 2.024, 0.05)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_touch"]
+size = Vector3(0.92, 2.02, 0.28)
+
+[node name="FenceDoor" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="FenceDoorModel" parent="." instance=ExtResource("2_model")]
+
+[node name="FrameBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="LeftJambCol" type="CollisionShape3D" parent="FrameBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.48, 1.05, 0)
+shape = SubResource("BoxShape3D_jamb")
+
+[node name="RightJambCol" type="CollisionShape3D" parent="FrameBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.48, 1.05, 0)
+shape = SubResource("BoxShape3D_jamb")
+
+[node name="TopHeaderCol" type="CollisionShape3D" parent="FrameBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.08, 0)
+shape = SubResource("BoxShape3D_header")
+
+[node name="DoorLeaf" type="AnimatableBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.46, 0, 0)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+
+[node name="LeafCollider" type="CollisionShape3D" parent="DoorLeaf"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.46, 1.04, 0)
+shape = SubResource("BoxShape3D_leaf")
+
+[node name="TouchArea" type="Area3D" parent="DoorLeaf"]
+collision_layer = 0
+collision_mask = 14
+
+[node name="TouchCollider" type="CollisionShape3D" parent="DoorLeaf/TouchArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.46, 1.04, 0)
+shape = SubResource("BoxShape3D_touch")
+
+[node name="InteractComponent" type="Node" parent="."]
+script = ExtResource("3_interact")
