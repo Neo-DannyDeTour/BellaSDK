@@ -1,0 +1,82 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/chipwood_sheet_osb_raw/chipwood_sheet_osb_raw.glb" id="1_raw_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/chipwood_sheet_osb_aged/chipwood_sheet_osb_aged.glb" id="2_aged_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/chipwood_sheet_particle_fine/chipwood_sheet_particle_fine.glb" id="3_fine_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/chipwood_crate/chipwood_crate.glb" id="4_crate_glb"]
+[ext_resource type="Material" path="res://assets/materials/chipwood_osb_raw/chipwood_osb_raw.tres" id="5_raw_mat"]
+[ext_resource type="Material" path="res://assets/materials/chipwood_osb_aged/chipwood_osb_aged.tres" id="6_aged_mat"]
+[ext_resource type="Material" path="res://assets/materials/chipwood_particle_fine/chipwood_particle_fine.tres" id="7_fine_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_sheet"]
+size = Vector3(1.22, 2.44, 0.018)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_crate"]
+size = Vector3(1, 1, 1)
+
+[node name="ChipwoodShowcase" type="Node3D"]
+
+[node name="SheetOsbRaw" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0, 0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SheetOsbRaw"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.22, 0)
+shape = SubResource("BoxShape3D_sheet")
+
+[node name="Model" parent="SheetOsbRaw" instance=ExtResource("1_raw_glb")]
+
+[node name="SheetMesh" parent="SheetOsbRaw/Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("5_raw_mat")
+
+[node name="SheetOsbAged" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 0, 0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SheetOsbAged"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.22, 0)
+shape = SubResource("BoxShape3D_sheet")
+
+[node name="Model" parent="SheetOsbAged" instance=ExtResource("2_aged_glb")]
+
+[node name="SheetMesh" parent="SheetOsbAged/Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("6_aged_mat")
+
+[node name="SheetParticleFine" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.0, 0, 0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SheetParticleFine"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.22, 0)
+shape = SubResource("BoxShape3D_sheet")
+
+[node name="Model" parent="SheetParticleFine" instance=ExtResource("3_fine_glb")]
+
+[node name="SheetMesh" parent="SheetParticleFine/Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("7_fine_mat")
+
+[node name="ChipwoodCrate" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, 0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ChipwoodCrate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_crate")
+
+[node name="Model" parent="ChipwoodCrate" instance=ExtResource("4_crate_glb")]
+
+[node name="CrateMesh" parent="ChipwoodCrate/Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("6_aged_mat")
+
+[editable path="SheetOsbRaw/Model"]
+[editable path="SheetOsbAged/Model"]
+[editable path="SheetParticleFine/Model"]
+[editable path="ChipwoodCrate/Model"]

@@ -1,0 +1,13 @@
+[gd_resource type="ORMMaterial3D" format=3 uid="uid://c83wmmwtcn0o8"]
+
+[ext_resource type="Texture2D" uid="uid://d1xq0exolk474" path="res://assets/materials/chipwood_osb_aged/textures/chipwood_osb_aged_albedo.png" id="1_albedo"]
+[ext_resource type="Texture2D" uid="uid://b2vtqarvcc3bu" path="res://assets/materials/chipwood_osb_aged/textures/chipwood_osb_aged_orm.png" id="2_orm"]
+[ext_resource type="Texture2D" uid="uid://du6p6erab23p5" path="res://assets/materials/chipwood_osb_aged/textures/chipwood_osb_aged_normal.png" id="3_normal"]
+
+[resource]
+resource_name = "chipwood_osb_aged"
+albedo_texture = ExtResource("1_albedo")
+orm_texture = ExtResource("2_orm")
+normal_enabled = true
+normal_scale = 0.3
+normal_texture = ExtResource("3_normal")

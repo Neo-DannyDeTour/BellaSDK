@@ -1,0 +1,14 @@
+[gd_resource type="ORMMaterial3D" format=3 uid="uid://ibigmrdowabk"]
+
+[ext_resource type="Texture2D" uid="uid://da54muarx2w58" path="res://assets/materials/plywood/textures/plywood_albedo.png" id="1_albedo"]
+[ext_resource type="Texture2D" uid="uid://cjen4tpa7u3gw" path="res://assets/materials/plywood/textures/plywood_orm.png" id="2_orm"]
+[ext_resource type="Texture2D" uid="uid://cdaetabgti3pk" path="res://assets/materials/plywood/textures/plywood_normal.png" id="3_normal"]
+
+[resource]
+resource_name = "plywood"
+albedo_texture = ExtResource("1_albedo")
+orm_texture = ExtResource("2_orm")
+normal_enabled = true
+normal_scale = 0.09
+normal_texture = ExtResource("3_normal")
+uv1_triplanar = true
