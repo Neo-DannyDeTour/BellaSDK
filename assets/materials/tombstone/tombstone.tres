@@ -1,0 +1,20 @@
+[gd_resource type="ShaderMaterial" load_steps=5 format=3]
+
+[ext_resource type="Shader" uid="uid://dmd24aom8tmly" path="res://shaders/tombstone.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" uid="uid://b7jc43wl8su3l" path="res://assets/materials/tombstone/textures/tombstone_albedo.png" id="2_albedo"]
+[ext_resource type="Texture2D" uid="uid://boq3c6fm7nbu0" path="res://assets/materials/tombstone/textures/tombstone_normal.png" id="3_normal"]
+[ext_resource type="Texture2D" uid="uid://dcfgpd6w5b3l" path="res://assets/materials/tombstone/textures/tombstone_orm.png" id="4_orm"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/albedo_tex = ExtResource("2_albedo")
+shader_parameter/normal_tex = ExtResource("3_normal")
+shader_parameter/orm_tex = ExtResource("4_orm")
+shader_parameter/stone_uv_scale = Vector2(1.5, 2.2)
+shader_parameter/stone_tint = Color(0.88, 0.86, 0.82, 1)
+shader_parameter/grime_color = Color(0.08, 0.07, 0.06, 1)
+shader_parameter/gold_color = Color(0.72, 0.6, 0.26, 1)
+shader_parameter/emblem_center = Vector2(0.5, 0.68)
+shader_parameter/emblem_radius = 0.22
+shader_parameter/normal_strength = 0.85
