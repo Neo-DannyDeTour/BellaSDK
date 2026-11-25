@@ -1,0 +1,31 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://props/construction/concrete_pipe.tscn" id="1_pipe"]
+
+[node name="ConcretePipeX9" type="Node3D"]
+
+[node name="Pipe_L1_1" parent="." instance=ExtResource("1_pipe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0, -2.88)
+
+[node name="Pipe_L1_2" parent="." instance=ExtResource("1_pipe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0, 0)
+
+[node name="Pipe_L1_3" parent="." instance=ExtResource("1_pipe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0, 2.88)
+
+[node name="Pipe_L2_1" parent="." instance=ExtResource("1_pipe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.88)
+
+[node name="Pipe_L2_2" parent="." instance=ExtResource("1_pipe")]
+
+[node name="Pipe_L2_3" parent="." instance=ExtResource("1_pipe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.88)
+
+[node name="Pipe_L3_1" parent="." instance=ExtResource("1_pipe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, -2.88)
+
+[node name="Pipe_L3_2" parent="." instance=ExtResource("1_pipe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, 0)
+
+[node name="Pipe_L3_3" parent="." instance=ExtResource("1_pipe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, 2.88)

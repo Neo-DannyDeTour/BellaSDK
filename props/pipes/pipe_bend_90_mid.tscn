@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://dk7ib1cirabu6" path="res://assets/models/pipes/pipe_bend_90_mid.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="2_mat"]
+
+[node name="PipeBend90Mid" instance=ExtResource("1_glb")]
+
+[node name="col" parent="." index="0"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="pipe_bend_90_mid" parent="." index="1"]
+layers = 1
+surface_material_override/0 = ExtResource("2_mat")

@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://dsxr55quu5af8" path="res://assets/models/props/concrete_pipe/concrete_pipe.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/weathered_concrete/weathered_concrete.tres" id="2_concrete"]
+
+[node name="ConcretePipe" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="concrete_pipe" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_concrete")
+
+[editable path="Model"]
