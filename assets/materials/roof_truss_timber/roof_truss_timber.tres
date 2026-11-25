@@ -1,15 +1,13 @@
-[gd_resource type="ORMMaterial3D" load_steps=4 format=3]
+[gd_resource type="ORMMaterial3D" format=3 uid="uid://bwbmi6ei36seb"]
 
-[ext_resource type="Texture2D" path="res://assets/materials/roof_truss_timber/textures/roof_truss_timber_albedo.png" id="1_albedo"]
-[ext_resource type="Texture2D" path="res://assets/materials/roof_truss_timber/textures/roof_truss_timber_orm.png" id="2_orm"]
-[ext_resource type="Texture2D" path="res://assets/materials/roof_truss_timber/textures/roof_truss_timber_normal.png" id="3_normal"]
+[ext_resource type="Texture2D" uid="uid://cl0eeti7e0y4d" path="res://assets/materials/roof_truss_timber/textures/roof_truss_timber_albedo.png" id="1_albedo"]
+[ext_resource type="Texture2D" uid="uid://bckxtg2kx2wg1" path="res://assets/materials/roof_truss_timber/textures/roof_truss_timber_orm.png" id="2_orm"]
+[ext_resource type="Texture2D" uid="uid://ck3jpwpokqwjx" path="res://assets/materials/roof_truss_timber/textures/roof_truss_timber_normal.png" id="3_normal"]
 
 [resource]
 resource_name = "roof_truss_timber"
 albedo_texture = ExtResource("1_albedo")
 orm_texture = ExtResource("2_orm")
-roughness = 1.0
-metallic = 1.0
 normal_enabled = true
+normal_scale = 0.1
 normal_texture = ExtResource("3_normal")
-uv1_scale = Vector3(1.0, 1.0, 1.0)
