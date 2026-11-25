@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" uid="uid://2av4lrruiple" path="res://props/tombstone/tombstone.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c7kudq2du46xj" path="res://assets/models/props/tombstone/tombstone.glb" id="2_glb"]
+[ext_resource type="Material" path="res://assets/materials/tombstone/tombstone.tres" id="3_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_tombstone"]
+size = Vector3(0.8, 1.4, 0.25)
+
+[node name="TombstoneProp" type="StaticBody3D" node_paths=PackedStringArray("target_mesh")]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_script")
+target_mesh = NodePath("TombstoneModel/TombstoneMesh")
+
+[node name="TombstoneModel" parent="." instance=ExtResource("2_glb")]
+
+[node name="TombstoneMesh" parent="TombstoneModel" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("3_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("BoxShape3D_tombstone")
+
+[editable path="TombstoneModel"]
