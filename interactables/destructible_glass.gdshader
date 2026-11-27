@@ -13,6 +13,7 @@ uniform float base_roughness : hint_range(0.0, 1.0) = 0.06;
 instance uniform float is_armored : hint_range(0.0, 1.0) = 0.0;
 instance uniform float crack_intensity : hint_range(0.0, 1.0) = 0.0;
 instance uniform vec2 impact_uv = vec2(0.5, 0.5);
+instance uniform float use_vertex_crack : hint_range(0.0, 1.0) = 0.0;
 
 vec2 hash22(vec2 p) {
 	vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
@@ -60,13 +61,16 @@ vec2 wire_cage_mask(vec2 uv, float density, float thickness) {
 }
 
 void fragment() {
+	float active_crack = (use_vertex_crack > 0.5) ? COLOR.r : crack_intensity;
+	vec2 active_impact_uv = (use_vertex_crack > 0.5) ? COLOR.gb : impact_uv;
+
 	float crack_line = 0.0;
 	float shard_frost = 0.0;
 	vec2 normal_perturb = vec2(0.0);
 
-	if (crack_intensity > 0.001) {
-		float impact_dist = distance(UV, impact_uv);
-		float radius = crack_intensity * 0.85;
+	if (active_crack > 0.001) {
+		float impact_dist = distance(UV, active_impact_uv);
+		float radius = active_crack * 0.85;
 		float radial_mask = 1.0 - smoothstep(radius * 0.35, radius + 0.08, impact_dist);
 
 		vec3 v_primary = voronoi_cracks(UV, 14.0);
@@ -78,7 +82,7 @@ void fragment() {
 		float radial_ring = (1.0 - smoothstep(0.0, 0.12, ring_wave)) * radial_mask * 0.6;
 
 		crack_line = clamp((primary_edge + fine_edge * 0.7 + radial_ring) * radial_mask, 0.0, 1.0);
-		shard_frost = clamp((1.0 - smoothstep(0.0, 0.09, impact_dist)) * crack_intensity, 0.0, 1.0);
+		shard_frost = clamp((1.0 - smoothstep(0.0, 0.09, impact_dist)) * active_crack, 0.0, 1.0);
 
 		vec2 shard_rand = (hash22(v_primary.yz) - 0.5) * 2.0;
 		normal_perturb = shard_rand * crack_line * 0.35;

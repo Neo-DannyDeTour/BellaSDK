@@ -6,6 +6,12 @@
 class_name PhysicsCable3D
 extends Node3D
 
+## Squared per-tick particle movement threshold below which cable counts as settled.
+const SETTLE_EPSILON_SQ: float = 0.000001
+
+## Consecutive settled physics ticks required before sleeping Verlet simulation.
+const SETTLE_FRAME_THRESHOLD: int = 12
+
 @export_category("Cable Connections")
 ## Starting anchor [Node3D] point where the cable originates.
 @export var start_anchor: Node3D
@@ -64,9 +70,7 @@ extends Node3D
 			print("PhysicsCable3D: show_debug_sphere toggled to ", show_debug_sphere)
 
 ## Editor-only placeholder icon node.
-@onready var _editor_icon: Node3D = (
-	get_node_or_null("%EditorIcon") if get_node_or_null("%EditorIcon") is Node3D else null
-)
+@onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon") as Node3D
 
 ## Current world-space positions of simulated Verlet particles.
 var _positions: PackedVector3Array = PackedVector3Array()
@@ -101,6 +105,9 @@ var _segment_length: float = 0.2
 ## Total count of simulated particle points along the cable.
 var _point_count: int = 0
 
+## Consecutive physics ticks where all cable endpoints and particles remained settled.
+var _settle_frames: int = 0
+
 
 ## Initializes simulation particles, batched mesh instances, or editor debug helpers.
 func _ready() -> void:
@@ -110,8 +117,28 @@ func _ready() -> void:
 			_editor_icon.queue_free()
 
 		_setup_cable_system()
+		if is_instance_valid(end_plug):
+			Utilities.safe_connect(end_plug.sleeping_state_changed, _on_endpoint_sleeping_changed)
+		if start_anchor is RigidBody3D:
+			var start_rb: RigidBody3D = start_anchor as RigidBody3D
+			Utilities.safe_connect(start_rb.sleeping_state_changed, _on_endpoint_sleeping_changed)
 	else:
 		_setup_debug_sphere()
+
+
+## Disconnects endpoint sleep listeners when exiting the scene tree.
+func _exit_tree() -> void:
+	if Engine.is_editor_hint():
+		return
+	if (
+		is_instance_valid(end_plug)
+		and end_plug.sleeping_state_changed.is_connected(_on_endpoint_sleeping_changed)
+	):
+		end_plug.sleeping_state_changed.disconnect(_on_endpoint_sleeping_changed)
+	if start_anchor is RigidBody3D:
+		var start_rb: RigidBody3D = start_anchor as RigidBody3D
+		if start_rb.sleeping_state_changed.is_connected(_on_endpoint_sleeping_changed):
+			start_rb.sleeping_state_changed.disconnect(_on_endpoint_sleeping_changed)
 
 
 ## Updates editor debug visuals or propagates cable transforms to the GPU instance buffer.
@@ -136,6 +163,11 @@ func _physics_process(delta: float) -> void:
 
 	var start_pos: Vector3 = start_anchor.global_position
 	var end_pos: Vector3 = end_plug.global_position
+	var max_move_sq: float = maxf(
+		start_pos.distance_squared_to(_last_start_pos), end_pos.distance_squared_to(_last_end_pos)
+	)
+	_last_start_pos = start_pos
+	_last_end_pos = end_pos
 
 	var last_idx: int = _point_count - 1
 	_positions[0] = start_pos
@@ -146,7 +178,9 @@ func _physics_process(delta: float) -> void:
 		var current: Vector3 = _positions[i]
 		var vel: Vector3 = (current - _prev_positions[i]) * damping
 		_prev_positions[i] = current
-		_positions[i] = current + vel + (gravity * dt_sq)
+		var next_pos: Vector3 = current + vel + (gravity * dt_sq)
+		_positions[i] = next_pos
+		max_move_sq = maxf(max_move_sq, current.distance_squared_to(next_pos))
 
 	for iter: int in range(constraint_iterations):
 		_positions[0] = start_pos
@@ -173,6 +207,32 @@ func _physics_process(delta: float) -> void:
 		var stretch: float = total_dist - cable_length_meters
 		var pull_dir: Vector3 = (start_pos - end_pos).normalized()
 		end_plug.apply_central_force(pull_dir * (stretch * tension_force))
+
+	var start_sleeping: bool = true
+	if start_anchor is RigidBody3D:
+		start_sleeping = (start_anchor as RigidBody3D).sleeping
+
+	if end_plug.sleeping and start_sleeping and max_move_sq <= SETTLE_EPSILON_SQ:
+		_settle_frames += 1
+		if _settle_frames >= SETTLE_FRAME_THRESHOLD:
+			if _point_count >= 2 and is_instance_valid(_multimesh):
+				_update_multimesh_transforms()
+			set_physics_process(false)
+			set_process(false)
+	else:
+		_settle_frames = 0
+
+
+## Wakes Verlet simulation and MultiMesh transform updates when an endpoint body wakes.
+func _on_endpoint_sleeping_changed() -> void:
+	var plug_awake: bool = is_instance_valid(end_plug) and not end_plug.sleeping
+	var start_awake: bool = (
+		start_anchor is RigidBody3D and not (start_anchor as RigidBody3D).sleeping
+	)
+	if plug_awake or start_awake:
+		_settle_frames = 0
+		set_physics_process(true)
+		set_process(true)
 
 
 ## Configures cable particle positions and initializes the [MultiMeshInstance3D].

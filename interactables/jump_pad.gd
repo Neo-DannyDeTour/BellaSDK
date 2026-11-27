@@ -107,7 +107,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var active_target: Node3D = assigned_target
 	if not is_instance_valid(active_target):
-		active_target = get_node_or_null("Target") as Node3D
+		if not is_instance_valid(_target_node):
+			_target_node = get_node_or_null("Target") as Node3D
+		active_target = _target_node
 
 	if is_instance_valid(active_target):
 		var has_pad_moved: bool = global_position != _last_start_pos

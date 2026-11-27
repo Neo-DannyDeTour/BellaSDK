@@ -54,6 +54,9 @@ var _last_cam_transform: Transform3D = Transform3D()
 ## Frame-skipping flag to throttle update frequency to 30 FPS.
 var _skip_frame: bool = false
 
+## Pre-allocated scratch array for pruning tracked bodies without per-tick heap allocs.
+var _erase_scratch: Array[Node3D] = []
+
 
 ## Restores original camera environment and disconnects global signals on exit tree.
 func _exit_tree() -> void:
@@ -283,10 +286,10 @@ func _physics_process(_delta: float) -> void:
 		set_physics_process(false)
 		return
 
-	var to_erase: Array[Node3D] = []
+	_erase_scratch.clear()
 	for tracked_body: Node3D in _tracked_bodies.keys():
 		if not is_instance_valid(tracked_body):
-			to_erase.append(tracked_body)
+			_erase_scratch.append(tracked_body)
 			continue
 
 		var current_side: float = _get_side(tracked_body.global_position)
@@ -294,11 +297,11 @@ func _physics_process(_delta: float) -> void:
 
 		if signf(current_side) != signf(previous_side):
 			_teleport_body(tracked_body)
-			to_erase.append(tracked_body)
+			_erase_scratch.append(tracked_body)
 		else:
 			_tracked_bodies[tracked_body] = current_side
 
-	for dead_body: Node3D in to_erase:
+	for dead_body: Node3D in _erase_scratch:
 		_tracked_bodies.erase(dead_body)
 
 	if _tracked_bodies.is_empty():

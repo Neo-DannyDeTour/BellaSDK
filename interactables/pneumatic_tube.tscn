@@ -23,19 +23,8 @@ outer_radius = 1.5
 wall_thickness = 0.08
 exit_launch_speed = 28.0
 
-[node name="TubeMesh" type="CSGPolygon3D" parent="." unique_id=2097655995]
-mode = 2
-path_node = NodePath("..")
-path_interval_type = 0
-path_interval = 0.5
-path_simplify_angle = 0.0
-path_rotation = 1
-path_rotation_accurate = false
-path_local = true
-path_continuous_u = true
-path_u_distance = 1.0
-path_joined = false
-material = SubResource("ShaderMaterial_bs8jf")
+[node name="TubeMesh" type="MeshInstance3D" parent="." unique_id=2097655995]
+material_override = SubResource("ShaderMaterial_bs8jf")
 
 [node name="IntakeArea" type="Area3D" parent="." unique_id=1114816217]
 collision_layer = 0

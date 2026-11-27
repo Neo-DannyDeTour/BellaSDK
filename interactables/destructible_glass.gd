@@ -21,6 +21,9 @@ const PARAM_CRACK_INTENSITY: StringName = &"crack_intensity"
 ## Per-instance shader uniform storing normalized UV coordinates of impact.
 const PARAM_IMPACT_UV: StringName = &"impact_uv"
 
+## Per-instance shader uniform reading per-shard crack state from vertex COLOR.
+const PARAM_USE_VERTEX_CRACK: StringName = &"use_vertex_crack"
+
 ## Half-thickness of glass physics colliders in meters.
 const GLASS_HALF_THICKNESS: float = 0.02
 
@@ -81,8 +84,11 @@ var _impact_uv: Vector2 = Vector2(0.5, 0.5)
 ## Active [Tween] interpolating intact fracture shader parameter.
 var _crack_tween: Tween = null
 
-## Container node holding generated [MeshInstance3D] shard visuals.
-var _shards_root: Node3D = null
+## Single batched [MeshInstance3D] rendering all surviving Voronoi shards.
+var _shards_mesh_inst: MeshInstance3D = null
+
+## Cached base glass material shared across merged shard and debris meshes.
+var _shards_base_mat: Material = null
 
 ## Generated Voronoi shard records; each entry is a typed Dictionary.
 var _shards: Array[Dictionary] = []
@@ -231,17 +237,13 @@ func repair_glass() -> void:
 	print("DestructibleGlass: repaired")
 
 
-## Syncs [member mode] to the per-instance shader uniform on intact quad and shards.
+## Syncs [member mode] to the per-instance shader uniform on intact quad and merged shards.
 func _sync_mode_uniform() -> void:
 	var armored_val: float = 1.0 if mode == GlassMode.ARMORED else 0.0
 	if is_instance_valid(_glass_quad):
 		_glass_quad.set_instance_shader_parameter(PARAM_IS_ARMORED, armored_val)
-	for shard: Dictionary in _shards:
-		var mesh_obj: Variant = shard.get(&"mesh", null)
-		if mesh_obj is MeshInstance3D:
-			var mi: MeshInstance3D = mesh_obj as MeshInstance3D
-			if is_instance_valid(mi):
-				mi.set_instance_shader_parameter(PARAM_IS_ARMORED, armored_val)
+	if is_instance_valid(_shards_mesh_inst):
+		_shards_mesh_inst.set_instance_shader_parameter(PARAM_IS_ARMORED, armored_val)
 
 
 ## Resizes quad mesh, physics shapes, and particle emission bounds to match [member size].
@@ -364,6 +366,7 @@ func _fracture_at(world_pos: Vector3, hit_dir: Vector3, hit_radius: float) -> vo
 		_remove_shard(idx, spawn_debris, impulse_dir)
 
 	_apply_radial_cracks(local_xy, hit_radius * 2.5)
+	_rebuild_merged_shards_mesh()
 
 	if get_alive_shard_count() <= 0 and is_instance_valid(_impact_area):
 		_impact_area.set_deferred(&"monitoring", false)
@@ -378,7 +381,7 @@ func _fracture_at(world_pos: Vector3, hit_dir: Vector3, hit_radius: float) -> vo
 		glass_broken.emit(world_pos, hit_dir)
 
 
-## Builds Voronoi shard meshes and per-shard convex colliders, hiding intact quad/collider.
+## Builds merged Voronoi shard mesh and per-shard convex colliders, hiding intact quad/collider.
 func _subdivide_into_shards(focus_xy: Vector2) -> void:
 	_is_subdivided = true
 	if is_instance_valid(_glass_quad):
@@ -386,15 +389,21 @@ func _subdivide_into_shards(focus_xy: Vector2) -> void:
 	if is_instance_valid(_collision_shape):
 		_collision_shape.set_deferred(&"disabled", true)
 
-	_shards_root = Node3D.new()
-	_shards_root.name = &"ShardsRoot"
-	add_child(_shards_root)
+	_shards_mesh_inst = MeshInstance3D.new()
+	_shards_mesh_inst.name = &"ShardsMesh"
+	_shards_mesh_inst.layers = CollisionLayers.RENDER_MASK_INTERACTIVE
+	_shards_mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_shards_mesh_inst.set_instance_shader_parameter(
+		PARAM_IS_ARMORED, 1.0 if mode == GlassMode.ARMORED else 0.0
+	)
+	_shards_mesh_inst.set_instance_shader_parameter(PARAM_USE_VERTEX_CRACK, 1.0)
+	add_child(_shards_mesh_inst)
 
 	var seeds: PackedVector2Array = _generate_voronoi_seeds(focus_xy)
 	var half_size: Vector2 = size * 0.5
-	var base_mat: Material = null
+	_shards_base_mat = null
 	if is_instance_valid(_glass_quad) and is_instance_valid(_glass_quad.mesh):
-		base_mat = _glass_quad.mesh.surface_get_material(0)
+		_shards_base_mat = _glass_quad.mesh.surface_get_material(0)
 
 	var polys: Array[PackedVector2Array] = []
 	for i: int in range(seeds.size()):
@@ -404,10 +413,11 @@ func _subdivide_into_shards(focus_xy: Vector2) -> void:
 
 	_shards.clear()
 	for poly: PackedVector2Array in polys:
-		var shard: Dictionary = _create_shard_entry(poly, half_size, base_mat)
+		var shard: Dictionary = _create_shard_entry(poly, half_size)
 		_shards.append(shard)
 
 	_build_shard_adjacency()
+	_rebuild_merged_shards_mesh()
 
 
 ## Generates jittered grid seeds plus radial seeds around [param focus_xy] for organic shards.
@@ -496,10 +506,8 @@ func _clip_polygon_half_plane(
 	return out
 
 
-## Instantiates mesh, collider, and metadata dictionary for a single Voronoi polygon shard.
-func _create_shard_entry(
-	poly: PackedVector2Array, half_size: Vector2, base_mat: Material
-) -> Dictionary:
+## Creates collider and metadata dictionary for a single Voronoi polygon shard.
+func _create_shard_entry(poly: PackedVector2Array, half_size: Vector2) -> Dictionary:
 	var center: Vector2 = Vector2.ZERO
 	var is_perimeter: bool = false
 	for v: Vector2 in poly:
@@ -507,16 +515,6 @@ func _create_shard_entry(
 		if absf(v.x) >= half_size.x - 0.003 or absf(v.y) >= half_size.y - 0.003:
 			is_perimeter = true
 	center /= float(poly.size())
-
-	var shard_mesh: ArrayMesh = _build_shard_array_mesh(poly, base_mat)
-	var mesh_inst: MeshInstance3D = MeshInstance3D.new()
-	mesh_inst.mesh = shard_mesh
-	mesh_inst.layers = CollisionLayers.RENDER_MASK_INTERACTIVE
-	mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mesh_inst.set_instance_shader_parameter(PARAM_IS_ARMORED, 0.0)
-	mesh_inst.set_instance_shader_parameter(PARAM_CRACK_INTENSITY, _crack_intensity)
-	mesh_inst.set_instance_shader_parameter(PARAM_IMPACT_UV, _impact_uv)
-	_shards_root.add_child(mesh_inst)
 
 	var col_shape: CollisionShape3D = CollisionShape3D.new()
 	col_shape.shape = _build_shard_convex_shape(poly)
@@ -530,10 +528,76 @@ func _create_shard_entry(
 		&"neighbors": empty_neighbors,
 		&"alive": true,
 		&"crack": _crack_intensity,
-		&"mesh": mesh_inst,
+		&"impact_uv": _impact_uv,
 		&"col": col_shape,
-		&"array_mesh": shard_mesh
 	}
+
+
+## Rebuilds the single merged [ArrayMesh] for all alive Voronoi shards in one draw call.
+func _rebuild_merged_shards_mesh() -> void:
+	if not is_instance_valid(_shards_mesh_inst):
+		return
+
+	var verts: PackedVector3Array = PackedVector3Array()
+	var normals: PackedVector3Array = PackedVector3Array()
+	var tangents: PackedFloat32Array = PackedFloat32Array()
+	var uvs: PackedVector2Array = PackedVector2Array()
+	var colors: PackedColorArray = PackedColorArray()
+	var indices: PackedInt32Array = PackedInt32Array()
+
+	for shard: Dictionary in _shards:
+		if not bool(shard.get(&"alive", false)):
+			continue
+		var poly_raw: Variant = shard.get(&"poly", PackedVector2Array())
+		if not (poly_raw is PackedVector2Array):
+			continue
+		var poly: PackedVector2Array = poly_raw as PackedVector2Array
+		if poly.size() < 3:
+			continue
+
+		var crack_raw: Variant = shard.get(&"crack", 0.0)
+		var shard_crack: float = crack_raw if crack_raw is float else 0.0
+		var uv_raw: Variant = shard.get(&"impact_uv", Vector2(0.5, 0.5))
+		var shard_uv: Vector2 = uv_raw if uv_raw is Vector2 else Vector2(0.5, 0.5)
+		var vert_color: Color = Color(shard_crack, shard_uv.x, shard_uv.y, 1.0)
+		var base_idx: int = verts.size()
+
+		for v: Vector2 in poly:
+			verts.append(Vector3(v.x, v.y, 0.0))
+			normals.append(Vector3.BACK)
+			tangents.append(1.0)
+			tangents.append(0.0)
+			tangents.append(0.0)
+			tangents.append(1.0)
+			uvs.append(_local_to_uv(v))
+			colors.append(vert_color)
+
+		for k: int in range(1, poly.size() - 1):
+			indices.append(base_idx)
+			indices.append(base_idx + k + 1)
+			indices.append(base_idx + k)
+
+	if indices.is_empty():
+		_shards_mesh_inst.visible = false
+		_shards_mesh_inst.mesh = null
+		return
+
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_TANGENT] = tangents
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = indices
+
+	var arr_mesh: ArrayMesh = ArrayMesh.new()
+	arr_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	if is_instance_valid(_shards_base_mat):
+		arr_mesh.surface_set_material(0, _shards_base_mat)
+
+	_shards_mesh_inst.mesh = arr_mesh
+	_shards_mesh_inst.visible = true
 
 
 ## Builds an [ArrayMesh] with front-facing normals, tangents, and pane-aligned UVs.
@@ -674,18 +738,11 @@ func _collect_floating_shards() -> Array[int]:
 	return floating
 
 
-## Frees shard visual/collider and optionally spawns falling [RigidBody3D] debris.
+## Frees shard collider and optionally spawns falling [RigidBody3D] debris.
 func _remove_shard(idx: int, spawn_debris: bool, impulse_dir: Vector3) -> void:
 	var shard: Dictionary = _shards[idx]
 	if spawn_debris:
 		_spawn_shard_debris(shard, impulse_dir)
-
-	var mesh_raw: Variant = shard.get(&"mesh", null)
-	if mesh_raw is MeshInstance3D:
-		var mi: MeshInstance3D = mesh_raw as MeshInstance3D
-		if is_instance_valid(mi):
-			mi.queue_free()
-	shard[&"mesh"] = null
 
 	var col_raw: Variant = shard.get(&"col", null)
 	if col_raw is CollisionShape3D:
@@ -702,13 +759,14 @@ func _spawn_shard_debris(shard: Dictionary, impulse_dir: Vector3) -> void:
 	if not is_instance_valid(host) or not is_inside_tree():
 		return
 
-	var arr_mesh_raw: Variant = shard.get(&"array_mesh", null)
 	var poly_raw: Variant = shard.get(&"poly", PackedVector2Array())
-	if not (arr_mesh_raw is ArrayMesh) or not (poly_raw is PackedVector2Array):
+	if not (poly_raw is PackedVector2Array):
 		return
 
-	var arr_mesh: ArrayMesh = arr_mesh_raw as ArrayMesh
 	var poly: PackedVector2Array = poly_raw as PackedVector2Array
+	if poly.size() < 3:
+		return
+	var arr_mesh: ArrayMesh = _build_shard_array_mesh(poly, _shards_base_mat)
 	var center_raw: Variant = shard.get(&"center", Vector2.ZERO)
 	var center: Vector2 = center_raw if center_raw is Vector2 else Vector2.ZERO
 
@@ -742,7 +800,7 @@ func _spawn_shard_debris(shard: Dictionary, impulse_dir: Vector3) -> void:
 	timer.timeout.connect(body.queue_free)
 
 
-## Increases crack shader uniform on surviving shards within [param crack_radius].
+## Increases crack state on surviving shards within [param crack_radius].
 func _apply_radial_cracks(local_xy: Vector2, crack_radius: float) -> void:
 	var impact_uv: Vector2 = _local_to_uv(local_xy)
 	var r_sq: float = crack_radius * crack_radius
@@ -759,19 +817,15 @@ func _apply_radial_cracks(local_xy: Vector2, crack_radius: float) -> void:
 		var cur_crack: float = cur_crack_raw if cur_crack_raw is float else 0.0
 		var next_crack: float = clampf(cur_crack + 0.4 + 0.55 * falloff, 0.0, 1.0)
 		shard[&"crack"] = next_crack
-		var mesh_raw: Variant = shard.get(&"mesh", null)
-		if mesh_raw is MeshInstance3D:
-			var mi: MeshInstance3D = mesh_raw as MeshInstance3D
-			if is_instance_valid(mi):
-				mi.set_instance_shader_parameter(PARAM_IMPACT_UV, impact_uv)
-				mi.set_instance_shader_parameter(PARAM_CRACK_INTENSITY, next_crack)
+		shard[&"impact_uv"] = impact_uv
 
 
-## Frees all generated shard meshes, collision shapes, and container node.
+## Frees all generated shard colliders, merged mesh node, and cached metadata.
 func _clear_shards() -> void:
 	for i: int in range(_shards.size()):
 		_remove_shard(i, false, Vector3.ZERO)
 	_shards.clear()
-	if is_instance_valid(_shards_root):
-		_shards_root.queue_free()
-	_shards_root = null
+	if is_instance_valid(_shards_mesh_inst):
+		_shards_mesh_inst.queue_free()
+	_shards_mesh_inst = null
+	_shards_base_mat = null
