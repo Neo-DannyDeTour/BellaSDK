@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/decals/garage/oil_slick.png" id="1_tex"]
+
+[node name="DecalOilSlick" type="Decal"]
+size = Vector3(1.6, 0.4, 1.6)
+texture_albedo = ExtResource("1_tex")
+modulate = Color(0.15, 0.14, 0.13, 0.88)
+upper_fade = 0.2
+lower_fade = 0.2
+cull_mask = 1

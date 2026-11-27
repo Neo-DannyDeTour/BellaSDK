@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/garage_debris/red_door_indicator.glb" id="1_glb"]
+
+[node name="RedDoorIndicator" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="RedGlow" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0.12)
+light_color = Color(1, 0.08, 0.05, 1)
+light_energy = 1.6
+shadow_enabled = false
+omni_range = 3.2

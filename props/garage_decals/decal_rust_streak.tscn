@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/decals/garage/rust_streak.png" id="1_tex"]
+
+[node name="DecalRustStreak" type="Decal"]
+size = Vector3(1.4, 0.4, 2.0)
+texture_albedo = ExtResource("1_tex")
+modulate = Color(0.72, 0.44, 0.26, 0.78)
+upper_fade = 0.2
+lower_fade = 0.2
+cull_mask = 1

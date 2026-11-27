@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/garage_structure/broken_metal_stairs_lshape.glb" id="1_glb"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_upper"]
+size = Vector3(1.24, 0.22, 2.55)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lower"]
+size = Vector3(1.24, 0.22, 1.25)
+
+[node name="BrokenMetalStairsLShape" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="Col_UpperRamp" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.71, -0.704, 0, 0.704, 0.71, 0, 1.12, 0.6)
+shape = SubResource("BoxShape3D_upper")
+
+[node name="Col_LowerCollapsed" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.14, -0.9)
+shape = SubResource("BoxShape3D_lower")

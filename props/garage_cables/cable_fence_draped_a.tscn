@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/garage_cables/cable_fence_draped_a.glb" id="1_glb"]
+
+[node name="CableFenceDrapedA" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]

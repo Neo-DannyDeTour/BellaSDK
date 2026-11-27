@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/decals/garage/wall_grime.png" id="1_tex"]
+
+[node name="DecalWallGrime" type="Decal"]
+size = Vector3(2.4, 0.5, 2.2)
+texture_albedo = ExtResource("1_tex")
+modulate = Color(0.28, 0.3, 0.24, 0.72)
+upper_fade = 0.2
+lower_fade = 0.2
+cull_mask = 1
