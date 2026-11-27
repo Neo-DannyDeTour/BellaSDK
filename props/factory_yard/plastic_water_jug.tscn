@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/factory_yard/plastic_water_jug.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/hdpe_weathered_plastic/hdpe_weathered_plastic.tres" id="2_hdpe"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jug"]
+size = Vector3(0.19, 0.38, 0.15)
+
+[node name="PlasticWaterJug" type="RigidBody3D"]
+collision_layer = 4
+collision_mask = 7
+mass = 1.2
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="plastic_water_jug" parent="Model" index="0"]
+layers = 4
+surface_material_override/0 = ExtResource("2_hdpe")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_jug")
+
+[editable path="Model"]

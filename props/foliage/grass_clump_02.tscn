@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/foliage/grass_clump_02.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/foliage_weeds_atlas/foliage_weeds_atlas.tres" id="2_weeds"]
+
+[node name="GrassClump02" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="grass_clump_02" parent="Model" index="0"]
+layers = 1
+cast_shadow = 0
+surface_material_override/0 = ExtResource("2_weeds")
+
+[editable path="Model"]

@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://props/construction/roadblock.tscn" id="1_roadblock"]
+[ext_resource type="PackedScene" path="res://assets/models/roadblock_flag/roadblock_flag.glb" id="2_flag_glb"]
+[ext_resource type="Material" path="res://assets/models/roadblock_flag/roadblock_flag.tres" id="3_flag_mat"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_post"]
+height = 1.35
+radius = 0.028
+
+[node name="RoadblockFlag" type="Node3D"]
+
+[node name="Roadblock" parent="." instance=ExtResource("1_roadblock")]
+
+[node name="FlagModel" parent="." instance=ExtResource("2_flag_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9125, 0)
+
+[node name="RoadblockFlag" parent="FlagModel" index="0"]
+layers = 4
+surface_material_override/0 = ExtResource("3_flag_mat")
+
+[node name="PostBody" type="StaticBody3D" parent="."]
+collision_layer = 4
+collision_mask = 0
+
+[node name="PostCollision" type="CollisionShape3D" parent="PostBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5875, 0)
+shape = SubResource("CylinderShape3D_post")
+
+[editable path="FlagModel"]

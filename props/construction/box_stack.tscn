@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://props/construction/cardboard_boxes.tscn" id="1_boxes"]
+
+[node name="BoxStack" type="Node3D"]
+
+[node name="Boxes_Base_1" parent="." instance=ExtResource("1_boxes")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.34, 0, 0)
+
+[node name="Boxes_Base_2" parent="." instance=ExtResource("1_boxes")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.34, 0, 0)
+
+[node name="Boxes_Base_3" parent="." instance=ExtResource("1_boxes")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, -0.6)
+
+[node name="Boxes_Top_1" parent="." instance=ExtResource("1_boxes")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0.654, 0)

@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://props/construction/brick_palette_stack.tscn" id="1_brick"]
+
+[node name="BrickStack" type="Node3D"]
+
+[node name="BrickBase_1" parent="." instance=ExtResource("1_brick")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.63, 0, 0)
+
+[node name="BrickBase_2" parent="." instance=ExtResource("1_brick")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.63, 0, 0)
+
+[node name="BrickTop_1" parent="." instance=ExtResource("1_brick")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)

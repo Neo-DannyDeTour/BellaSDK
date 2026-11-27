@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/factory_shells/roof_terrace.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/factory_stained_concrete/factory_stained_concrete.tres" id="2_stained"]
+[ext_resource type="Material" path="res://assets/materials/factory_floor_slab/factory_floor_slab.tres" id="3_slab"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_terrace"]
+size = Vector3(4, 0.35, 4)
+
+[node name="RoofTerrace" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="roof_terrace" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_stained")
+surface_material_override/1 = ExtResource("3_slab")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 0)
+shape = SubResource("BoxShape3D_terrace")
+
+[editable path="Model"]

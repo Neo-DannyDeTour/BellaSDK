@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/foliage/shrub_plant_01.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/overgrown_bark/overgrown_bark.tres" id="2_bark"]
+[ext_resource type="Material" path="res://assets/materials/foliage_broadleaf_atlas/foliage_broadleaf_atlas.tres" id="3_leaves"]
+
+[node name="ShrubPlant01" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="shrub_plant_01" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_bark")
+surface_material_override/1 = ExtResource("3_leaves")
+
+[editable path="Model"]

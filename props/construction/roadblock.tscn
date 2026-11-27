@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/roadblock/roadblock.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/roadblock/roadblock.tres" id="2_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_base"]
+size = Vector3(1.8, 0.34, 0.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(1.8, 0.52, 0.24)
+
+[node name="Roadblock" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="Roadblock" parent="Model" index="0"]
+layers = 4
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="BaseCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17, 0)
+shape = SubResource("BoxShape3D_base")
+
+[node name="WallCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.59, 0)
+shape = SubResource("BoxShape3D_wall")
+
+[editable path="Model"]

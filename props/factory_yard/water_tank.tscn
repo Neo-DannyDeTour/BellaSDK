@@ -1,0 +1,42 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/factory_yard/water_tank.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/painted_industrial_metal/painted_industrial_metal.tres" id="2_paint"]
+[ext_resource type="Material" path="res://assets/materials/galvanized_lattice_steel/galvanized_lattice_steel.tres" id="3_galv"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="4_rust"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_legs"]
+size = Vector3(3.08, 3.38, 3.08)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_tank"]
+height = 2.64
+radius = 1.48
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ladder"]
+size = Vector3(0.72, 6.0, 0.76)
+
+[node name="WaterTank" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="water_tank" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_paint")
+surface_material_override/1 = ExtResource("3_galv")
+surface_material_override/2 = ExtResource("4_rust")
+
+[node name="LegsCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.69, 0)
+shape = SubResource("BoxShape3D_legs")
+
+[node name="TankCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.68, 0)
+shape = SubResource("CylinderShape3D_tank")
+
+[node name="LadderCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 1.78)
+shape = SubResource("BoxShape3D_ladder")
+
+[editable path="Model"]

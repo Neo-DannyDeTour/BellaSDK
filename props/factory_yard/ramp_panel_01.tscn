@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/factory_yard/ramp_panel_01.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/steel_diamond_plate/steel_diamond_plate.tres" id="2_diamond"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_rust"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_slope"]
+size = Vector3(2, 0.06, 1.31)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lip"]
+size = Vector3(2, 0.185, 0.24)
+
+[node name="RampPanel01" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="ramp_panel_01" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_diamond")
+surface_material_override/1 = ExtResource("3_rust")
+
+[node name="SlopeCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.99249, -0.12234, 0, 0.12234, 0.99249, 0, 0.0837, 0.0463)
+shape = SubResource("BoxShape3D_slope")
+
+[node name="LandingCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0925, -0.63)
+shape = SubResource("BoxShape3D_lip")
+
+[editable path="Model"]

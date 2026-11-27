@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://props/construction/concrete_bag.tscn" id="1_bag"]
+
+[node name="ConcreteBagStack" type="Node3D"]
+
+[node name="Bag_L1_1" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(0.999391, 0, 0.034899, 0, 1, 0, -0.034899, 0, 0.999391, -0.265, 0, -0.205)
+
+[node name="Bag_L1_2" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(0.999507, 0, -0.031411, 0, 1, 0, 0.031411, 0, 0.999507, 0.265, 0, -0.205)
+
+[node name="Bag_L1_3" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(0.999263, 0, -0.038388, 0, 1, 0, 0.038388, 0, 0.999263, -0.265, 0, 0.205)
+
+[node name="Bag_L1_4" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(0.999657, 0, 0.026177, 0, 1, 0, -0.026177, 0, 0.999657, 0.265, 0, 0.205)
+
+[node name="Bag_L2_1" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(0.034899, 0, 0.999391, 0, 1, 0, -0.999391, 0, 0.034899, -0.205, 0.16, -0.265)
+
+[node name="Bag_L2_2" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(-0.031411, 0, 0.999507, 0, 1, 0, -0.999507, 0, -0.031411, 0.205, 0.16, -0.265)
+
+[node name="Bag_L2_3" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(-0.038388, 0, 0.999263, 0, 1, 0, -0.999263, 0, -0.038388, -0.205, 0.16, 0.265)
+
+[node name="Bag_L2_4" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(0.026177, 0, 0.999657, 0, 1, 0, -0.999657, 0, 0.026177, 0.205, 0.16, 0.265)
+
+[node name="Bag_L3_1" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(-0.99956, 0, 0.029666, 0, 1, 0, -0.029666, 0, -0.99956, -0.265, 0.32, -0.205)
+
+[node name="Bag_L3_2" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(-0.999328, 0, -0.036644, 0, 1, 0, 0.036644, 0, -0.999328, 0.265, 0.32, -0.205)
+
+[node name="Bag_L3_3" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(-0.99961, 0, -0.027922, 0, 1, 0, 0.027922, 0, -0.99961, -0.265, 0.32, 0.205)
+
+[node name="Bag_L3_4" parent="." instance=ExtResource("1_bag")]
+transform = Transform3D(-0.999194, 0, 0.040132, 0, 1, 0, -0.040132, 0, -0.999194, 0.265, 0.32, 0.205)

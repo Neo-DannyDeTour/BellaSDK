@@ -1,0 +1,435 @@
+[gd_scene load_steps=33 format=3]
+
+[ext_resource type="PackedScene" path="res://props/construction/freight_container.tscn" id="1_freight_container"]
+[ext_resource type="PackedScene" path="res://props/construction/dumpster.tscn" id="2_dumpster"]
+[ext_resource type="PackedScene" path="res://props/construction/portapotty.tscn" id="3_portapotty"]
+[ext_resource type="PackedScene" path="res://props/construction/light_generator.tscn" id="4_light_generator"]
+[ext_resource type="PackedScene" path="res://props/construction/water_tank.tscn" id="5_water_tank"]
+[ext_resource type="PackedScene" path="res://props/construction/brick_palette_stack.tscn" id="6_brick_palette_stack"]
+[ext_resource type="PackedScene" path="res://props/construction/cinder_stack.tscn" id="7_cinder_stack"]
+[ext_resource type="PackedScene" path="res://props/construction/drywall.tscn" id="8_drywall"]
+[ext_resource type="PackedScene" path="res://props/construction/rebar.tscn" id="9_rebar"]
+[ext_resource type="PackedScene" path="res://props/construction/tarp.tscn" id="10_tarp"]
+[ext_resource type="PackedScene" path="res://props/construction/concrete_pipe.tscn" id="11_concrete_pipe"]
+[ext_resource type="PackedScene" path="res://props/construction/concrete_bag.tscn" id="12_concrete_bag"]
+[ext_resource type="PackedScene" path="res://props/construction/barrel.tscn" id="13_barrel"]
+[ext_resource type="PackedScene" path="res://props/construction/plastic_barrel.tscn" id="14_plastic_barrel"]
+[ext_resource type="PackedScene" path="res://props/construction/cable_reel.tscn" id="15_cable_reel"]
+[ext_resource type="PackedScene" path="res://props/construction/spool.tscn" id="16_spool"]
+[ext_resource type="PackedScene" path="res://props/construction/cardboard_boxes.tscn" id="17_cardboard_boxes"]
+[ext_resource type="PackedScene" path="res://props/construction/roadblock.tscn" id="18_roadblock"]
+[ext_resource type="PackedScene" path="res://props/construction/traffic_barrier.tscn" id="19_traffic_barrier"]
+[ext_resource type="PackedScene" path="res://props/construction/construction_pylons.tscn" id="20_construction_pylons"]
+[ext_resource type="PackedScene" path="res://props/construction/box_stack.tscn" id="21_box_stack"]
+[ext_resource type="PackedScene" path="res://props/construction/brick_stack.tscn" id="22_brick_stack"]
+[ext_resource type="PackedScene" path="res://props/construction/cinder_stack_bundle.tscn" id="23_cinder_stack_bundle"]
+[ext_resource type="PackedScene" path="res://props/construction/concrete_bag_stack.tscn" id="24_concrete_bag_stack"]
+[ext_resource type="PackedScene" path="res://props/construction/roadblock_flag.tscn" id="25_roadblock_flag"]
+[ext_resource type="PackedScene" path="res://props/construction/concrete_pipe_x9.tscn" id="26_concrete_pipe_x9"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.38, 0.56, 0.78, 1)
+sky_horizon_color = Color(0.72, 0.76, 0.8, 1)
+ground_bottom_color = Color(0.16, 0.17, 0.18, 1)
+ground_horizon_color = Color(0.55, 0.57, 0.59, 1)
+
+[sub_resource type="Sky" id="Sky_env"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_env")
+ambient_light_source = 3
+ambient_light_energy = 0.75
+tonemap_mode = 2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(44, 0.2, 32)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.18, 0.19, 0.2, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(44, 0.2, 32)
+
+[node name="ConstructionVol1Overview" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 16, 12)
+light_color = Color(1, 0.98, 0.94, 1)
+light_energy = 1.25
+shadow_enabled = true
+directional_shadow_max_distance = 80.0
+
+[node name="OverviewCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.843661, 0.536875, 0, -0.536875, 0.843661, 0, 18, 29)
+current = true
+fov = 55.0
+far = 200.0
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="FloorMesh" type="MeshInstance3D" parent="Floor"]
+layers = 1
+material_override = SubResource("StandardMaterial3D_floor")
+mesh = SubResource("BoxMesh_floor")
+
+[node name="Row1HeavyEquipment" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
+
+[node name="FreightContainer" parent="Row1HeavyEquipment" instance=ExtResource("1_freight_container")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, 0)
+
+[node name="Label_freight_container" type="Label3D" parent="Row1HeavyEquipment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.05, 1.8)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "freight_container"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Dumpster" parent="Row1HeavyEquipment" instance=ExtResource("2_dumpster")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0, 0)
+
+[node name="Label_dumpster" type="Label3D" parent="Row1HeavyEquipment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.05, 1.35)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "dumpster"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Portapotty" parent="Row1HeavyEquipment" instance=ExtResource("3_portapotty")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 0)
+
+[node name="Label_portapotty" type="Label3D" parent="Row1HeavyEquipment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.05, 1.15)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "portapotty"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="LightGenerator" parent="Row1HeavyEquipment" instance=ExtResource("4_light_generator")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 0)
+
+[node name="Label_light_generator" type="Label3D" parent="Row1HeavyEquipment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0.05, 1.8)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "light_generator"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="WaterTank" parent="Row1HeavyEquipment" instance=ExtResource("5_water_tank")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0, 0)
+
+[node name="Label_water_tank" type="Label3D" parent="Row1HeavyEquipment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0.05, 1.1)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "water_tank"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Row2BuildingMaterials" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
+
+[node name="BrickPaletteStack" parent="Row2BuildingMaterials" instance=ExtResource("6_brick_palette_stack")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 0)
+
+[node name="Label_brick_palette_stack" type="Label3D" parent="Row2BuildingMaterials"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0.05, 1.05)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "brick_palette_stack"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="CinderStack" parent="Row2BuildingMaterials" instance=ExtResource("7_cinder_stack")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 0)
+
+[node name="Label_cinder_stack" type="Label3D" parent="Row2BuildingMaterials"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.05, 1.05)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "cinder_stack"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Drywall" parent="Row2BuildingMaterials" instance=ExtResource("8_drywall")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0, 0)
+
+[node name="Label_drywall" type="Label3D" parent="Row2BuildingMaterials"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0.05, 1.15)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "drywall"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Rebar" parent="Row2BuildingMaterials" instance=ExtResource("9_rebar")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="Label_rebar" type="Label3D" parent="Row2BuildingMaterials"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0.7)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "rebar"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Tarp" parent="Row2BuildingMaterials" instance=ExtResource("10_tarp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0)
+
+[node name="Label_tarp" type="Label3D" parent="Row2BuildingMaterials"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0.05, 1.15)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "tarp"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="ConcretePipe" parent="Row2BuildingMaterials" instance=ExtResource("11_concrete_pipe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0, 0)
+
+[node name="Label_concrete_pipe" type="Label3D" parent="Row2BuildingMaterials"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0.05, 2.05)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "concrete_pipe"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="ConcreteBag" parent="Row2BuildingMaterials" instance=ExtResource("12_concrete_bag")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.5, 0, 0)
+
+[node name="Label_concrete_bag" type="Label3D" parent="Row2BuildingMaterials"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.5, 0.05, 0.75)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "concrete_bag"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Row3ContainersSpoolsSafety" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
+
+[node name="Barrel" parent="Row3ContainersSpoolsSafety" instance=ExtResource("13_barrel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.5, 0, 0)
+
+[node name="Label_barrel" type="Label3D" parent="Row3ContainersSpoolsSafety"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.5, 0.05, 0.85)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "barrel"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="PlasticBarrel" parent="Row3ContainersSpoolsSafety" instance=ExtResource("14_plastic_barrel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 0)
+
+[node name="Label_plastic_barrel" type="Label3D" parent="Row3ContainersSpoolsSafety"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.05, 0.85)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "plastic_barrel"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="CableReel" parent="Row3ContainersSpoolsSafety" instance=ExtResource("15_cable_reel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0, 0)
+
+[node name="Label_cable_reel" type="Label3D" parent="Row3ContainersSpoolsSafety"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.05, 1.0)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "cable_reel"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Spool" parent="Row3ContainersSpoolsSafety" instance=ExtResource("16_spool")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, 0)
+
+[node name="Label_spool" type="Label3D" parent="Row3ContainersSpoolsSafety"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.05, 0.8)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "spool"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="CardboardBoxes" parent="Row3ContainersSpoolsSafety" instance=ExtResource("17_cardboard_boxes")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0)
+
+[node name="Label_cardboard_boxes" type="Label3D" parent="Row3ContainersSpoolsSafety"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.05, 0.85)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "cardboard_boxes"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Roadblock" parent="Row3ContainersSpoolsSafety" instance=ExtResource("18_roadblock")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, 0)
+
+[node name="Label_roadblock" type="Label3D" parent="Row3ContainersSpoolsSafety"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0.05, 0.85)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "roadblock"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="TrafficBarrier" parent="Row3ContainersSpoolsSafety" instance=ExtResource("19_traffic_barrier")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 0)
+
+[node name="Label_traffic_barrier" type="Label3D" parent="Row3ContainersSpoolsSafety"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.05, 0.85)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "traffic_barrier"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="ConstructionPylons" parent="Row3ContainersSpoolsSafety" instance=ExtResource("20_construction_pylons")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+
+[node name="Label_construction_pylons" type="Label3D" parent="Row3ContainersSpoolsSafety"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0.05, 0.75)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "construction_pylons"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="Row4CompositeStacks" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 11)
+
+[node name="BoxStack" parent="Row4CompositeStacks" instance=ExtResource("21_box_stack")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, 0)
+
+[node name="Label_box_stack" type="Label3D" parent="Row4CompositeStacks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0.05, 1.25)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "box_stack"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="BrickStack" parent="Row4CompositeStacks" instance=ExtResource("22_brick_stack")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0, 0)
+
+[node name="Label_brick_stack" type="Label3D" parent="Row4CompositeStacks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.05, 1.2)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "brick_stack"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="CinderStackBundle" parent="Row4CompositeStacks" instance=ExtResource("23_cinder_stack_bundle")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 0)
+
+[node name="Label_cinder_stack_bundle" type="Label3D" parent="Row4CompositeStacks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.05, 1.2)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "cinder_stack_bundle"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="ConcreteBagStack" parent="Row4CompositeStacks" instance=ExtResource("24_concrete_bag_stack")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, 0)
+
+[node name="Label_concrete_bag_stack" type="Label3D" parent="Row4CompositeStacks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0.05, 1.2)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "concrete_bag_stack"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="RoadblockFlag" parent="Row4CompositeStacks" instance=ExtResource("25_roadblock_flag")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0)
+
+[node name="Label_roadblock_flag" type="Label3D" parent="Row4CompositeStacks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.05, 1.05)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "roadblock_flag"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2
+
+[node name="ConcretePipeX9" parent="Row4CompositeStacks" instance=ExtResource("26_concrete_pipe_x9")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 0)
+
+[node name="Label_concrete_pipe_x9" type="Label3D" parent="Row4CompositeStacks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.05, 4.8)
+pixel_size = 0.005
+billboard = 1
+modulate = Color(0.95, 0.96, 0.98, 1)
+text = "concrete_pipe_x9"
+font_size = 52
+outline_size = 10
+vertical_alignment = 2

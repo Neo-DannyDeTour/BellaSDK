@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/portapotty/portapotty.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/portapotty/portapotty.tres" id="2_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_portapotty"]
+size = Vector3(1.16, 2.3, 1.21)
+
+[node name="Portapotty" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="Portapotty" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+shape = SubResource("BoxShape3D_portapotty")
+
+[editable path="Model"]

@@ -1,0 +1,48 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/factory_yard/crane_tower.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/galvanized_lattice_steel/galvanized_lattice_steel.tres" id="2_galv"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_rust"]
+[ext_resource type="Material" path="res://assets/materials/painted_industrial_metal/painted_industrial_metal.tres" id="4_paint"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_base"]
+size = Vector3(3.7, 1.38, 3.7)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mast"]
+size = Vector3(1.3, 13.1, 1.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jib"]
+size = Vector3(1.5, 1.7, 16.06)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cab"]
+size = Vector3(1.0, 1.71, 1.36)
+
+[node name="CraneTower" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="crane_tower" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_galv")
+surface_material_override/1 = ExtResource("3_rust")
+surface_material_override/2 = ExtResource("4_paint")
+
+[node name="BaseCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.69, 0)
+shape = SubResource("BoxShape3D_base")
+
+[node name="MastCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.93, 0)
+shape = SubResource("BoxShape3D_mast")
+
+[node name="JibCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.8, 3.1985)
+shape = SubResource("BoxShape3D_jib")
+
+[node name="CabCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.14, 15.105, 0.04)
+shape = SubResource("BoxShape3D_cab")
+
+[editable path="Model"]

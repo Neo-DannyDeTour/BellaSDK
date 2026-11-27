@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://dhvqbr2t1t05i"]
+
+[ext_resource type="PackedScene" uid="uid://du8nwos0g0rj6" path="res://assets/models/props/factory_yard/garbage_bag.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/trash_bag_plastic/trash_bag_plastic.tres" id="2_trash"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_bag"]
+height = 0.55
+radius = 0.23
+
+[node name="GarbageBag" type="RigidBody3D" unique_id=198142052]
+collision_layer = 4
+collision_mask = 7
+mass = 6.0
+
+[node name="Model" parent="." unique_id=424956815 instance=ExtResource("1_glb")]
+
+[node name="garbage_bag" parent="Model" index="0" unique_id=1838561911]
+layers = 4
+surface_material_override/0 = ExtResource("2_trash")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1014465288]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.275, 0)
+shape = SubResource("CylinderShape3D_bag")
+
+[editable path="Model"]

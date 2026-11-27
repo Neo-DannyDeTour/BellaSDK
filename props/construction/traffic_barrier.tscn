@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/traffic_barrier/traffic_barrier.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/traffic_barrier/traffic_barrier.tres" id="2_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_base"]
+size = Vector3(1.5, 0.04, 0.55)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_panel"]
+size = Vector3(1.5, 1.03, 0.08)
+
+[node name="TrafficBarrier" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="TrafficBarrier" parent="Model" index="0"]
+layers = 4
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="BaseCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+shape = SubResource("BoxShape3D_base")
+
+[node name="PanelCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.555, 0)
+shape = SubResource("BoxShape3D_panel")
+
+[editable path="Model"]

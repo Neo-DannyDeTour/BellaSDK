@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/factory_yard/street_light.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/galvanized_lattice_steel/galvanized_lattice_steel.tres" id="2_galv"]
+[ext_resource type="Material" path="res://assets/materials/rusted_steel/rusted_steel.tres" id="3_rust"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pole"]
+size = Vector3(0.42, 6.45, 0.42)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_head"]
+size = Vector3(0.4, 0.4, 1.85)
+
+[node name="StreetLight" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="street_light" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_galv")
+surface_material_override/1 = ExtResource("3_rust")
+
+[node name="PoleCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.225, 0)
+shape = SubResource("BoxShape3D_pole")
+
+[node name="HeadCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.3, 1.075)
+shape = SubResource("BoxShape3D_head")
+
+[editable path="Model"]

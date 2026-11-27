@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/factory_yard/cardboard_debris_01.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/materials/weathered_cardboard/weathered_cardboard.tres" id="2_cardboard"]
+
+[node name="CardboardDebris01" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="cardboard_debris_01" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_cardboard")
+
+[editable path="Model"]

@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/concrete_bag/concrete_bag.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/concrete_bag/concrete_bag.tres" id="2_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bag"]
+size = Vector3(0.4761, 0.16, 0.3552)
+
+[node name="ConcreteBag" type="RigidBody3D"]
+collision_layer = 4
+collision_mask = 7
+mass = 35.0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="concrete_bag" parent="Model" index="0"]
+layers = 4
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
+shape = SubResource("BoxShape3D_bag")
+
+[editable path="Model"]

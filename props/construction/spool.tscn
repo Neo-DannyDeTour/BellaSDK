@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/spool/spool.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/spool/spool.tres" id="2_mat"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_1"]
+height = 0.35
+radius = 0.225
+
+[node name="Spool" type="RigidBody3D"]
+collision_layer = 4
+collision_mask = 7
+mass = 12.0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="spool" parent="Model" index="0"]
+layers = 4
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 0)
+shape = SubResource("CylinderShape3D_1")
+
+[editable path="Model"]
