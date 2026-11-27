@@ -21,6 +21,15 @@ Unless user specifies an override tag (`stylized`, `plush`, `retro`), enforce **
 - Grounded physical proportions, believable industrial/worn CMF, weathered matte-to-scuffed surfaces.
 - Avoid neon emissive clutter, plastic gloss, floating bits, or cartoon proportions.
 
+### Semi-Realistic 2004 HL2 / Alyx Vance Humanoid Standard
+For hero/NPC humanoids (such as Bella):
+- **Ortho-Fitted Silhouette**: Fit base mesh silhouette directly to front, 90-degree side, and back orthographic reference plates before baking blendshapes or fitting eyes/lashes/garments.
+- **3-View Seamless Head Projection**: Project front, mirrored side, and back head views onto a dedicated 2K UV atlas (`[0.04, 0.96]`) with smooth view-angle blending, harmonized skin tone, and zero cutoff seams at neck/ears.
+- **Slim Athletic-Realistic Proportions**: Maintain natural waist, ribcage, and limbs without inflated thighs/hips; keep glute/bust curves anatomically grounded and garments close-fitting.
+- **Matte-Satin Skin + Baked Facial AO**: Bake subtle HL2-style facial AO (eye creases, nostrils, under-lip, forehead bang shadow) into albedo/ORM; pair with isotropic micro-pore normals, roughness `>= 0.52`, low specular (`~0.25..0.30`), and restrained SSS.
+- **Natural Eyes with Upper-Eyelid Shadow**: Sample natural iris hues from reference (no neon emission/glow) and bake/apply an upper-eyelid shadow gradient across the top ~25% of the eye.
+- **Sculpted Layered Hair Mass + Soft Cards**: Pair a head-hugging cap (center part + ash shadow) with organic C-curl locks and brow-grazing cards; keep albedo midtones (`0.48..0.84`) with bleed-padded alpha=0 borders so strands never blow out to `#FFFFFF` or fringe black.
+
 ---
 
 ## Hybrid Source Priority (Pick Cheapest High-Fidelity Path)

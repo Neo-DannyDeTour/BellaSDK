@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dkeytsv2i2rrh"]
 
-[ext_resource type="Script" path="res://scenes/ghost_girl_face_preview.gd" id="1_preview_script"]
+[ext_resource type="Script" uid="uid://cfaxwgbwywbyj" path="res://scenes/ghost_girl_face_preview.gd" id="1_preview_script"]
 [ext_resource type="PackedScene" path="res://npcs/ghost_girl/ghost_girl.tscn" id="2_ghost_girl_scene"]
 
 [sub_resource type="Environment" id="Environment_studio"]
@@ -25,70 +25,70 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
-[node name="GhostGirlFacePreview" type="Node3D"]
+[node name="GhostGirlFacePreview" type="Node3D" unique_id=1256919167]
 script = ExtResource("1_preview_script")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=629759919]
 environment = SubResource("Environment_studio")
 
-[node name="KeyLight" type="SpotLight3D" parent="."]
+[node name="KeyLight" type="SpotLight3D" parent="." unique_id=608847640]
 transform = Transform3D(-0.8, 0.19821, -0.566315, 0, 0.943858, 0.33035, 0.6, 0.26428, -0.755087, -1.2, 2.2, -1.6)
 light_color = Color(1, 0.96, 0.92, 1)
 light_energy = 2.6
 shadow_enabled = true
 spot_angle = 40.0
 
-[node name="FillLight" type="SpotLight3D" parent="."]
+[node name="FillLight" type="SpotLight3D" parent="." unique_id=1731918468]
 transform = Transform3D(-0.731055, -0.033215, 0.681509, 0, 0.998814, 0.048679, -0.682318, 0.035587, -0.730189, 1.4, 1.6, -1.5)
 light_color = Color(0.86, 0.92, 1, 1)
 light_energy = 1.1
 spot_angle = 50.0
 
-[node name="RimLight" type="SpotLight3D" parent="."]
+[node name="RimLight" type="SpotLight3D" parent="." unique_id=1058011435]
 transform = Transform3D(0.894427, -0.203529, 0.398216, 0, 0.890438, 0.455104, -0.447214, -0.407057, 0.796432, 0.7, 2.3, 1.4)
 light_color = Color(0.92, 0.96, 1, 1)
 light_energy = 1.8
 
-[node name="Camera3D" type="Camera3D" parent="."]
+[node name="Camera3D" type="Camera3D" parent="." unique_id=944417824]
 transform = Transform3D(-1, 0, 0, 0, 0.999671, 0.025633, 0, 0.025633, -0.999671, 0, 1.45, -0.82)
 current = true
 fov = 35.0
 
-[node name="StudioFloor" type="MeshInstance3D" parent="."]
+[node name="StudioFloor" type="MeshInstance3D" parent="." unique_id=1759233800]
 mesh = SubResource("PlaneMesh_floor")
 surface_material_override/0 = SubResource("StandardMaterial3D_backdrop")
 
-[node name="GhostGirl" parent="." instance=ExtResource("2_ghost_girl_scene")]
+[node name="GhostGirl" parent="." unique_id=31234419 instance=ExtResource("2_ghost_girl_scene")]
 
-[node name="GazeOrbitTarget" type="Marker3D" parent="."]
+[node name="GazeOrbitTarget" type="Marker3D" parent="." unique_id=261343329]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.44, -0.82)
 
-[node name="PreviewHUD" type="CanvasLayer" parent="."]
+[node name="PreviewHUD" type="CanvasLayer" parent="." unique_id=870511075]
 
-[node name="HudPanel" type="PanelContainer" parent="PreviewHUD"]
+[node name="HudPanel" type="PanelContainer" parent="PreviewHUD" unique_id=154238088]
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 920.0
 offset_bottom = 84.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
 
-[node name="HudMargin" type="MarginContainer" parent="PreviewHUD/HudPanel"]
+[node name="HudMargin" type="MarginContainer" parent="PreviewHUD/HudPanel" unique_id=1468087143]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 8
 
-[node name="HudStack" type="VBoxContainer" parent="PreviewHUD/HudPanel/HudMargin"]
+[node name="HudStack" type="VBoxContainer" parent="PreviewHUD/HudPanel/HudMargin" unique_id=1091706683]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="HudLabel" type="Label" parent="PreviewHUD/HudPanel/HudMargin/HudStack"]
+[node name="HudLabel" type="Label" parent="PreviewHUD/HudPanel/HudMargin/HudStack" unique_id=1905565633]
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 text = "1:Neutral 2:Happy 3:Surprised 4:Angry 5:Sad 6:Blink | V:Viseme | G:Gaze | H:RigMode | A:LiveARKit | T:SynthSweep | R:Record | P:PlayClip"
 
-[node name="StatusLabel" type="Label" parent="PreviewHUD/HudPanel/HudMargin/HudStack"]
+[node name="StatusLabel" type="Label" parent="PreviewHUD/HudPanel/HudMargin/HudStack" unique_id=1148417847]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
 theme_override_font_sizes/font_size = 13
