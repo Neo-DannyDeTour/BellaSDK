@@ -37,6 +37,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--tex-dir", type=Path, required=True, help="Directory for extracted textures")
     parser.add_argument("--meta-out", type=Path, required=True, help="Output JSON metadata path")
     parser.add_argument("--keep-separate", action="store_true", help="Do not join sub-meshes")
+    parser.add_argument(
+        "--preserve-materials",
+        action="store_true",
+        help="Preserve multi-slot material assignments and extract textures per material slot",
+    )
     return parser.parse_args(argv)
 
 
@@ -130,6 +135,7 @@ def _extract_material_textures(
     mesh_objs: list[bpy.types.Object],
     tex_dir: Path,
     slug: str,
+    preserve_materials: bool = False,
 ) -> dict[str, str]:
     extracted: dict[str, str] = {}
     seen_mats: set[str] = set()
@@ -145,6 +151,7 @@ def _extract_material_textures(
             if bsdf is None:
                 continue
 
+            safe_mat = "".join(c if c.isalnum() else "_" for c in mat.name).strip("_").lower()
             slot_map = {
                 "albedo": "Base Color",
                 "normal": "Normal",
@@ -152,15 +159,16 @@ def _extract_material_textures(
                 "roughness": "Roughness",
             }
             for key, input_name in slot_map.items():
-                if key in extracted or input_name not in bsdf.inputs:
+                out_key = f"{safe_mat}_{key}" if (preserve_materials and len(seen_mats) > 1) else key
+                if out_key in extracted or input_name not in bsdf.inputs:
                     continue
                 img = _trace_image_node(bsdf.inputs[input_name])
                 if img is None:
                     continue
-                target = tex_dir / f"{slug}_{key}_raw.png"
-                saved = _save_image_png(img, target)
+                fname = f"{slug}_{out_key}_raw.png"
+                saved = _save_image_png(img, tex_dir / fname)
                 if saved is not None:
-                    extracted[key] = str(saved)
+                    extracted[out_key] = str(saved)
     return extracted
 
 
@@ -200,7 +208,9 @@ def main() -> int:
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
     # Extract embedded textures before decimation/export
-    extracted = _extract_material_textures(mesh_objs, args.tex_dir, args.slug)
+    extracted = _extract_material_textures(
+        mesh_objs, args.tex_dir, args.slug, preserve_materials=args.preserve_materials
+    )
 
     # Weld vertices, recalc normals, and UV-safe decimate proportionally per object
     total_before = _total_triangles(mesh_objs)

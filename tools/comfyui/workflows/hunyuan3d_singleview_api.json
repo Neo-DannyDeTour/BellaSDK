@@ -1,0 +1,64 @@
+{
+  "1": {
+    "class_type": "Hy3DModelLoader",
+    "inputs": {
+      "model": "hunyuan3d-dit-v2-0-fp16.safetensors",
+      "attention_mode": "sdpa",
+      "cublas_ops": false
+    }
+  },
+  "2": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "front.png",
+      "upload": "image"
+    }
+  },
+  "5": {
+    "class_type": "Hy3DGenerateMesh",
+    "inputs": {
+      "pipeline": ["1", 0],
+      "image": ["2", 0],
+      "mask": ["2", 1],
+      "guidance_scale": 5.5,
+      "steps": 30,
+      "seed": 42,
+      "scheduler": "FlowMatchEulerDiscreteScheduler",
+      "force_offload": true
+    }
+  },
+  "6": {
+    "class_type": "Hy3DVAEDecode",
+    "inputs": {
+      "vae": ["1", 1],
+      "latents": ["5", 0],
+      "box_v": 1.01,
+      "octree_resolution": 384,
+      "num_chunks": 8000,
+      "mc_level": 0.0,
+      "mc_algo": "mc",
+      "enable_flash_vdm": true,
+      "force_offload": true
+    }
+  },
+  "7": {
+    "class_type": "Hy3DPostprocessMesh",
+    "inputs": {
+      "trimesh": ["6", 0],
+      "remove_floaters": true,
+      "remove_degenerate_faces": true,
+      "reduce_faces": true,
+      "max_facenum": 50000,
+      "smooth_normals": false
+    }
+  },
+  "8": {
+    "class_type": "Hy3DExportMesh",
+    "inputs": {
+      "trimesh": ["7", 0],
+      "filename_prefix": "3D/Hy3D_sv",
+      "file_format": "glb",
+      "save_file": true
+    }
+  }
+}
