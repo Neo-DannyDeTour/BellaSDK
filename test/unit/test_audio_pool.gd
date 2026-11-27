@@ -2,7 +2,7 @@
 class_name TestAudioPool
 extends GutTest
 
-const AUDIO_POOL_SCRIPT: GDScript = preload("res://core/audio_pool.gd")
+const AUDIO_POOL_SCRIPT: GDScript = preload("res://core/audio/audio_pool.gd")
 
 ## The [AudioPool] node instance under test.
 var _audio_pool: Node = null

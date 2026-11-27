@@ -2,7 +2,7 @@
 class_name TestAudioManager
 extends GutTest
 
-const AUDIO_MANAGER_SCRIPT: GDScript = preload("res://core/audio_manager.gd")
+const AUDIO_MANAGER_SCRIPT: GDScript = preload("res://core/audio/audio_manager.gd")
 
 ## The [AudioManager] node instance under test.
 var _audio_manager: Node = null

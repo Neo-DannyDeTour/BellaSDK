@@ -131,7 +131,7 @@ func test_layer6_audio_manager_concurrency_limits() -> void:
 	print("TestBellaArchitecture: Testing Layer 6 - AudioManager Throttling.")
 	var audio_mgr: Node = get_node_or_null("/root/AudioManager")
 	if not is_instance_valid(audio_mgr):
-		var audio_script: GDScript = load("res://core/audio_manager.gd") as GDScript
+		var audio_script: GDScript = load("res://core/audio/audio_manager.gd") as GDScript
 		var new_mgr: Object = audio_script.new()
 		if new_mgr is Node:
 			audio_mgr = new_mgr
