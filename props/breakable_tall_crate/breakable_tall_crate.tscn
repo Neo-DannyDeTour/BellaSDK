@@ -1,0 +1,165 @@
+[gd_scene load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://props/breakable_tall_crate/breakable_tall_crate.gd" id="1_script"]
+[ext_resource type="Shader" path="res://props/breakable_tall_crate/breakable_tall_crate.gdshader" id="2_shader"]
+[ext_resource type="PackedScene" path="res://assets/models/breakable_tall_crate/tall_crate_intact.glb" id="3_intact"]
+[ext_resource type="PackedScene" path="res://assets/models/breakable_tall_crate/tall_crate_gib_0.glb" id="4_gib0"]
+[ext_resource type="PackedScene" path="res://assets/models/breakable_tall_crate/tall_crate_gib_1.glb" id="5_gib1"]
+[ext_resource type="PackedScene" path="res://assets/models/breakable_tall_crate/tall_crate_gib_2.glb" id="6_gib2"]
+[ext_resource type="PackedScene" path="res://assets/models/breakable_tall_crate/tall_crate_gib_3.glb" id="7_gib3"]
+[ext_resource type="PackedScene" path="res://assets/models/breakable_tall_crate/tall_crate_gib_4.glb" id="8_gib4"]
+[ext_resource type="PackedScene" path="res://assets/models/breakable_tall_crate/tall_crate_gib_5.glb" id="9_gib5"]
+[ext_resource type="PackedScene" path="res://assets/models/breakable_tall_crate/tall_crate_gib_6.glb" id="10_gib6"]
+[ext_resource type="PackedScene" path="res://assets/models/breakable_tall_crate/tall_crate_gib_7.glb" id="11_gib7"]
+[ext_resource type="Texture2D" path="res://assets/materials/weathered_olive_crate_wood/textures/weathered_olive_crate_wood_albedo.png" id="12_albedo"]
+[ext_resource type="Texture2D" path="res://assets/materials/weathered_olive_crate_wood/textures/weathered_olive_crate_wood_orm.png" id="13_orm"]
+[ext_resource type="Texture2D" path="res://assets/materials/weathered_olive_crate_wood/textures/weathered_olive_crate_wood_normal.png" id="14_normal"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wood"]
+render_priority = 0
+shader = ExtResource("2_shader")
+shader_parameter/albedo_tex = ExtResource("12_albedo")
+shader_parameter/orm_tex = ExtResource("13_orm")
+shader_parameter/normal_tex = ExtResource("14_normal")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_intact"]
+size = Vector3(0.65, 1.35, 0.65)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_panel_z"]
+size = Vector3(0.58, 0.62, 0.032)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_panel_x"]
+size = Vector3(0.032, 0.64, 0.58)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lid"]
+size = Vector3(0.62, 0.035, 0.62)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_post_a"]
+size = Vector3(0.07, 1.28, 0.07)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_post_b"]
+size = Vector3(0.07, 1.15, 0.07)
+
+[node name="BreakableTallCrate" type="RigidBody3D"]
+collision_layer = 4
+collision_mask = 23
+mass = 18.0
+contact_monitor = true
+max_contacts_reported = 2
+script = ExtResource("1_script")
+gib_fade_material = SubResource("ShaderMaterial_wood")
+
+[node name="Col_Intact" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.675, 0)
+shape = SubResource("BoxShape3D_intact")
+
+[node name="IntactVisuals" type="Node3D" parent="."]
+
+[node name="TallCrateModel" parent="IntactVisuals" instance=ExtResource("3_intact")]
+
+[node name="Gibs" type="Node3D" parent="."]
+visible = false
+
+[node name="Gib_0" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.98, 0.30)
+collision_layer = 0
+collision_mask = 0
+mass = 2.0
+freeze = true
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_0"]
+shape = SubResource("BoxShape3D_panel_z")
+disabled = true
+
+[node name="Visual" parent="Gibs/Gib_0" instance=ExtResource("4_gib0")]
+
+[node name="Gib_1" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.34, 0.30)
+collision_layer = 0
+collision_mask = 0
+mass = 2.0
+freeze = true
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_1"]
+shape = SubResource("BoxShape3D_panel_z")
+disabled = true
+
+[node name="Visual" parent="Gibs/Gib_1" instance=ExtResource("5_gib1")]
+
+[node name="Gib_2" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, -0.30)
+collision_layer = 0
+collision_mask = 0
+mass = 2.0
+freeze = true
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_2"]
+shape = SubResource("BoxShape3D_panel_z")
+disabled = true
+
+[node name="Visual" parent="Gibs/Gib_2" instance=ExtResource("6_gib2")]
+
+[node name="Gib_3" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.30, 0.68, 0)
+collision_layer = 0
+collision_mask = 0
+mass = 2.0
+freeze = true
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_3"]
+shape = SubResource("BoxShape3D_panel_x")
+disabled = true
+
+[node name="Visual" parent="Gibs/Gib_3" instance=ExtResource("7_gib3")]
+
+[node name="Gib_4" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.30, 0.68, 0)
+collision_layer = 0
+collision_mask = 0
+mass = 2.0
+freeze = true
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_4"]
+shape = SubResource("BoxShape3D_panel_x")
+disabled = true
+
+[node name="Visual" parent="Gibs/Gib_4" instance=ExtResource("8_gib4")]
+
+[node name="Gib_5" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.33, 0)
+collision_layer = 0
+collision_mask = 0
+mass = 2.2
+freeze = true
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_5"]
+shape = SubResource("BoxShape3D_lid")
+disabled = true
+
+[node name="Visual" parent="Gibs/Gib_5" instance=ExtResource("9_gib5")]
+
+[node name="Gib_6" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.28, 0.67, 0.28)
+collision_layer = 0
+collision_mask = 0
+mass = 1.6
+freeze = true
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_6"]
+shape = SubResource("BoxShape3D_post_a")
+disabled = true
+
+[node name="Visual" parent="Gibs/Gib_6" instance=ExtResource("10_gib6")]
+
+[node name="Gib_7" type="RigidBody3D" parent="Gibs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28, 0.62, -0.28)
+collision_layer = 0
+collision_mask = 0
+mass = 1.6
+freeze = true
+
+[node name="Shape" type="CollisionShape3D" parent="Gibs/Gib_7"]
+shape = SubResource("BoxShape3D_post_b")
+disabled = true
+
+[node name="Visual" parent="Gibs/Gib_7" instance=ExtResource("11_gib7")]
