@@ -1,7 +1,7 @@
 ## Unit test suite validating SaveSlot UI state initialization and signal handling.
 extends GutTest
 
-const SAVE_SLOT_SCENE: PackedScene = preload("res://core/save_slot.tscn")
+const SAVE_SLOT_SCENE: PackedScene = preload("res://ui/save_slot.tscn")
 
 ## Instance of the SaveSlot UI component under test.
 var _save_slot: SaveSlot

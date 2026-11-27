@@ -4,8 +4,8 @@ extends GutTest
 
 ## Active Wave 1 spatial shaders (excluding 7 orphan candidates scheduled for removal).
 const SPATIAL_SHADERS: Array[String] = [
-	"res://dynamic_ocean/shaders/ocean_spray.gdshader",
-	"res://dynamic_ocean/shaders/ocean_water.gdshader",
+	"res://environment/dynamic_ocean/shaders/ocean_spray.gdshader",
+	"res://environment/dynamic_ocean/shaders/ocean_water.gdshader",
 	"res://environment/Citadel_TEST_2.gdshader",
 	"res://environment/argon_citadel_core/argon_citadel_corona.gdshader",
 	"res://environment/argon_citadel_core/argon_citadel_corona_waves.gdshader",
@@ -102,7 +102,7 @@ const FOG_SHADERS: Array[String] = [
 
 ## Active Wave 1 particles shaders.
 const PARTICLES_SHADERS: Array[String] = [
-	"res://dynamic_ocean/shaders/ocean_spray_particle.gdshader",
+	"res://environment/dynamic_ocean/shaders/ocean_spray_particle.gdshader",
 	"res://shaders/rain_process.gdshader",
 ]
 
@@ -160,7 +160,7 @@ func test_particles_shaders_load_and_mode() -> void:
 ## Verifies dynamic ocean shader uniform contracts for water, spray, and spray particles.
 func test_dynamic_ocean_uniform_contracts() -> void:
 	_assert_uniforms(
-		"res://dynamic_ocean/shaders/ocean_water.gdshader",
+		"res://environment/dynamic_ocean/shaders/ocean_water.gdshader",
 		[
 			"depth_color_consumption",
 			"crest_color",
@@ -173,7 +173,7 @@ func test_dynamic_ocean_uniform_contracts() -> void:
 		]
 	)
 	_assert_uniforms(
-		"res://dynamic_ocean/shaders/ocean_spray.gdshader",
+		"res://environment/dynamic_ocean/shaders/ocean_spray.gdshader",
 		[
 			"max_alpha",
 			"brightness_multiplier",
@@ -182,7 +182,7 @@ func test_dynamic_ocean_uniform_contracts() -> void:
 		]
 	)
 	_assert_uniforms(
-		"res://dynamic_ocean/shaders/ocean_spray_particle.gdshader",
+		"res://environment/dynamic_ocean/shaders/ocean_spray_particle.gdshader",
 		[
 			"num_particles",
 			"particle_scale",
