@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=4 uid="uid://5xqyddws6rt5"]
 
-[ext_resource type="Shader" uid="uid://c04intj7sf4jy" path="res://dynamic_ocean/shaders/ocean_spray_particle.gdshader" id="1_puvd8"]
+[ext_resource type="Shader" uid="uid://c04intj7sf4jy" path="res://environment/dynamic_ocean/shaders/ocean_spray_particle.gdshader" id="1_puvd8"]
 
 [resource]
 shader = ExtResource("1_puvd8")

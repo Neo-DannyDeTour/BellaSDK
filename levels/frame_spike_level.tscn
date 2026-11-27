@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://crfas2bkomdv6" path="res://interactables/player_drone.tscn" id="2_mhrra"]
 [ext_resource type="PackedScene" uid="uid://bkxrbjc7txin4" path="res://ui/CCTV.tscn" id="3_c8ysq"]
 [ext_resource type="CompressedTexture3D" uid="uid://dei12lsgrjpyu" path="res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga" id="3_kmgok"]
-[ext_resource type="PackedScene" uid="uid://ck5j4wdfr0yqt" path="res://dynamic_ocean/dynamic_ocean.tscn" id="4_c8ysq"]
+[ext_resource type="PackedScene" uid="uid://ck5j4wdfr0yqt" path="res://environment/dynamic_ocean/dynamic_ocean.tscn" id="4_c8ysq"]
 [ext_resource type="CompressedTexture3D" uid="uid://b3uyfsp4in821" path="res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png" id="4_m87fd"]
 [ext_resource type="PackedScene" uid="uid://c4jdpcnpsoerv" path="res://interactables/mirror.tscn" id="5_jdeir"]
 [ext_resource type="Texture2D" uid="uid://de2nsujnhdlg0" path="res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres" id="5_mq654"]

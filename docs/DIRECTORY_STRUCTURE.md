@@ -10,9 +10,8 @@ Defines the project layout of BellaSDK (Godot 4.7.1 / Forward Plus / Jolt Physic
 BellaSDK/
 ├── assets/          # Static art, audio, materials, 3D models, decals, fonts, HDRs
 ├── core/            # Engine architecture, autoloads, singletons, pools, utilities
-├── dynamic_ocean/   # Ocean simulation meshes and compute shaders
 ├── enemies/         # AI characters, drones, turrets, and combatants
-├── environment/     # World geometry, weather, soundscapes, signs, lighting
+├── environment/     # World geometry, weather, soundscapes, signs, lighting, dynamic_ocean/
 ├── interactables/   # Doors, buttons, cables, sockets, valves, ragdolls, pickups
 ├── levels/          # Playable level scenes, chunks, testbeds, and blockouts
 ├── npcs/            # Half-Life-style animated NPCs, look-at rigs, and character actors

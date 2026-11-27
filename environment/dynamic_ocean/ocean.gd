@@ -19,15 +19,21 @@ enum WaveMapResolution {
 }
 
 ## Shader material applied to the ocean surface mesh.
-const WATER_MAT: ShaderMaterial = preload("res://dynamic_ocean/materials/mat_ocean.tres")
+const WATER_MAT: ShaderMaterial = preload(
+	"res://environment/dynamic_ocean/materials/mat_ocean.tres"
+)
 ## Shader material applied to spray particle emissions.
-const SPRAY_MAT: ShaderMaterial = preload("res://dynamic_ocean/materials/mat_spray.tres")
+const SPRAY_MAT: ShaderMaterial = preload(
+	"res://environment/dynamic_ocean/materials/mat_spray.tres"
+)
 ## Ultra-high density clipmap mesh asset.
-const WATER_MESH_HIGH8_K: Mesh = preload("res://dynamic_ocean/meshes/clipmap_high_8k.obj")
+const WATER_MESH_HIGH8_K: Mesh = preload(
+	"res://environment/dynamic_ocean/meshes/clipmap_high_8k.obj"
+)
 ## Standard high density clipmap mesh asset.
-const WATER_MESH_HIGH: Mesh = preload("res://dynamic_ocean/meshes/clipmap_high.obj")
+const WATER_MESH_HIGH: Mesh = preload("res://environment/dynamic_ocean/meshes/clipmap_high.obj")
 ## Low density clipmap mesh asset.
-const WATER_MESH_LOW: Mesh = preload("res://dynamic_ocean/meshes/clipmap_low.obj")
+const WATER_MESH_LOW: Mesh = preload("res://environment/dynamic_ocean/meshes/clipmap_low.obj")
 
 ## Global and material shader parameter names.
 const PARAM_WATER_COLOR: StringName = &"water_color"

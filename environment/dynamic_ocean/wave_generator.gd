@@ -82,25 +82,25 @@ func init_gpu(num_cascades: int) -> void:
 
 	context = RenderingContext.create(rd)
 	var spectrum_compute_shader: RID = context.load_shader(
-		"res://dynamic_ocean/shaders/compute/spectrum_compute.glsl"
+		"res://environment/dynamic_ocean/shaders/compute/spectrum_compute.glsl"
 	)
 	var fft_butterfly_shader: RID = context.load_shader(
-		"res://dynamic_ocean/shaders/compute/fft_butterfly.glsl"
+		"res://environment/dynamic_ocean/shaders/compute/fft_butterfly.glsl"
 	)
 	var spectrum_modulate_shader: RID = context.load_shader(
-		"res://dynamic_ocean/shaders/compute/spectrum_modulate.glsl"
+		"res://environment/dynamic_ocean/shaders/compute/spectrum_modulate.glsl"
 	)
 	var fft_compute_shader: RID = context.load_shader(
-		"res://dynamic_ocean/shaders/compute/fft_compute.glsl"
+		"res://environment/dynamic_ocean/shaders/compute/fft_compute.glsl"
 	)
 	var transpose_shader: RID = context.load_shader(
-		"res://dynamic_ocean/shaders/compute/transpose.glsl"
+		"res://environment/dynamic_ocean/shaders/compute/transpose.glsl"
 	)
 	var fft_unpack_shader: RID = context.load_shader(
-		"res://dynamic_ocean/shaders/compute/fft_unpack.glsl"
+		"res://environment/dynamic_ocean/shaders/compute/fft_unpack.glsl"
 	)
 	var downsample_shader: RID = context.load_shader(
-		"res://dynamic_ocean/shaders/compute/downsample_compute.glsl"
+		"res://environment/dynamic_ocean/shaders/compute/downsample_compute.glsl"
 	)
 
 	var dims: Vector2i = Vector2i(map_size, map_size)
