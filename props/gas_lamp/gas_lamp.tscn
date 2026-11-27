@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/gas_lamp/gas_lamp.glb" id="1_glb"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_1"]
+height = 0.34
+radius = 0.095
+
+[node name="GasLamp" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17, 0)
+shape = SubResource("CylinderShape3D_1")
+
+[node name="FlameLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17, 0)
+light_color = Color(1, 0.68, 0.32, 1)
+light_energy = 2.2
+shadow_enabled = false
+omni_range = 5.5
+omni_attenuation = 1.4

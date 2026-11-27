@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/soviet_wooden_chair/soviet_wooden_chair.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/soviet_wooden_chair/soviet_wooden_chair.tres" id="2_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_seat"]
+size = Vector3(0.472, 0.445, 0.48)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_backrest"]
+size = Vector3(0.41, 0.415, 0.065)
+
+[node name="SovietWoodenChair" type="RigidBody3D"]
+collision_layer = 4
+collision_mask = 7
+mass = 4.5
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="SovietWoodenChair" parent="Model" index="0"]
+layers = 4
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="SeatCollisionShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.2225, 0.005)
+shape = SubResource("BoxShape3D_seat")
+
+[node name="BackrestCollisionShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.6525, -0.218)
+shape = SubResource("BoxShape3D_backrest")
+
+[editable path="Model"]

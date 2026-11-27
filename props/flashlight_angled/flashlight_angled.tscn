@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/flashlight_angled/flashlight_angled.glb" id="1_glb"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(0.06, 0.16, 0.065)
+
+[node name="FlashlightAngled" type="Node3D"]
+
+[node name="ClipPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.09, -0.025)
+
+[node name="Model" parent="ClipPivot" instance=ExtResource("1_glb")]
+
+[node name="BeamLight" type="SpotLight3D" parent="ClipPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.135, -0.035)
+visible = false
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 4.0
+spot_range = 18.0
+spot_angle = 32.0
+
+[node name="PickupBody" type="StaticBody3D" parent="ClipPivot"]
+collision_layer = 4
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ClipPivot/PickupBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
+shape = SubResource("BoxShape3D_1")

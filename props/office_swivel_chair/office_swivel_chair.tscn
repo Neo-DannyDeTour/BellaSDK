@@ -1,0 +1,38 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/office_swivel_chair/office_swivel_chair.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/office_swivel_chair/office_swivel_chair.tres" id="2_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(0.54, 0.43, 0.54)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2"]
+size = Vector3(0.45, 0.08, 0.45)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3"]
+size = Vector3(0.4, 0.34, 0.08)
+
+[node name="OfficeSwivelChair" type="RigidBody3D"]
+collision_layer = 4
+collision_mask = 7
+mass = 9.5
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="OfficeSwivelChair" parent="Model" index="0"]
+layers = 4
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="BaseCollisionShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.215, 0.0)
+shape = SubResource("BoxShape3D_1")
+
+[node name="SeatCollisionShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.468, 0.0)
+shape = SubResource("BoxShape3D_2")
+
+[node name="BackrestCollisionShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.735, -0.24)
+shape = SubResource("BoxShape3D_3")
+
+[editable path="Model"]

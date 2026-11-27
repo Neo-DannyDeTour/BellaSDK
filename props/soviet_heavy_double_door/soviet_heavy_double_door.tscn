@@ -1,0 +1,31 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/soviet_heavy_double_door/soviet_heavy_double_door.glb" id="1_glb"]
+[ext_resource type="Material" path="res://assets/models/soviet_heavy_double_door/soviet_heavy_double_door.tres" id="2_mat"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(1.56, 2.2, 0.204)
+
+[node name="SovietHeavyDoubleDoor" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Model" parent="." instance=ExtResource("1_glb")]
+
+[node name="DoorFrame" parent="Model" index="0"]
+layers = 1
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="DoorLeafLeft" parent="Model" index="1"]
+layers = 1
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="DoorLeafRight" parent="Model" index="2"]
+layers = 1
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("BoxShape3D_1")
+
+[editable path="Model"]
