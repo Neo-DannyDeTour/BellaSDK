@@ -72,15 +72,10 @@
 [ext_resource type="Script" uid="uid://cpanucihj2fsj" path="res://player/state_wolf_wall_run.gd" id="70_j3r50"]
 [ext_resource type="Script" uid="uid://nmq3xe2f3kq1" path="res://player/state_wolf_climb.gd" id="71_utr5e"]
 [ext_resource type="Script" uid="uid://p5dlbr1nqemi" path="res://player/state_jib_crane.gd" id="72_jibcr"]
-[ext_resource type="Script" path="res://player/weapon_procedural_animator.gd" id="73_animator"]
+[ext_resource type="Script" uid="uid://d62575cgnpfj" path="res://player/weapon_procedural_animator.gd" id="73_animator"]
 [ext_resource type="Material" uid="uid://d3x1lensd1rt" path="res://shaders/mat_lens_dirt_billboard.tres" id="74_lensdirt"]
 [ext_resource type="PackedScene" uid="uid://b8drnkeffct01" path="res://player/drunk_effect.tscn" id="75_drunk"]
 [ext_resource type="PackedScene" path="res://npcs/bella/bella_player.tscn" id="76_bella_body"]
-
-[sub_resource type="QuadMesh" id="QuadMesh_lensdirt"]
-material = ExtResource("74_lensdirt")
-size = Vector2(2, 2)
-
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -102,6 +97,10 @@ shader_parameter/normal_threshold = 0.5
 
 [sub_resource type="QuadMesh" id="QuadMesh_534t5"]
 material = SubResource("ShaderMaterial_tx8to")
+size = Vector2(2, 2)
+
+[sub_resource type="QuadMesh" id="QuadMesh_lensdirt"]
+material = ExtResource("74_lensdirt")
 size = Vector2(2, 2)
 
 [sub_resource type="Animation" id="Animation_bruh7"]
@@ -460,6 +459,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.52, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head/Eyes" unique_id=1414380114]
 cull_mask = 1048573
+near = 0.025
 script = ExtResource("2_a2xo5")
 
 [node name="InteractionShapeCast" type="ShapeCast3D" parent="Head/Eyes/Camera3D" unique_id=1917702885]
@@ -522,7 +522,6 @@ layers = 512
 cast_shadow = 0
 extra_cull_margin = 10000.0
 mesh = SubResource("QuadMesh_lensdirt")
-
 
 [node name="NoteReader" type="Marker3D" parent="Head/Eyes/Camera3D" unique_id=693307965]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, -0.5)

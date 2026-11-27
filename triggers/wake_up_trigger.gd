@@ -133,7 +133,9 @@ func _prepare_lying_pose(p: Player) -> void:
 
 	var space_state: PhysicsDirectSpaceState3D = _active_camera.get_world_3d().direct_space_state
 	var ray_params: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		_active_camera.global_position, _active_camera.global_position + (Vector3.DOWN * 6.0)
+		_active_camera.global_position,
+		_active_camera.global_position + (Vector3.DOWN * 6.0),
+		CollisionLayers.MASK_ENVIRONMENT
 	)
 	ray_params.exclude = [p.get_rid()]
 	var ray_hit: Dictionary = space_state.intersect_ray(ray_params)

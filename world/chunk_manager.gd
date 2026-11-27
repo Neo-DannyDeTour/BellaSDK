@@ -314,8 +314,11 @@ func _instantiate_and_attach(coord: Vector2i, packed: PackedScene) -> bool:
 		_chunk_states.erase(coord)
 		return false
 	var deltas_snapshot: Dictionary = _build_deltas_snapshot(coord)
-	var instance: Node3D = packed.instantiate() as Node3D
+	var raw_node: Node = packed.instantiate()
+	var instance: Node3D = raw_node as Node3D
 	if instance == null:
+		if is_instance_valid(raw_node):
+			raw_node.queue_free()
 		_chunk_states.erase(coord)
 		return false
 	instance.position = Vector3(float(coord.x) * CHUNK_SIZE, 0.0, float(coord.y) * CHUNK_SIZE)

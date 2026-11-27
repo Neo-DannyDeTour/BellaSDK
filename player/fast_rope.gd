@@ -103,6 +103,9 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
+	set_process(false)
+	set_physics_process(false)
+
 	if is_instance_valid(interact_label):
 		interact_label.hide()
 		var events: Array[InputEvent] = InputMap.action_get_events("interact")
@@ -158,21 +161,24 @@ func _on_focused() -> void:
 			else:
 				interact_label.text = "[" + interact_key_name + "] GO UP"
 		interact_label.show()
+	_update_physics_processing()
 
 
 ## Hides floating interaction prompt when player crosshair turns away.
 func _on_unfocused() -> void:
 	if is_instance_valid(interact_label):
 		interact_label.hide()
+	_update_physics_processing()
 
 
 ## Processes player ascent/descent, audio tracking, or repositions target label.
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
+		set_physics_process(false)
 		return
 
 	if interaction_cooldown > 0.0:
-		interaction_cooldown -= delta
+		interaction_cooldown = maxf(0.0, interaction_cooldown - delta)
 
 	if is_instance_valid(attached_player):
 		attach_timer += delta
@@ -210,6 +216,16 @@ func _physics_process(delta: float) -> void:
 			var cam_up: Vector3 = cam.global_transform.basis.y
 			var final_pos: Vector3 = hit_point - (cam_up * label_offset_amount)
 			interact_label.global_position = final_pos
+	else:
+		_update_physics_processing()
+
+
+## Gates physics processing to active climb, focus prompt tracking, or re-grab cooldown.
+func _update_physics_processing() -> void:
+	if Engine.is_editor_hint():
+		return
+	var focused: bool = is_instance_valid(interact_comp) and interact_comp.is_currently_focused
+	set_physics_process(is_instance_valid(attached_player) or interaction_cooldown > 0.0 or focused)
 
 
 ## Receives interaction event and attaches player if vacant and cooled down.
@@ -270,6 +286,8 @@ func attach(player: CharacterBody3D) -> void:
 		loop_audio.global_position = attached_player.global_position
 		loop_audio.play()
 
+	_update_physics_processing()
+
 
 ## Detaches player from rope, applies optional launch impulse, and resets audio.
 func detach(reached_top: bool) -> void:
@@ -310,6 +328,7 @@ func detach(reached_top: bool) -> void:
 		one_shot_audio.play()
 
 	attached_player = null
+	_update_physics_processing()
 
 
 ## Retrieves and caches the active 3D camera from the main viewport.

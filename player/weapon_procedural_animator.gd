@@ -86,7 +86,10 @@ const SWAY_SMOOTH_SPEED: float = 14.0
 @export var reload_pose_rotation: Vector3 = Vector3(-0.25, 0.15, -0.20)
 
 ## Master toggle governing procedural updates.
-var is_active: bool = true
+var is_active: bool = true:
+	set(value):
+		is_active = value
+		_sync_process_state()
 
 ## Active animation state of the viewmodel.
 var state: AnimationState = AnimationState.IDLE
@@ -160,13 +163,26 @@ var _inspect_tween: Tween = null
 ## Active tween driving reload animation sequence.
 var _reload_tween: Tween = null
 
+## Tracks whether ancestor player and locomotion references have been resolved.
+var _refs_resolved: bool = false
 
-## Initializes default positions and locates player locomotion references.
+
+## Initializes default positions, resolves player refs, and gates process updates.
 func _ready() -> void:
 	print("WeaponProceduralAnimator: Initializing viewmodel animator.")
 	position = rest_position
 	rotation = rest_rotation
 	_resolve_player_references()
+	_sync_process_state()
+
+
+## Synchronizes process gating on visibility changes and invalidates refs on reparent.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED:
+		_sync_process_state()
+	elif what == NOTIFICATION_PARENTED:
+		_refs_resolved = false
+		_resolve_player_references()
 
 
 ## Intercepts mouse motion inputs to accumulate sway delta.
@@ -182,9 +198,11 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Lifecycle per-frame update solving sway, bobbing, and sprint blending.
 func _process(delta: float) -> void:
 	if not is_active or not visible:
+		_sync_process_state()
 		return
 
-	_resolve_player_references()
+	if not _refs_resolved:
+		_resolve_player_references()
 
 	# 1. Evaluate mouse look sway
 	_target_sway_rot.y = clampf(
@@ -445,9 +463,18 @@ func apply_recoil(recoil_pos: Vector3, recoil_rot: Vector3) -> void:
 	_current_sway_rot += recoil_rot
 
 
+## Gates per-frame [_process] execution to active and visible viewmodels.
+func _sync_process_state() -> void:
+	set_process(is_active and visible)
+
+
 ## Resolves and caches references to the player root and locomotion component.
 func _resolve_player_references() -> void:
 	if is_instance_valid(_player) and is_instance_valid(_locomotion):
+		_refs_resolved = true
+		return
+
+	if not is_inside_tree():
 		return
 
 	var p_node: Node = NodeQuery.find_ancestor_in_group(self, &"player")
@@ -456,6 +483,7 @@ func _resolve_player_references() -> void:
 		var loc: Variant = _player.get(&"locomotion_component")
 		if loc is PlayerLocomotionComponent:
 			_locomotion = loc
+	_refs_resolved = true
 
 
 ## Resets inspect state upon tween completion.

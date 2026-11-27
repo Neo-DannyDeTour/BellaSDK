@@ -16,6 +16,18 @@ const STATE_CROSSFADE_SEC: float = 0.12
 const MAX_LOOK_PITCH_RAD: float = 1.4835
 ## Planar locomotion blend coordinate assigned to forward sprint speed.
 const RUN_BLEND_Y: float = 1.5
+## Look-down pitch (radians) where backward body alignment begins.
+const LOOK_DOWN_START_RAD: float = -0.35
+## Look-down pitch (radians) where full chest/bust POV alignment is reached.
+const LOOK_DOWN_FULL_RAD: float = -1.31
+## Additional local +Z shift (m) at full look-down to frame chest and clear neck ring.
+const LOOK_DOWN_Z_OFFSET: float = 0.13
+## Additional local Y shift (m) at full look-down for eye-to-bust framing.
+const LOOK_DOWN_Y_OFFSET: float = 0.0
+## Local Y offset (m) while crouching to keep camera above chest height.
+const CROUCH_BODY_Y_OFFSET: float = -0.18
+## Local Z offset (m) while crouching to keep V-neck/bust framed cleanly.
+const CROUCH_BODY_Z_OFFSET: float = 0.04
 
 ## AnimationTree parameter key for the base [AnimationNodeStateMachine] playback.
 const PARAM_SM_PLAYBACK: StringName = &"parameters/state_machine/playback"
@@ -72,10 +84,11 @@ const ENV_LAYER_MESHES: Array[StringName] = [
 	&"Bella_Boots",
 ]
 
-## Meshes rendered on Layer 2 so first-person camera culls arms/gloves while keeping shadows.
+## Meshes rendered on Layer 2 so first-person camera culls arms/collar while keeping shadows.
 const PLAYER_LAYER_MESHES: Array[StringName] = [
 	&"Bella_Arms",
 	&"Bella_Gloves",
+	&"Bella_CollarShadow",
 ]
 
 ## Upper-body humanoid bones filtered onto [code]weapon_blend[/code] overlay.
@@ -150,6 +163,10 @@ var _active_weapon_tag: String = ""
 var _current_state: StringName = &""
 ## Current smoothed vertical camera look pitch in radians.
 var _look_pitch_rad: float = 0.0
+## Current smoothed crouch alignment factor in [0.0, 1.0].
+var _crouch_pose_alpha: float = 0.0
+## Calibrated resting local position of [PlayerBodyController] from scene transform.
+var _base_local_pos: Vector3 = Vector3.ZERO
 ## Cached bone index for [constant BONE_SPINE].
 var _spine_bone_idx: int = -1
 ## Cached bone index for [constant BONE_CHEST].
@@ -162,6 +179,7 @@ var _head_bone_idx: int = -1
 func _ready() -> void:
 	set_process(false)
 	set_physics_process(true)
+	_base_local_pos = position
 
 	if not is_instance_valid(model_root):
 		model_root = get_node_or_null(^"BellaModel") as Node3D
@@ -292,6 +310,7 @@ func _physics_process(delta: float) -> void:
 			camera_controller.head.rotation.x, -MAX_LOOK_PITCH_RAD, MAX_LOOK_PITCH_RAD
 		)
 	_look_pitch_rad = MathUtils.damp(_look_pitch_rad, target_pitch, BLEND_SMOOTH_SPEED, delta)
+	_update_look_alignment(delta, is_crouching)
 
 
 ## Returns the rigged [Skeleton3D] discovered inside [member model_root].
@@ -588,14 +607,36 @@ func _apply_active_weapon(weapon_id: String, immediate: bool = false) -> void:
 			_anim_tree.set(PARAM_WEAPON_BLEND, _weapon_blend)
 
 
-## Applies subtle camera pitch follow onto spine, chest, and head after [AnimationTree] runs.
+## Smoothly aligns local Z/Y offset for look-down chest POV and crouch camera clearance.
+func _update_look_alignment(delta: float, is_crouching: bool) -> void:
+	var target_crouch_alpha: float = 1.0 if is_crouching else 0.0
+	_crouch_pose_alpha = MathUtils.damp(
+		_crouch_pose_alpha, target_crouch_alpha, BLEND_SMOOTH_SPEED, delta
+	)
+
+	var down_span: float = LOOK_DOWN_START_RAD - LOOK_DOWN_FULL_RAD
+	var raw_t: float = clampf((LOOK_DOWN_START_RAD - _look_pitch_rad) / down_span, 0.0, 1.0)
+	var look_down_alpha: float = raw_t * raw_t * (3.0 - 2.0 * raw_t)
+
+	var offset_y: float = (
+		look_down_alpha * LOOK_DOWN_Y_OFFSET + _crouch_pose_alpha * CROUCH_BODY_Y_OFFSET
+	)
+	var offset_z: float = (
+		look_down_alpha * LOOK_DOWN_Z_OFFSET + _crouch_pose_alpha * CROUCH_BODY_Z_OFFSET
+	)
+	position = _base_local_pos + Vector3(0.0, offset_y, offset_z)
+
+
+## Applies camera pitch onto head (and subtle spine/chest when looking up) after mixer runs.
 func _on_mixer_applied() -> void:
 	if not visible or not is_instance_valid(_skeleton) or is_zero_approx(_look_pitch_rad):
 		return
 
-	_apply_bone_pitch(_spine_bone_idx, _look_pitch_rad * 0.12)
-	_apply_bone_pitch(_chest_bone_idx, _look_pitch_rad * 0.22)
-	_apply_bone_pitch(_head_bone_idx, _look_pitch_rad * 0.40)
+	# Keep torso upright when looking down so chest/V-neck stays framed instead of folding away.
+	if _look_pitch_rad > 0.0:
+		_apply_bone_pitch(_spine_bone_idx, _look_pitch_rad * 0.08)
+		_apply_bone_pitch(_chest_bone_idx, _look_pitch_rad * 0.14)
+	_apply_bone_pitch(_head_bone_idx, _look_pitch_rad * 0.42)
 
 
 ## Adds local pitch rotation [param pitch_rad] onto [param bone_idx] pose rotation.

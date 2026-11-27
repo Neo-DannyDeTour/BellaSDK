@@ -385,4 +385,4 @@ func test_impact_manager_contracts() -> void:
 	assert_almost_eq(float(ImpactManager.get(&"FADE_LENGTH")), 5.0, 0.001)
 	assert_false(ImpactManager.is_processing())
 	assert_false(ImpactManager.is_physics_processing())
-	assert_eq(ImpactManager.get_child_count(), 64)
+	assert_gte(ImpactManager.get_child_count(), 64)

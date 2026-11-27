@@ -9,10 +9,11 @@ const BELLA_PLAYER_SCENE: PackedScene = preload("res://npcs/bella/bella_player.t
 ## Preloaded main FPS player scene verified for integration wiring.
 const PLAYER_SCENE: PackedScene = preload("res://player/player.tscn")
 
-## Expected 6 modular meshes remaining in [bella_player.glb].
+## Expected 7 modular meshes remaining in [bella_player.glb].
 const EXPECTED_PLAYER_MESHES: Array[String] = [
 	"Bella_Arms",
 	"Bella_Boots",
+	"Bella_CollarShadow",
 	"Bella_Dress",
 	"Bella_Gloves",
 	"Bella_Skirt",
@@ -130,6 +131,7 @@ func test_bella_player_meshes_layers_and_head_cube() -> void:
 		var p_mesh: MeshInstance3D = (
 			model.find_child(String(player_name), true, false) as MeshInstance3D
 		)
+		assert_not_null(p_mesh, "Missing PLAYER_LAYER_MESHES node: " + String(player_name))
 		assert_eq(
 			p_mesh.layers,
 			CollisionLayers.RENDER_MASK_PLAYER,
@@ -140,6 +142,21 @@ func test_bella_player_meshes_layers_and_head_cube() -> void:
 			GeometryInstance3D.SHADOW_CASTING_SETTING_ON,
 			String(player_name) + " must cast shadows."
 		)
+
+	var collar_mesh: MeshInstance3D = (
+		model.find_child("Bella_CollarShadow", true, false) as MeshInstance3D
+	)
+	assert_not_null(collar_mesh, "Bella_CollarShadow mesh must exist in bella_player.glb.")
+	assert_eq(
+		collar_mesh.layers,
+		CollisionLayers.RENDER_MASK_PLAYER,
+		"Bella_CollarShadow must render on Layer 2."
+	)
+	assert_eq(
+		collar_mesh.cast_shadow,
+		GeometryInstance3D.SHADOW_CASTING_SETTING_ON,
+		"Bella_CollarShadow must cast shadows."
+	)
 
 	var head_cube: MeshInstance3D = (
 		body.head_cube_attachment.get_node_or_null(^"HeadCube") as MeshInstance3D
@@ -380,9 +397,10 @@ func test_locomotion_crouch_air_wolf_and_pitch_reactions() -> void:
 	var skel: Skeleton3D = body.get_skeleton()
 	var head_idx: int = skel.find_bone("Head")
 	head_node.rotation.x = 0.0
-	_step_body_physics(body, Vector3.ZERO, 0.1, 8)
+	_step_body_physics(body, Vector3.ZERO, 0.1, 12)
 	await get_tree().physics_frame
 	await get_tree().process_frame
+	var neutral_pos: Vector3 = body.position
 	var neutral_head_fwd: Vector3 = (
 		(body.global_transform.affine_inverse() * body.head_cube_attachment.global_transform)
 		. basis
@@ -404,6 +422,27 @@ func test_locomotion_crouch_air_wolf_and_pitch_reactions() -> void:
 		"Looking up (head.rotation.x > 0) must pitch Head bone upward."
 	)
 	assert_gte(head_idx, 0, "Head bone index must remain valid.")
+
+	# Looking straight down shifts BellaBody backward (+Z) cleanly without hunching Chest
+	head_node.rotation.x = -1.45
+	_step_body_physics(body, Vector3.ZERO, 0.1, 12)
+	await get_tree().physics_frame
+	await get_tree().process_frame
+	assert_gt(
+		body.position.z,
+		neutral_pos.z + 0.04,
+		"Looking down (-83 deg) must shift BellaBody local +Z backward to frame chest."
+	)
+	var look_down_head_fwd: Vector3 = (
+		(body.global_transform.affine_inverse() * body.head_cube_attachment.global_transform)
+		. basis
+		. z
+	)
+	assert_lt(
+		look_down_head_fwd.y,
+		neutral_head_fwd.y - 0.10,
+		"Looking down must pitch Head bone downward."
+	)
 
 
 ## Verifies weapon equip signal switching, upper-body blend, and initial inventory sync.
@@ -492,6 +531,7 @@ func test_player_scene_integration() -> void:
 	var cam: Camera3D = p.get_node_or_null(^"Head/Eyes/Camera3D") as Camera3D
 	assert_not_null(cam, "Player Camera3D must exist.")
 	assert_eq(cam.cull_mask, 1048573, "Player Camera3D must exclude Render Layer 2.")
+	assert_lte(cam.near, 0.03, "Player Camera3D near clip must be <= 0.03m to avoid chest clip.")
 
 	var bella_body: PlayerBodyController = p.get_node_or_null(^"BellaBody") as PlayerBodyController
 	assert_not_null(bella_body, "player.tscn must instance BellaBody as PlayerBodyController.")

@@ -201,7 +201,8 @@ func test_video_config_contract() -> void:
 	assert_eq(VideoConfig.DEFAULT_FPS, 60)
 
 	var defaults: Dictionary = VideoConfig.get_default_settings_dict()
-	assert_eq(defaults.get("preset"), "Ultra")
+	assert_eq(defaults.get("preset"), "High")
+	assert_eq(defaults.get("clouds"), "Off")
 	assert_eq(defaults.get("fps_limit"), 60)
 	assert_almost_eq(
 		VideoConfig.compute_effective_ui_scale(1.25, Vector2i(1920, 1080)), 1.25, 0.0001
