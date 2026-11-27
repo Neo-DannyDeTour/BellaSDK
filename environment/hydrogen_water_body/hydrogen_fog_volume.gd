@@ -35,7 +35,7 @@ var _cached_flashlight: SpotLight3D = null
 
 ## Caches FogVolume ShaderMaterial RID and initializes baseline fog uniforms.
 func _ready() -> void:
-	layers = 512
+	layers = CollisionLayers.RENDER_MASK_VOLUMETRICS
 	_current_density = base_density
 	_current_fade_dist = base_fade_dist
 	if material is ShaderMaterial:

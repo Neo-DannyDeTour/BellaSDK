@@ -23,18 +23,21 @@ const _PARAM_NEAR_BIAS: StringName = &"near_camera_bias"
 const _SNAP_DIST_SQ: float = 2.25
 
 @export_group("Rain State")
+## Enables or disables GPU rain particle emission and screen droplet VFX.
 @export var enabled: bool = true:
 	set(value):
 		enabled = value
 		if is_inside_tree():
 			_sync_state()
 
+## Overall rain intensity scalar controlling spawn ratio and eye droplet strength.
 @export_range(0.0, 1.0, 0.01) var intensity: float = 1.0:
 	set(value):
 		intensity = clampf(value, 0.0, 1.0)
 		if is_inside_tree():
 			_sync_state()
 
+## Storm turbulence and vortex swirl factor applied to falling rain particles.
 @export_range(0.0, 1.0, 0.01) var swirl: float = 0.35:
 	set(value):
 		swirl = clampf(value, 0.0, 1.0)
@@ -42,24 +45,28 @@ const _SNAP_DIST_SQ: float = 2.25
 			_sync_state()
 
 @export_group("Boundaries & Volume")
+## World-space dimensions of the rain spawn box and player detection zone.
 @export var volume_size: Vector3 = Vector3(30.0, 20.0, 30.0):
 	set(value):
 		volume_size = value.max(Vector3(2.0, 2.0, 2.0))
 		if is_inside_tree():
 			_sync_volume()
 
+## Maximum GPU rain particle budget emitted inside [member volume_size].
 @export_range(1024, 65536, 512) var max_particles: int = 25088:
 	set(value):
 		max_particles = maxi(value, 1024)
 		if is_inside_tree() and is_instance_valid(_particles):
 			_particles.amount = max_particles
 
+## Snaps rain volume position above the active [Camera3D] when enabled.
 @export var follow_camera: bool = true:
 	set(value):
 		follow_camera = value
 		if is_inside_tree():
 			_sync_state()
 
+## Bias weighting particle spawn density closer to the active camera.
 @export_range(0.0, 1.0, 0.05) var near_camera_bias: float = 0.65:
 	set(value):
 		near_camera_bias = clampf(value, 0.0, 1.0)
@@ -67,24 +74,28 @@ const _SNAP_DIST_SQ: float = 2.25
 			_sync_state()
 
 @export_group("Wind & Shaders")
+## Baseline directional wind velocity applied to rain streaks.
 @export var base_wind: Vector3 = Vector3(2.0, 0.0, 1.0):
 	set(value):
 		base_wind = value
 		if is_inside_tree():
 			_sync_state()
 
+## Wind velocity multiplier applied at maximum storm swirl intensity.
 @export var storm_wind_multiplier: float = 4.5:
 	set(value):
 		storm_wind_multiplier = maxf(value, 1.0)
 		if is_inside_tree():
 			_sync_state()
 
+## Particle process [Shader] driving GPU rain trajectory and turbulence.
 @export var process_shader: Shader:
 	set(value):
 		process_shader = value
 		if is_inside_tree():
 			_rebuild_materials()
 
+## Raindrop streak rendering [Shader] assigned to particle draw passes.
 @export var drop_shader: Shader:
 	set(value):
 		drop_shader = value
@@ -356,10 +367,9 @@ func _is_camera_under_roof() -> bool:
 
 	var from_pos: Vector3 = check_node.global_position + Vector3(0.0, 0.25, 0.0)
 	var to_pos: Vector3 = from_pos + Vector3(0.0, volume_size.y, 0.0)
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		from_pos, to_pos, CollisionLayers.MASK_ENVIRONMENT
+	var hit: Dictionary = NodeQuery.cast_ray(
+		space, from_pos, to_pos, CollisionLayers.MASK_ENVIRONMENT
 	)
-	var hit: Dictionary = space.intersect_ray(query)
 	return not hit.is_empty()
 
 

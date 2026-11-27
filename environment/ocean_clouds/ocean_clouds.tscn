@@ -40,6 +40,7 @@ shader_parameter/canopy_radius = 1800.0
 shader_parameter/horizon_curvature = 4e-05
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_canopy"]
+resource_local_to_scene = true
 size = Vector2(3600, 3600)
 subdivide_width = 24
 subdivide_depth = 24

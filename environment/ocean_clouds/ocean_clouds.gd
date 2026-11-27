@@ -193,18 +193,19 @@ func sync_sun_light() -> void:
 		_set_param(PARAM_SUN_COLOR, sun_color)
 
 
-## Duplicates shared [ShaderMaterial] and [PlaneMesh] so per-instance edits stay isolated.
+## Binds a cached [MaterialCache] variant of [ShaderMaterial] for per-instance uniforms.
 func _ensure_unique_material() -> void:
 	if not is_instance_valid(_cloud_mesh):
 		return
 	var existing: Material = _cloud_mesh.material_override
 	if existing is ShaderMaterial:
-		var duplicated: Resource = existing.duplicate()
-		_material = duplicated as ShaderMaterial
-		_cloud_mesh.material_override = _material
-	if _cloud_mesh.mesh is PlaneMesh:
-		var dup_mesh: Resource = _cloud_mesh.mesh.duplicate()
-		_cloud_mesh.mesh = dup_mesh as PlaneMesh
+		var variant_key: String = String(get_path()) if is_inside_tree() else String(name)
+		if variant_key.is_empty():
+			variant_key = str(get_instance_id())
+		var cached_mat: Material = MaterialCache.get_variant(existing, variant_key)
+		if cached_mat is ShaderMaterial:
+			_material = cached_mat as ShaderMaterial
+			_cloud_mesh.material_override = _material
 
 
 ## Applies volumetric render layer and disables shadow casting and GI on the canopy mesh.

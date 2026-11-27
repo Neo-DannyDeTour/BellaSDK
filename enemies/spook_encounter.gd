@@ -10,12 +10,6 @@ signal spook_spawned(spawn_pos: Vector3)
 ## Emitted when the spook vanishes after the player turns around.
 signal spook_vanished
 
-## Physics collision layer for Environment geometry (Layer 1).
-const PHYSICS_LAYER_ENVIRONMENT: int = 1
-
-## Physics collision layer for Player character detection (Layer 2).
-const PHYSICS_LAYER_PLAYER: int = 2
-
 @export_group("Trigger Volume")
 
 ## 3D boundary dimensions of the trigger volume and physics collision box.
@@ -171,8 +165,8 @@ var _active_lifetime: float = 0.0
 ## Initializes layers, child nodes, gizmo meshes, and collision links.
 func _ready() -> void:
 	print("SpookEncounter: Initializing encounter node -> ", name)
-	collision_layer = 0
-	collision_mask = PHYSICS_LAYER_PLAYER
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_PLAYER
 
 	_ensure_child_nodes()
 	_rebuild_visuals()
@@ -476,10 +470,9 @@ func _find_floor_position(candidate_pos: Vector3) -> Vector3:
 	var ray_top: Vector3 = candidate_pos + Vector3(0.0, 2.0, 0.0)
 	var ray_bottom: Vector3 = candidate_pos - Vector3(0.0, 8.0, 0.0)
 
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		ray_top, ray_bottom, PHYSICS_LAYER_ENVIRONMENT
+	var hit: Dictionary = NodeQuery.cast_ray(
+		space_state, ray_top, ray_bottom, CollisionLayers.MASK_ENVIRONMENT
 	)
-	var hit: Dictionary = space_state.intersect_ray(query)
 	if not hit.is_empty():
 		var raw_pos: Variant = hit.get(&"position")
 		if raw_pos is Vector3:
@@ -510,19 +503,21 @@ func _calculate_behind_spawn_position(player_node: Node3D) -> Vector3:
 		var space_state: PhysicsDirectSpaceState3D = world.direct_space_state
 		if is_instance_valid(space_state):
 			var head_height: Vector3 = Vector3(0.0, 1.2, 0.0)
-			var wall_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-				player_pos + head_height, desired_rear + head_height, PHYSICS_LAYER_ENVIRONMENT
+			var wall_hit: Dictionary = NodeQuery.cast_ray(
+				space_state,
+				player_pos + head_height,
+				desired_rear + head_height,
+				CollisionLayers.MASK_ENVIRONMENT
 			)
-			var wall_hit: Dictionary = space_state.intersect_ray(wall_query)
 			if not wall_hit.is_empty():
-				var hit_point: Vector3 = wall_hit.get(&"position", desired_rear)
+				var raw_wall_pos: Variant = wall_hit.get(&"position")
+				var hit_point: Vector3 = raw_wall_pos if raw_wall_pos is Vector3 else desired_rear
 				print("SpookEncounter: Obstructing wall hit behind player at ", hit_point)
 				desired_rear = hit_point - (back_dir * 0.4)
 
 	return _find_floor_position(desired_rear)
 
 
-## Checks whether player camera has rotated toward the spook silhouette.
 ## Checks whether player camera has rotated toward the spook silhouette.
 func _is_player_looking_at_spook() -> bool:
 	if not is_instance_valid(_player_camera) or not is_instance_valid(_spook_sprite):
@@ -628,10 +623,9 @@ func _has_line_of_sight() -> bool:
 		)
 	var target_chest: Vector3 = _spook_sprite.global_position + Vector3(0.0, sprite_h * 0.2, 0.0)
 
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		_player_camera.global_position, target_chest, PHYSICS_LAYER_ENVIRONMENT
+	var hit: Dictionary = NodeQuery.cast_ray(
+		space_state, _player_camera.global_position, target_chest, CollisionLayers.MASK_ENVIRONMENT
 	)
-	var hit: Dictionary = space_state.intersect_ray(query)
 	return hit.is_empty()
 
 
