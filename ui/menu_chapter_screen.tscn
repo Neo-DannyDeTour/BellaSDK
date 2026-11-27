@@ -39,6 +39,20 @@ image = ExtResource("5_odh0u")
 scene_path = "uid://dxdy3802b0jpj"
 metadata/_custom_type_script = "uid://45jvq8yps1jm"
 
+[sub_resource type="Resource" id="Resource_aecl6"]
+script = ExtResource("2_sl2hs")
+chapter_name = "VFX Combat Showcase"
+description = "Test map with fire and smoke vfx"
+scene_path = "res://scenes/vfx/vfx_combat_showcase.tscn"
+metadata/_custom_type_script = "uid://45jvq8yps1jm"
+
+[sub_resource type="Resource" id="Resource_ief2m"]
+script = ExtResource("2_sl2hs")
+chapter_name = "Ghost Girl Facial "
+description = "Animation Test"
+scene_path = "res://scenes/ghost_girl_face_preview.tscn"
+metadata/_custom_type_script = "uid://45jvq8yps1jm"
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1symm"]
 shader = ExtResource("5_ef8iv")
 shader_parameter/blur_amount = 2.0
@@ -53,7 +67,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_w8ad5")
-chapters = Array[ExtResource("2_sl2hs")]([SubResource("Resource_53ons"), SubResource("Resource_h04da"), SubResource("Resource_xs68i")])
+chapters = Array[ExtResource("2_sl2hs")]([SubResource("Resource_53ons"), SubResource("Resource_h04da"), SubResource("Resource_xs68i"), SubResource("Resource_aecl6"), SubResource("Resource_ief2m")])
 
 [node name="Background" type="TextureRect" parent="." unique_id=2096381043]
 unique_name_in_owner = true
@@ -182,12 +196,14 @@ theme_override_constants/separation = 10
 
 [node name="PlayButton" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection" unique_id=1925590167 instance=ExtResource("7_8qdoq")]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(116, 74)
 layout_mode = 2
 custom_text = "Play"
 glitch_text = "DIE!"
 
 [node name="BackButton" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection" unique_id=583418114 instance=ExtResource("7_8qdoq")]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(421, 74)
 layout_mode = 2
 custom_text = "Back to Main Menu"
 glitch_text = "Back to Hell"

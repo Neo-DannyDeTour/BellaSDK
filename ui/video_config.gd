@@ -12,13 +12,13 @@ const DEFAULT_FPS: int = 60
 const DEFAULT_FSR_MODE: String = "Disabled (Native)"
 
 ## Default anti-aliasing mode label.
-const DEFAULT_AA_MODE: String = "MSAA 4x"
+const DEFAULT_AA_MODE: String = "TAA (Smooth)"
 
 ## Default vertical synchronization mode.
 const DEFAULT_VSYNC: int = DisplayServer.VSYNC_DISABLED
 
 ## Default master quality preset name.
-const DEFAULT_PRESET: String = "Ultra"
+const DEFAULT_PRESET: String = "High"
 
 ## Default tonemapping algorithm label.
 const DEFAULT_TONEMAP: String = "Filmic"
@@ -26,41 +26,41 @@ const DEFAULT_TONEMAP: String = "Filmic"
 ## Default anisotropic filtering level label.
 const DEFAULT_ANISOTROPY: String = "4x"
 
-## Default screen-space ambient occlusion tier ("Ultra" preset default).
-const DEFAULT_SSAO: String = "High"
+## Default screen-space ambient occlusion tier ("High" preset default).
+const DEFAULT_SSAO: String = "Medium"
 
-## Default screen-space indirect lighting tier ("Ultra" preset default).
-const DEFAULT_SSI: String = "High"
+## Default screen-space indirect lighting tier ("High" preset default).
+const DEFAULT_SSI: String = "Low"
 
-## Default screen-space reflections tier ("Ultra" preset default).
-const DEFAULT_SSR: String = "High"
+## Default screen-space reflections tier ("High" preset default).
+const DEFAULT_SSR: String = "Low"
 
-## Default signed distance field global illumination tier ("Ultra" preset default).
-const DEFAULT_SDFGI: String = "High"
+## Default signed distance field global illumination tier ("High" preset default).
+const DEFAULT_SDFGI: String = "Low"
 
-## Default volumetric fog quality tier ("Ultra" preset default).
-const DEFAULT_FOG: String = "High"
+## Default volumetric fog quality tier ("High" preset default).
+const DEFAULT_FOG: String = "Off"
 
-## Default glow/bloom quality tier ("Ultra" preset default).
+## Default glow/bloom quality tier ("High" preset default).
 const DEFAULT_GLOW: String = "High"
 
-## Default volumetric clouds quality tier ("Ultra" preset default).
-const DEFAULT_CLOUDS: String = "High"
+## Default volumetric clouds quality tier ("High" preset default).
+const DEFAULT_CLOUDS: String = "Off"
 
-## Default shadow quality tier ("Ultra" preset default).
+## Default shadow quality tier ("High" preset default).
 const DEFAULT_SHADOW_QUALITY: String = "High (Smooth)"
 
-## Default dynamic light shadow casting state ("Ultra" preset default).
+## Default dynamic light shadow casting state ("High" preset default).
 const DEFAULT_DYNAMIC_LIGHT_SHADOWS: bool = true
 
-## Default positional shadow filtering tier ("Ultra" preset default).
-const DEFAULT_SHADOW_FILTER: String = "Soft High"
+## Default positional shadow filtering tier ("High" preset default).
+const DEFAULT_SHADOW_FILTER: String = "Soft Medium"
 
-## Default positional light shadow fade distance in meters ("Ultra" preset default).
-const DEFAULT_POSITIONAL_SHADOW_DISTANCE: float = 40.0
+## Default positional light shadow fade distance in meters ("High" preset default).
+const DEFAULT_POSITIONAL_SHADOW_DISTANCE: float = 32.0
 
-## Default directional light shadow max distance in meters ("Ultra" preset default).
-const DEFAULT_DIRECTIONAL_SHADOW_DISTANCE: float = 80.0
+## Default directional light shadow max distance in meters ("High" preset default).
+const DEFAULT_DIRECTIONAL_SHADOW_DISTANCE: float = 64.0
 
 ## Default occlusion culling state.
 const DEFAULT_OCCLUSION_CULLING: bool = true
@@ -92,8 +92,8 @@ const DEFAULT_LENS_DIRT: bool = true
 ## Default lens dirt intensity scalar.
 const DEFAULT_LENS_DIRT_INTENSITY: float = 0.01
 
-## Default mesh LOD threshold ("Ultra" preset default).
-const DEFAULT_MESH_LOD: float = 1.0
+## Default mesh LOD threshold ("High" preset default).
+const DEFAULT_MESH_LOD: float = 4.0
 
 ## Default color debanding state.
 const DEFAULT_DEBANDING: bool = true
@@ -256,7 +256,7 @@ const ANISOTROPY_LEVELS: Dictionary[String, int] = {
 const SSAO_MODES: Dictionary = {
 	"Off": {"enabled": false, "quality": 0, "half_size": true},
 	"Low": {"enabled": true, "quality": 0, "half_size": true},
-	"Medium": {"enabled": true, "quality": 1, "half_size": false},
+	"Medium": {"enabled": true, "quality": 1, "half_size": true},
 	"High": {"enabled": true, "quality": 2, "half_size": false},
 	"Ultra": {"enabled": true, "quality": 3, "half_size": false},
 }
@@ -310,25 +310,25 @@ const CLOUDS_MODES: Dictionary = {
 	{
 		"enabled": true,
 		"resolution_scale": 2,
-		"max_step_count": 96.0,
-		"max_lighting_steps": 8.0,
+		"max_step_count": 32.0,
+		"max_lighting_steps": 4.0,
 		"shadow_steps": 0,
 	},
 	"Medium":
 	{
 		"enabled": true,
-		"resolution_scale": 1,
-		"max_step_count": 160.0,
-		"max_lighting_steps": 16.0,
-		"shadow_steps": 4,
+		"resolution_scale": 2,
+		"max_step_count": 48.0,
+		"max_lighting_steps": 6.0,
+		"shadow_steps": 2,
 	},
 	"High":
 	{
 		"enabled": true,
 		"resolution_scale": 1,
-		"max_step_count": 300.0,
-		"max_lighting_steps": 32.0,
-		"shadow_steps": 6,
+		"max_step_count": 64.0,
+		"max_lighting_steps": 8.0,
+		"shadow_steps": 4,
 	},
 }
 
@@ -357,7 +357,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "Off",
 		"volumetric_fog": "Off",
 		"glow": "Off",
-		"clouds": "Low",
+		"clouds": "Off",
 		"mesh_lod_threshold": 32.0,
 	},
 	"Medium":
@@ -383,7 +383,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "Off",
 		"volumetric_fog": "Off",
 		"glow": "Low",
-		"clouds": "Medium",
+		"clouds": "Off",
 		"mesh_lod_threshold": 16.0,
 	},
 	"High":
@@ -398,9 +398,9 @@ const PRESETS: Dictionary = {
 		"texture_filter": "Linear Mipmap",
 		"fsr_mode": "Disabled (Native)",
 		"resolution_scale": 1.0,
-		"dof_enabled": true,
-		"dof_amount": 0.15,
-		"motion_blur": 0.50,
+		"dof_enabled": false,
+		"dof_amount": 0.0,
+		"motion_blur": 0.0,
 		"lens_dirt_enabled": true,
 		"lens_dirt_intensity": 0.01,
 		"ssao": "Medium",
@@ -409,7 +409,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "Low",
 		"volumetric_fog": "Off",
 		"glow": "High",
-		"clouds": "High",
+		"clouds": "Off",
 		"mesh_lod_threshold": 4.0,
 	},
 	"Ultra":
@@ -441,7 +441,7 @@ const PRESETS: Dictionary = {
 }
 
 
-## Returns a complete default settings dictionary built from the "Ultra" preset.
+## Returns a complete default settings dictionary built from [constant DEFAULT_PRESET].
 static func get_default_settings_dict() -> Dictionary:
 	var native_res: Vector2i = get_native_resolution(0)
 	var base: Dictionary = {
@@ -463,9 +463,9 @@ static func get_default_settings_dict() -> Dictionary:
 		"renderer": "forward_plus",
 		"gpu_adapter_index": 0,
 	}
-	var ultra_preset: Dictionary = Dictionary(PRESETS["Ultra"])
-	for key: Variant in ultra_preset.keys():
-		base[key] = ultra_preset[key]
+	var default_preset: Dictionary = Dictionary(PRESETS[DEFAULT_PRESET])
+	for key: Variant in default_preset.keys():
+		base[key] = default_preset[key]
 	return base
 
 

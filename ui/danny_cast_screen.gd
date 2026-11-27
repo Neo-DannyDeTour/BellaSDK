@@ -65,6 +65,9 @@ func _ready() -> void:
 
 	if auto_play:
 		play_video()
+	else:
+		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		video_player.paused = true
 
 
 ## Interrogates camera distance while screen is within camera frustum.

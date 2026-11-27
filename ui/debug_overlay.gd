@@ -58,6 +58,9 @@ var is_debug_allowed: bool = OS.has_feature("debug")
 ## Material used to draw the green wireframe debug overlay.
 var green_wireframe_material: ShaderMaterial
 
+## Cached original [member GeometryInstance3D.material_overlay] values keyed by node ID.
+var _cached_overlays: Dictionary[int, Material] = {}
+
 
 ## Lifecycle method called when the node enters the scene tree.
 ## Builds dynamic debug materials and binds debug UI button signals.
@@ -85,6 +88,12 @@ func _exit_tree() -> void:
 		Events.debug_menu_toggled.disconnect(_on_debug_menu_toggled)
 	if Events.console_toggled.is_connected(_on_console_toggled):
 		Events.console_toggled.disconnect(_on_console_toggled)
+
+	if is_wireframe_overlay:
+		var tree: SceneTree = get_tree()
+		if is_instance_valid(tree) and is_instance_valid(tree.current_scene):
+			_apply_wireframe_to_node(tree.current_scene, false)
+	_cached_overlays.clear()
 
 
 ## Compiles the runtime spatial green wireframe debug shader material.
@@ -208,18 +217,26 @@ func _on_wireframe_overlay_button_pressed() -> void:
 	var root_node: Node = get_tree().current_scene
 	if root_node:
 		_apply_wireframe_to_node(root_node, is_wireframe_overlay)
+	if not is_wireframe_overlay:
+		_cached_overlays.clear()
 
 
-## Recursively applies or removes the green wireframe shader overlay on mesh nodes.
+## Recursively applies or restores the green wireframe shader overlay on mesh nodes.
 ## [param node] Target [Node] branch to process.
-## [param is_overlay] True to assign [member green_wireframe_material], false to clear.
+## [param is_overlay] True to assign [member green_wireframe_material], false to restore.
 func _apply_wireframe_to_node(node: Node, is_overlay: bool) -> void:
-	if node is MeshInstance3D:
-		var mesh_node: MeshInstance3D = node
-		mesh_node.material_overlay = (green_wireframe_material if is_overlay else null)
-	elif node is CSGShape3D:
-		var csg_node: CSGShape3D = node
-		csg_node.material_overlay = (green_wireframe_material if is_overlay else null)
+	if node is MeshInstance3D or node is CSGShape3D:
+		var geom: GeometryInstance3D = node as GeometryInstance3D
+		var nid: int = node.get_instance_id()
+		if is_overlay:
+			if not _cached_overlays.has(nid):
+				_cached_overlays[nid] = geom.material_overlay
+			geom.material_overlay = green_wireframe_material
+		else:
+			var prev_raw: Variant = _cached_overlays.get(nid, null)
+			var prev_mat: Material = prev_raw as Material if prev_raw is Material else null
+			geom.material_overlay = prev_mat
+			_cached_overlays.erase(nid)
 
 	for child: Node in node.get_children():
 		_apply_wireframe_to_node(child, is_overlay)

@@ -541,11 +541,34 @@ static func _apply_gameplay_cameras(
 
 ## Applies the active volumetric clouds quality tier to all [SunshineCloudsDriverGD] nodes.
 static func _apply_gameplay_clouds(tree: SceneTree, config: Dictionary) -> void:
-	var clouds_tier: StringName = StringName(_get_str(config, "clouds", VideoConfig.DEFAULT_CLOUDS))
+	var clouds_key: String = _get_str(config, "clouds", VideoConfig.DEFAULT_CLOUDS)
+	var clouds_tier: StringName = StringName(clouds_key)
+	var tier_cfg: Dictionary = _get_dict(VideoConfig.CLOUDS_MODES, clouds_key)
+	var clouds_enabled: bool = _get_bool(tier_cfg, "enabled", false)
 	var drivers: Array[Node] = tree.get_nodes_in_group(&"sunshine_clouds")
 	for node: Node in drivers:
-		if is_instance_valid(node) and node.has_method(&"set_quality_tier"):
+		if not is_instance_valid(node):
+			continue
+		if node.has_method(&"set_quality_tier"):
 			node.call(&"set_quality_tier", clouds_tier)
+		var raw_res: Variant = node.get(&"clouds_resource")
+		if raw_res is CompositorEffect:
+			var effect: CompositorEffect = raw_res as CompositorEffect
+			if not clouds_enabled:
+				effect.enabled = false
+			elif effect is SunshineCloudsGD:
+				var clouds_res: SunshineCloudsGD = effect as SunshineCloudsGD
+				var cur_scale: int = _get_int(tier_cfg, "resolution_scale", 1)
+				clouds_res.set(&"resolution_scale", cur_scale)
+				clouds_res.max_step_count = _get_float(
+					tier_cfg, "max_step_count", clouds_res.max_step_count
+				)
+				clouds_res.max_lighting_steps = _get_float(
+					tier_cfg, "max_lighting_steps", clouds_res.max_lighting_steps
+				)
+				clouds_res.shadow_steps = _get_int(
+					tier_cfg, "shadow_steps", clouds_res.shadow_steps
+				)
 
 
 ## Updates all [Light3D] nodes inside a specific subtree.
@@ -623,7 +646,7 @@ static func _populate_environment(env: Environment, config: Dictionary, is_previ
 			env.volumetric_fog_density = 0.02
 			env.volumetric_fog_albedo = Color(0.85, 0.9, 0.95)
 	else:
-		env.volumetric_fog_enabled = fog_on
+		env.volumetric_fog_enabled = fog_on and (env.volumetric_fog_density > 0.0001)
 
 	var glow_key: String = _get_str(config, "glow", VideoConfig.DEFAULT_GLOW)
 	var glow_dict: Dictionary = _get_dict(VideoConfig.GLOW_MODES, glow_key)

@@ -17,9 +17,9 @@ func before_each() -> void:
 	graphics.call("reset_to_defaults")
 
 
-## Verifies that resetting to defaults initializes the canonical "Ultra" preset.
-func test_reset_to_defaults_loads_ultra_preset() -> void:
-	print("TestGraphicsManager: test_reset_to_defaults_loads_ultra_preset() called.")
+## Verifies that resetting to defaults initializes the canonical "High" preset.
+func test_reset_to_defaults_loads_high_preset() -> void:
+	print("TestGraphicsManager: test_reset_to_defaults_loads_high_preset() called.")
 	var preset: Variant = graphics.call("get_setting", "preset", "")
 	var sdfgi: Variant = graphics.call("get_setting", "sdfgi", "")
 	var ssao: Variant = graphics.call("get_setting", "ssao", "")
@@ -30,11 +30,11 @@ func test_reset_to_defaults_loads_ultra_preset() -> void:
 	var lens_dirt_enabled: Variant = graphics.call("get_setting", "lens_dirt_enabled", false)
 	var lens_dirt_intensity: Variant = graphics.call("get_setting", "lens_dirt_intensity", -1.0)
 
-	assert_eq(preset, "Ultra", "Default preset should be Ultra.")
-	assert_eq(sdfgi, "High", "Ultra preset SDFGI should default to High.")
-	assert_eq(ssao, "Ultra", "Ultra preset SSAO should default to Ultra.")
-	assert_eq(clouds, "High", "Ultra preset Clouds should default to High.")
-	assert_eq(aa_mode, "MSAA 4x", "Default AA mode should be MSAA 4x.")
+	assert_eq(preset, "High", "Default preset should be High.")
+	assert_eq(sdfgi, "Low", "High preset SDFGI should default to Low.")
+	assert_eq(ssao, "Medium", "High preset SSAO should default to Medium.")
+	assert_eq(clouds, "Off", "High preset Clouds should default to Off.")
+	assert_eq(aa_mode, "TAA (Smooth)", "Default AA mode should be TAA (Smooth).")
 	assert_eq(motion_blur, 0.0, "Default motion blur should be 0.0.")
 	assert_eq(dof_enabled, false, "Default DoF should be disabled.")
 	assert_eq(lens_dirt_enabled, true, "Default lens dirt should be enabled.")
@@ -66,9 +66,9 @@ func test_apply_preset_updates_active_config() -> void:
 func test_all_presets_contain_clouds_key() -> void:
 	print("TestGraphicsManager: test_all_presets_contain_clouds_key() called.")
 	var expected_map: Dictionary[String, String] = {
-		"Low": "Low",
-		"Medium": "Medium",
-		"High": "High",
+		"Low": "Off",
+		"Medium": "Off",
+		"High": "Off",
 		"Ultra": "High",
 	}
 	for preset_name: String in expected_map.keys():
@@ -96,13 +96,13 @@ func test_set_diorama_mode_toggles_isolation() -> void:
 	assert_false(graphics.get("is_diorama_active"), "Diorama mode should be inactive.")
 
 
-## Verifies that setting volumetric fog to on preserves level zero density for FogVolumes.
-func test_volumetric_fog_retains_zero_density_when_enabled() -> void:
-	print("TestGraphicsManager: test_volumetric_fog_retains_zero_density_when_enabled() called.")
+## Verifies zero-density environments force volumetric fog off while positive density honors config.
+func test_volumetric_fog_disables_zero_density_environments() -> void:
+	print("TestGraphicsManager: test_volumetric_fog_disables_zero_density_environments() called.")
 	var we: WorldEnvironment = WorldEnvironment.new()
 	var env: Environment = Environment.new()
 	env.volumetric_fog_density = 0.0
-	env.volumetric_fog_enabled = false
+	env.volumetric_fog_enabled = true
 	we.environment = env
 	add_child_autofree(we)
 
@@ -111,12 +111,19 @@ func test_volumetric_fog_retains_zero_density_when_enabled() -> void:
 	}
 	VideoApplier.apply_to_world_environment(we, config)
 
-	assert_true(
+	assert_false(
 		we.environment.volumetric_fog_enabled,
-		"Volumetric fog should be enabled to support FogVolumes."
+		"Zero-density environment must force volumetric fog off to avoid wasted GPU compute."
 	)
 	assert_eq(
 		we.environment.volumetric_fog_density, 0.0, "Authored zero fog density must be preserved."
+	)
+
+	we.environment.volumetric_fog_density = 0.02
+	VideoApplier.apply_to_world_environment(we, config)
+	assert_true(
+		we.environment.volumetric_fog_enabled,
+		"Positive-density environment should enable volumetric fog when setting is High."
 	)
 
 	config["volumetric_fog"] = "Off"

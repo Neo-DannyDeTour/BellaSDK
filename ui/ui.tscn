@@ -1092,6 +1092,7 @@ script = ExtResource("11_hrmpd")
 visible = false
 layout_mode = 2
 mouse_filter = 2
+stretch = true
 stretch_shrink = 2
 
 [node name="ChapterLabelSubViewport" type="SubViewport" parent="ChapterTitleContainer/EffectContainer" unique_id=178570349]
