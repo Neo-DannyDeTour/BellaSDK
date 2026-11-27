@@ -45,7 +45,6 @@ static func reset_tween(node: Node, existing_tween: Tween) -> Tween:
 	if not is_instance_valid(node) or not node.is_inside_tree():
 		return null
 	var new_tw: Tween = node.create_tween()
-	print("[Utilities] Reset basic tween on node: ", node.name)
 	return new_tw
 
 
@@ -63,7 +62,6 @@ static func reset_tween_ext(
 	var new_tw: Tween = node.create_tween()
 	new_tw.set_trans(trans_type)
 	new_tw.set_ease(ease_type)
-	print("[Utilities] Reset extended tween on node: ", node.name)
 	return new_tw
 
 
@@ -96,7 +94,7 @@ static func raycast_3d(
 	space_state: PhysicsDirectSpaceState3D,
 	origin: Vector3,
 	target: Vector3,
-	collision_mask: int = 1,
+	collision_mask: int = CollisionLayers.MASK_ENVIRONMENT,
 	exclude: Array[RID] = []
 ) -> Dictionary:
 	return NodeQuery.cast_ray(space_state, origin, target, collision_mask, exclude)
@@ -114,50 +112,10 @@ static func delay_call(
 	return timer
 
 
-## Traverses parent hierarchy of [param node] to find ancestor matching [param script_type].
-## Forwarded to [NodeQuery.find_ancestor_of_type] as single source of truth.
-static func find_ancestor_of_type(node: Node, script_type: Script) -> Node:
-	return NodeQuery.find_ancestor_of_type(node, script_type)
-
-
 ## Kills [param tween] safely if valid and currently active.
 static func safe_kill_tween(tween: Tween) -> void:
 	if is_instance_valid(tween) and tween.is_valid():
 		tween.kill()
-		print("[Utilities] Killed active tween.")
-
-
-## Snaps 3D position [param pos] to coordinate grid step [param grid_step].
-## Forwarded to [MathUtils.snap_to_grid_3d] as single source of truth.
-static func snap_to_grid_3d(pos: Vector3, grid_step: float) -> Vector3:
-	var snapped_pos: Vector3 = MathUtils.snap_to_grid_3d(pos, grid_step)
-	print("[Utilities] Snapped position ", pos, " to: ", snapped_pos)
-	return snapped_pos
-
-
-## Normalizes radian angle [param angle_rad] to the range [-PI, PI].
-## Forwarded to [MathUtils.normalize_angle] as single source of truth.
-static func normalize_angle(angle_rad: float) -> float:
-	var normalized: float = MathUtils.normalize_angle(angle_rad)
-	print("[Utilities] Normalized angle ", angle_rad, " to: ", normalized)
-	return normalized
-
-
-## Checks if squared distance between [param pos_a] and [param pos_b] <= [param max_dist].
-## Forwarded to [MathUtils.is_within_distance_3d] as single source of truth.
-static func is_within_distance_3d(pos_a: Vector3, pos_b: Vector3, max_dist: float) -> bool:
-	var is_within: bool = MathUtils.is_within_distance_3d(pos_a, pos_b, max_dist)
-	print(
-		"[Utilities] Distance check between ",
-		pos_a,
-		" and ",
-		pos_b,
-		" <= ",
-		max_dist,
-		": ",
-		is_within
-	)
-	return is_within
 
 
 ## Editor-only helper that bakes a [CSGShape3D] into a sibling [StaticBody3D] + .res mesh.

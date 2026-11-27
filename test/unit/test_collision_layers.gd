@@ -10,6 +10,8 @@ func test_constants() -> void:
 	assert_eq(CollisionLayers.MASK_ENVIRONMENT, 1, "Environment mask should be 1 << 0")
 	assert_eq(CollisionLayers.LAYER_ENEMIES_IDX, 5, "Enemies layer idx should be 5")
 	assert_eq(CollisionLayers.MASK_ENEMIES, 16, "Enemies mask should be 1 << 4")
+	assert_eq(CollisionLayers.LAYER_PREVIEW_IDX, 11, "Preview layer idx should be 11")
+	assert_eq(CollisionLayers.MASK_PREVIEW, 1024, "Preview mask should be 1 << 10")
 
 
 func test_layer_to_mask() -> void:

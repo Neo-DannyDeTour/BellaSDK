@@ -50,7 +50,6 @@ func _connect_event_bus() -> void:
 
 ## Handles 2D sound effect requests from [signal Events.sfx_2d_requested].
 func _on_sfx_2d_requested(stream: AudioStream, bus: StringName = &"SFX") -> void:
-	print("[AudioPool] Received sfx_2d_requested event.")
 	play_sfx_2d(stream, bus)
 
 
@@ -58,13 +57,11 @@ func _on_sfx_2d_requested(stream: AudioStream, bus: StringName = &"SFX") -> void
 func _on_sfx_3d_requested(
 	stream: AudioStream, global_pos: Vector3, bus: StringName = &"SFX"
 ) -> void:
-	print("[AudioPool] Received sfx_3d_requested event.")
 	play_sfx_3d(stream, global_pos, bus)
 
 
 ## Allocates and instantiates audio nodes if not yet populated.
 func _ensure_pools_allocated() -> void:
-	print("[AudioPool] Ensuring pools allocated...")
 	if _pool_2d.is_empty():
 		for i: int in range(POOL_SIZE_2D):
 			var player_2d: AudioStreamPlayer = AudioStreamPlayer.new()
@@ -91,7 +88,6 @@ func play_sfx_2d(stream: AudioStream, bus: StringName = &"SFX") -> AudioStreamPl
 	_index_2d = (_index_2d + 1) % POOL_SIZE_2D
 	player.stream = stream
 	player.bus = bus
-	print("[AudioPool] Playing 2D SFX: %s on bus %s" % [stream.resource_path, bus])
 	player.play()
 	return player
 
@@ -108,7 +104,6 @@ func play_sfx_3d(
 	player.global_position = global_pos
 	player.stream = stream
 	player.bus = bus
-	print("[AudioPool] Playing 3D SFX: %s at %s" % [stream.resource_path, str(global_pos)])
 	player.play()
 	return player
 
@@ -120,7 +115,6 @@ func get_pooled_player_2d() -> AudioStreamPlayer:
 		return null
 	var player: AudioStreamPlayer = _pool_2d[_index_2d]
 	_index_2d = (_index_2d + 1) % POOL_SIZE_2D
-	print("[AudioPool] Retrieved idle 2D pooled player: %s" % player.name)
 	return player
 
 
@@ -131,5 +125,4 @@ func get_pooled_player_3d() -> AudioStreamPlayer3D:
 		return null
 	var player: AudioStreamPlayer3D = _pool_3d[_index_3d]
 	_index_3d = (_index_3d + 1) % POOL_SIZE_3D
-	print("[AudioPool] Retrieved idle 3D pooled player: %s" % player.name)
 	return player

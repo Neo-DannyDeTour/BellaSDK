@@ -12,7 +12,7 @@ static var _keycard_system: Node = null
 static var _graphics_manager: Node = null
 
 ## Generic registry storing dynamic service references by [StringName].
-static var _services: Dictionary = {}
+static var _services: Dictionary[StringName, Node] = {}
 
 ## Optional root window override used to isolate tests from engine autoloads.
 static var root_override: Window = null
@@ -40,10 +40,8 @@ static func register_service(service_name: StringName, service_instance: Node) -
 
 ## Returns the registered service [Node] mapped to [param service_name].
 static func get_service(service_name: StringName) -> Node:
-	print("SystemLocator: Resolving service -> ", service_name)
-	var service: Node = (
-		_services.get(service_name, null) if _services.get(service_name, null) is Node else null
-	)
+	var raw_service: Variant = _services.get(service_name, null)
+	var service: Node = raw_service if raw_service is Node else null
 	if not is_instance_valid(service):
 		var root: Window = _get_root_window()
 		if is_instance_valid(root) and root.has_node(NodePath(service_name)):
@@ -99,7 +97,7 @@ static func clear_cache() -> void:
 static func _get_root_window() -> Window:
 	if is_instance_valid(root_override):
 		return root_override
-	var tree: SceneTree = Engine.get_main_loop() if Engine.get_main_loop() is SceneTree else null
-	if is_instance_valid(tree):
-		return tree.root
+	var main_loop: MainLoop = Engine.get_main_loop()
+	if main_loop is SceneTree:
+		return (main_loop as SceneTree).root
 	return null

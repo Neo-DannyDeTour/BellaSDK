@@ -12,25 +12,25 @@ func before_each() -> void:
 	_signal_counts.clear()
 
 
-## Test Layer 1: [Utilities] static math, grid snapping, and distance checks.
+## Test Layer 1: [MathUtils] static math, grid snapping, and distance checks.
 func test_layer1_utilities_math_and_grid() -> void:
 	print("TestBellaArchitecture: Testing Layer 1 - Utilities.")
 	var origin: Vector3 = Vector3(1.23, 4.56, 7.89)
-	var snapped_pos: Vector3 = Utilities.snap_to_grid_3d(origin, 0.5)
+	var snapped_pos: Vector3 = MathUtils.snap_to_grid_3d(origin, 0.5)
 	assert_eq(snapped_pos, Vector3(1.0, 4.5, 8.0), "Grid snap should align to 0.5 units.")
 
 	var raw_angle: float = 4.0 * PI
-	var norm_angle: float = Utilities.normalize_angle(raw_angle)
+	var norm_angle: float = MathUtils.normalize_angle(raw_angle)
 	assert_almost_eq(norm_angle, 0.0, 0.001, "Angle normalization must wrap to [-PI, PI].")
 
 	var pos_a: Vector3 = Vector3.ZERO
 	var pos_b: Vector3 = Vector3(3.0, 0.0, 4.0)
 	assert_true(
-		Utilities.is_within_distance_3d(pos_a, pos_b, 5.0),
+		MathUtils.is_within_distance_3d(pos_a, pos_b, 5.0),
 		"3-4-5 triangle hypotenuse should evaluate <= 5.0."
 	)
 	assert_false(
-		Utilities.is_within_distance_3d(pos_a, pos_b, 4.9),
+		MathUtils.is_within_distance_3d(pos_a, pos_b, 4.9),
 		"Distance 5.0 should exceed 4.9 max check."
 	)
 

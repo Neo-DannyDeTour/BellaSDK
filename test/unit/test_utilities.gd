@@ -257,7 +257,7 @@ func test_delay_call_orphan_node_guard() -> void:
 	assert_false(_callback_executed, "Callback should not be triggered on orphan.")
 
 
-## Verifies [method Utilities.find_ancestor_of_type] traverses upwards to find matching script.
+## Verifies [method NodeQuery.find_ancestor_of_type] traverses upwards to find matching script.
 func test_find_ancestor_of_type_success() -> void:
 	print("[TestUtilities] Testing find_ancestor_of_type hierarchy ascent.")
 	var grand_parent: DummyAncestorNode = DummyAncestorNode.new()
@@ -266,27 +266,27 @@ func test_find_ancestor_of_type_success() -> void:
 	add_child_autofree(grand_parent)
 	grand_parent.add_child(parent)
 	parent.add_child(child)
-	var found: Node = Utilities.find_ancestor_of_type(child, DummyAncestorNode)
+	var found: Node = NodeQuery.find_ancestor_of_type(child, DummyAncestorNode)
 	assert_eq(found, grand_parent, "Should locate DummyAncestorNode two levels up.")
 
 
-## Verifies [method Utilities.find_ancestor_of_type] returns null if script is not in ancestry.
+## Verifies [method NodeQuery.find_ancestor_of_type] returns null if script is not in ancestry.
 func test_find_ancestor_of_type_missing() -> void:
 	print("[TestUtilities] Testing find_ancestor_of_type missing target.")
 	var parent: Node = Node.new()
 	var child: Node = Node.new()
 	add_child_autofree(parent)
 	parent.add_child(child)
-	var found: Node = Utilities.find_ancestor_of_type(child, DummyAncestorNode)
+	var found: Node = NodeQuery.find_ancestor_of_type(child, DummyAncestorNode)
 	assert_null(found, "Should return null if target script is not in hierarchy.")
 
 
-## Verifies [method Utilities.find_ancestor_of_type] handles null node or script gracefully.
+## Verifies [method NodeQuery.find_ancestor_of_type] handles null node or script gracefully.
 func test_find_ancestor_of_type_null_guards() -> void:
 	print("[TestUtilities] Testing find_ancestor_of_type null guards.")
 	var node: Node = Node.new()
 	autofree(node)
 	assert_null(
-		Utilities.find_ancestor_of_type(null, DummyAncestorNode), "Null node should return null."
+		NodeQuery.find_ancestor_of_type(null, DummyAncestorNode), "Null node should return null."
 	)
-	assert_null(Utilities.find_ancestor_of_type(node, null), "Null script type should return null.")
+	assert_null(NodeQuery.find_ancestor_of_type(node, null), "Null script type should return null.")

@@ -79,13 +79,13 @@ func test_node_query_contracts() -> void:
 	assert_true(NodeQuery.cast_ray(null, Vector3.ZERO, Vector3.FORWARD).is_empty())
 
 
-## Verifies [Utilities] pure helpers, signal connect, control centering, and raycast guard.
+## Verifies [Utilities] and [MathUtils] helpers, signal connect, control centering, and raycast.
 func test_utilities_contracts() -> void:
 	assert_true(Utilities.raycast_3d(null, Vector3.ZERO, Vector3.FORWARD).is_empty())
-	assert_eq(Utilities.snap_to_grid_3d(Vector3(1.4, 2.6, -0.4), 1.0), Vector3(1.0, 3.0, 0.0))
-	assert_almost_eq(Utilities.normalize_angle(TAU + 0.5), 0.5, 0.0001)
-	assert_true(Utilities.is_within_distance_3d(Vector3.ZERO, Vector3(3.0, 4.0, 0.0), 5.0))
-	assert_false(Utilities.is_within_distance_3d(Vector3.ZERO, Vector3(3.0, 4.1, 0.0), 5.0))
+	assert_eq(MathUtils.snap_to_grid_3d(Vector3(1.4, 2.6, -0.4), 1.0), Vector3(1.0, 3.0, 0.0))
+	assert_almost_eq(MathUtils.normalize_angle(TAU + 0.5), 0.5, 0.0001)
+	assert_true(MathUtils.is_within_distance_3d(Vector3.ZERO, Vector3(3.0, 4.0, 0.0), 5.0))
+	assert_false(MathUtils.is_within_distance_3d(Vector3.ZERO, Vector3(3.0, 4.1, 0.0), 5.0))
 
 	var ctrl: Control = Control.new()
 	ctrl.custom_minimum_size = Vector2(100.0, 40.0)

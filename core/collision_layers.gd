@@ -12,6 +12,8 @@ const LAYER_INTERACTIVE_IDX: int = 3
 const LAYER_DEBRIS_IDX: int = 4
 ## Physics layer 5 index for enemies, turrets, and hazards.
 const LAYER_ENEMIES_IDX: int = 5
+## Physics layer 11 index for preview dioramas and isolated menu viewports.
+const LAYER_PREVIEW_IDX: int = 11
 
 ## Bitmask disabling all physics collision layers.
 const MASK_NONE: int = 0
@@ -25,6 +27,8 @@ const MASK_INTERACTIVE: int = 1 << 2
 const MASK_DEBRIS: int = 1 << 3
 ## Bitmask matching physics layer 5 enemy entities.
 const MASK_ENEMIES: int = 1 << 4
+## Bitmask matching physics layer 11 preview/diorama objects.
+const MASK_PREVIEW: int = 1 << 10
 ## Bitmask enabling all 32 physics collision layers.
 const MASK_ALL: int = 0xFFFFFFFF
 
@@ -63,7 +67,6 @@ const RENDER_MASK_ALL: int = 0xFFFFF
 
 ## Converts a 1-based layer index into its corresponding single-bit mask.
 static func layer_to_mask(layer_index: int) -> int:
-	print("CollisionLayers: Converting layer index ", layer_index, " to bitmask.")
 	if layer_index < 1 or layer_index > 32:
 		return 0
 	return 1 << (layer_index - 1)
@@ -71,7 +74,6 @@ static func layer_to_mask(layer_index: int) -> int:
 
 ## Checks if the specified bitmask contains the given 1-based layer index.
 static func has_layer(mask: int, layer_index: int) -> bool:
-	print("CollisionLayers: Testing mask ", mask, " against layer ", layer_index)
 	if layer_index < 1 or layer_index > 32:
 		return false
 	return (mask & (1 << (layer_index - 1))) != 0
