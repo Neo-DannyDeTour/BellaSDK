@@ -1,15 +1,2131 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="GutTests" failures="0" tests="5" >
-  <testsuite name="test/unit/test_fence_door.gd" tests="5" failures="0" skipped="0" time="0.005594" >
-      <testcase name="test_hierarchy_and_layers" assertions="8" status="pass" classname="test/unit/test_fence_door.gd" time="0.001128" >
+<testsuites name="GutTests" failures="0" tests="917" >
+  <testsuite name="test/unit/test_ammo_box.gd" tests="4" failures="0" skipped="0" time="0.001238" >
+      <testcase name="test_default_properties" assertions="3" status="pass" classname="test/unit/test_ammo_box.gd" time="0.000679" >
       </testcase>
-      <testcase name="test_interact_toggles_when_unlocked" assertions="7" status="pass" classname="test/unit/test_fence_door.gd" time="0.000813" >
+      <testcase name="test_archetype_mutation_updates_resolved_id" assertions="2" status="pass" classname="test/unit/test_ammo_box.gd" time="0.000187" >
       </testcase>
-      <testcase name="test_interact_blocked_when_locked" assertions="4" status="pass" classname="test/unit/test_fence_door.gd" time="0.000506" >
+      <testcase name="test_focus_unfocus_toggles_label_visibility" assertions="2" status="pass" classname="test/unit/test_ammo_box.gd" time="0.000194" >
       </testcase>
-      <testcase name="test_event_sequencer_full_control" assertions="5" status="pass" classname="test/unit/test_fence_door.gd" time="0.00273" >
+      <testcase name="test_interaction_replenishes_ammo_and_frees_box" assertions="2" status="pass" classname="test/unit/test_ammo_box.gd" time="0.000178" >
       </testcase>
-      <testcase name="test_touch_triggers_fence_shake_with_cooldown" assertions="2" status="pass" classname="test/unit/test_fence_door.gd" time="0.000417" >
+  </testsuite>
+  <testsuite name="test/unit/test_audio_manager.gd" tests="4" failures="0" skipped="0" time="0.721124" >
+      <testcase name="test_null_stream_returns_null" assertions="2" status="pass" classname="test/unit/test_audio_manager.gd" time="0.404334" >
+      </testcase>
+      <testcase name="test_concurrency_limit_suppression_2d" assertions="3" status="pass" classname="test/unit/test_audio_manager.gd" time="0.099789" >
+      </testcase>
+      <testcase name="test_concurrency_limit_suppression_3d" assertions="2" status="pass" classname="test/unit/test_audio_manager.gd" time="0.116636" >
+      </testcase>
+      <testcase name="test_active_count_decrements_on_finish" assertions="4" status="pass" classname="test/unit/test_audio_manager.gd" time="0.100365" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_audio_pool.gd" tests="5" failures="0" skipped="0" time="0.500778" >
+      <testcase name="test_pool_allocation_capacities" assertions="6" status="pass" classname="test/unit/test_audio_pool.gd" time="0.099557" >
+      </testcase>
+      <testcase name="test_play_sfx_2d_rotates_slots" assertions="4" status="pass" classname="test/unit/test_audio_pool.gd" time="0.100271" >
+      </testcase>
+      <testcase name="test_play_sfx_3d_spatial_properties" assertions="3" status="pass" classname="test/unit/test_audio_pool.gd" time="0.10024" >
+      </testcase>
+      <testcase name="test_null_stream_handling" assertions="2" status="pass" classname="test/unit/test_audio_pool.gd" time="0.100466" >
+      </testcase>
+      <testcase name="test_get_pooled_player_retrieval" assertions="6" status="pass" classname="test/unit/test_audio_pool.gd" time="0.100244" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_base_trigger_area_3d.gd" tests="8" failures="0" skipped="0" time="0.80201" >
+      <testcase name="test_collision_layers_and_mask_initialized" assertions="2" status="pass" classname="test/unit/test_base_trigger_area_3d.gd" time="0.099285" >
+      </testcase>
+      <testcase name="test_player_identified_by_name" assertions="1" status="pass" classname="test/unit/test_base_trigger_area_3d.gd" time="0.100517" >
+      </testcase>
+      <testcase name="test_player_identified_by_group" assertions="1" status="pass" classname="test/unit/test_base_trigger_area_3d.gd" time="0.10035" >
+      </testcase>
+      <testcase name="test_non_player_rejected" assertions="2" status="pass" classname="test/unit/test_base_trigger_area_3d.gd" time="0.100353" >
+      </testcase>
+      <testcase name="test_player_entry_and_exit_signals" assertions="4" status="pass" classname="test/unit/test_base_trigger_area_3d.gd" time="0.100352" >
+      </testcase>
+      <testcase name="test_trigger_once_blocks_reentry" assertions="3" status="pass" classname="test/unit/test_base_trigger_area_3d.gd" time="0.100269" >
+      </testcase>
+      <testcase name="test_trigger_reentry_when_trigger_once_false" assertions="1" status="pass" classname="test/unit/test_base_trigger_area_3d.gd" time="0.10051" >
+      </testcase>
+      <testcase name="test_shape_bounds_synchronization" assertions="4" status="pass" classname="test/unit/test_base_trigger_area_3d.gd" time="0.100374" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_bear_trap.gd" tests="3" failures="0" skipped="0" time="0.002179" >
+      <testcase name="test_initial_state" assertions="1" status="pass" classname="test/unit/test_bear_trap.gd" time="0.000725" >
+      </testcase>
+      <testcase name="test_snap_shut" assertions="7" status="pass" classname="test/unit/test_bear_trap.gd" time="0.000679" >
+      </testcase>
+      <testcase name="test_timer_timeouts" assertions="8" status="pass" classname="test/unit/test_bear_trap.gd" time="0.000775" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_bella_architecture.gd" tests="7" failures="0" skipped="0" time="0.246853" >
+      <testcase name="test_layer1_utilities_math_and_grid" assertions="4" status="pass" classname="test/unit/test_bella_architecture.gd" time="0.000314" >
+      </testcase>
+      <testcase name="test_layer2_global_rng_determinism" assertions="5" status="pass" classname="test/unit/test_bella_architecture.gd" time="0.000419" >
+      </testcase>
+      <testcase name="test_layer3_events_bus_lifecycle" assertions="5" status="pass" classname="test/unit/test_bella_architecture.gd" time="0.000337" >
+      </testcase>
+      <testcase name="test_layer4_types_and_collision_masks" assertions="11" status="pass" classname="test/unit/test_bella_architecture.gd" time="0.000427" >
+      </testcase>
+      <testcase name="test_layer5_reference_data_resolution" assertions="4" status="pass" classname="test/unit/test_bella_architecture.gd" time="0.000217" >
+      </testcase>
+      <testcase name="test_layer6_audio_manager_concurrency_limits" assertions="2" status="pass" classname="test/unit/test_bella_architecture.gd" time="0.000362" >
+      </testcase>
+      <testcase name="test_wave_spawner_lifecycle_integration" assertions="2" status="pass" classname="test/unit/test_bella_architecture.gd" time="0.244777" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_bella_face_rig.gd" tests="4" failures="0" skipped="0" time="0.005815" >
+      <testcase name="test_bella_scene_bones_and_modular_meshes" assertions="51" status="pass" classname="test/unit/test_bella_face_rig.gd" time="0.001807" >
+      </testcase>
+      <testcase name="test_arkit_52_blendshapes_and_eyelash_sync" assertions="124" status="pass" classname="test/unit/test_bella_face_rig.gd" time="0.001372" >
+      </testcase>
+      <testcase name="test_expressions_visemes_and_jaw_bone_coupling" assertions="71" status="pass" classname="test/unit/test_bella_face_rig.gd" time="0.001765" >
+      </testcase>
+      <testcase name="test_eye_look_at_modifiers_and_visibility_gating" assertions="25" status="pass" classname="test/unit/test_bella_face_rig.gd" time="0.000871" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_bimbo_mannequin.gd" tests="1" failures="0" skipped="0" time="0.043697" >
+      <testcase name="test_bimbo_mannequin_setup_and_activation" assertions="16" status="pass" classname="test/unit/test_bimbo_mannequin.gd" time="0.043697" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_breakable_crate.gd" tests="3" failures="0" skipped="0" time="0.002877" >
+      <testcase name="test_crate_instantiation_and_properties" assertions="11" status="pass" classname="test/unit/test_breakable_crate.gd" time="0.001154" >
+      </testcase>
+      <testcase name="test_crate_gunshot_break" assertions="1" status="pass" classname="test/unit/test_breakable_crate.gd" time="0.000903" >
+      </testcase>
+      <testcase name="test_player_stomp_break" assertions="1" status="pass" classname="test/unit/test_breakable_crate.gd" time="0.00082" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_breakable_tall_crate.gd" tests="2" failures="0" skipped="0" time="0.013675" >
+      <testcase name="test_initial_state" assertions="6" status="pass" classname="test/unit/test_breakable_tall_crate.gd" time="0.000346" >
+      </testcase>
+      <testcase name="test_breaks_into_eight_debris_gibs_on_lethal_damage" assertions="11" status="pass" classname="test/unit/test_breakable_tall_crate.gd" time="0.013329" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_button.gd" tests="3" failures="0" skipped="0" time="0.055511" >
+      <testcase name="test_on_focus" assertions="2" status="pass" classname="test/unit/test_button.gd" time="0.015886" >
+      </testcase>
+      <testcase name="test_on_unfocus" assertions="2" status="pass" classname="test/unit/test_button.gd" time="0.016597" >
+      </testcase>
+      <testcase name="test_global_event_broadcast" assertions="1" status="pass" classname="test/unit/test_button.gd" time="0.023028" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_cage_light.gd" tests="3" failures="0" skipped="0" time="0.004235" >
+      <testcase name="test_initial_hierarchy_and_references" assertions="3" status="pass" classname="test/unit/test_cage_light.gd" time="0.001887" >
+      </testcase>
+      <testcase name="test_power_component_turns_light_and_emission_on" assertions="6" status="pass" classname="test/unit/test_cage_light.gd" time="0.001287" >
+      </testcase>
+      <testcase name="test_remove_power_turns_light_and_emission_off" assertions="5" status="pass" classname="test/unit/test_cage_light.gd" time="0.001061" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_camera_controller.gd" tests="4" failures="0" skipped="0" time="0.389725" >
+      <testcase name="test_wolf_mode_event_toggle" assertions="3" status="pass" classname="test/unit/test_camera_controller.gd" time="0.088385" >
+      </testcase>
+      <testcase name="test_wolf_mode_idle_jitter_active" assertions="2" status="pass" classname="test/unit/test_camera_controller.gd" time="0.100603" >
+      </testcase>
+      <testcase name="test_movement_suppresses_wolf_idle_jitter" assertions="3" status="pass" classname="test/unit/test_camera_controller.gd" time="0.100202" >
+      </testcase>
+      <testcase name="test_reduce_motion_disables_wolf_idle_jitter" assertions="3" status="pass" classname="test/unit/test_camera_controller.gd" time="0.100535" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_camera_shake_manager.gd" tests="6" failures="0" skipped="0" time="0.600827" >
+      <testcase name="test_initial_state_and_process_disabled" assertions="2" status="pass" classname="test/unit/test_camera_shake_manager.gd" time="0.099296" >
+      </testcase>
+      <testcase name="test_add_trauma_clamps_and_wakes_process" assertions="3" status="pass" classname="test/unit/test_camera_shake_manager.gd" time="0.100319" >
+      </testcase>
+      <testcase name="test_start_rumble_wakes_process" assertions="3" status="pass" classname="test/unit/test_camera_shake_manager.gd" time="0.100168" >
+      </testcase>
+      <testcase name="test_trauma_decay_and_sleep" assertions="5" status="pass" classname="test/unit/test_camera_shake_manager.gd" time="0.100274" >
+      </testcase>
+      <testcase name="test_accessibility_scale_clamping" assertions="3" status="pass" classname="test/unit/test_camera_shake_manager.gd" time="0.100366" >
+      </testcase>
+      <testcase name="test_stop_all_resets_and_sleeps" assertions="6" status="pass" classname="test/unit/test_camera_shake_manager.gd" time="0.100404" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_checkpoint.gd" tests="4" failures="0" skipped="0" time="0.001098" >
+      <testcase name="test_initial_state" assertions="2" status="pass" classname="test/unit/test_checkpoint.gd" time="0.000257" >
+      </testcase>
+      <testcase name="test_activate_checkpoint" assertions="3" status="pass" classname="test/unit/test_checkpoint.gd" time="0.000326" >
+      </testcase>
+      <testcase name="test_deactivate_checkpoint" assertions="2" status="pass" classname="test/unit/test_checkpoint.gd" time="0.000243" >
+      </testcase>
+      <testcase name="test_trigger_shape_box" assertions="2" status="pass" classname="test/unit/test_checkpoint.gd" time="0.000272" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_cinder_block.gd" tests="3" failures="0" skipped="0" time="0.001974" >
+      <testcase name="test_initial_hierarchy_and_components" assertions="8" status="pass" classname="test/unit/test_cinder_block.gd" time="0.000766" >
+      </testcase>
+      <testcase name="test_physics_and_layers" assertions="3" status="pass" classname="test/unit/test_cinder_block.gd" time="0.00066" >
+      </testcase>
+      <testcase name="test_pickable_interfaces" assertions="4" status="pass" classname="test/unit/test_cinder_block.gd" time="0.000548" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_collision_layers.gd" tests="3" failures="0" skipped="0" time="0.001223" >
+      <testcase name="test_constants" assertions="4" status="pass" classname="test/unit/test_collision_layers.gd" time="0.000413" >
+      </testcase>
+      <testcase name="test_layer_to_mask" assertions="5" status="pass" classname="test/unit/test_collision_layers.gd" time="0.000453" >
+      </testcase>
+      <testcase name="test_has_layer" assertions="4" status="pass" classname="test/unit/test_collision_layers.gd" time="0.000357" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_combination_lock.gd" tests="3" failures="0" skipped="0" time="0.000971" >
+      <testcase name="test_secret_code_formatting" assertions="1" status="pass" classname="test/unit/test_combination_lock.gd" time="0.000385" >
+      </testcase>
+      <testcase name="test_code_submission_correct" assertions="1" status="pass" classname="test/unit/test_combination_lock.gd" time="0.000312" >
+      </testcase>
+      <testcase name="test_code_submission_incorrect" assertions="1" status="pass" classname="test/unit/test_combination_lock.gd" time="0.000274" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_console_command_registry.gd" tests="5" failures="0" skipped="0" time="0.001289" >
+      <testcase name="test_register_and_get_command" assertions="4" status="pass" classname="test/unit/test_console_command_registry.gd" time="0.000275" >
+      </testcase>
+      <testcase name="test_unregister_command" assertions="3" status="pass" classname="test/unit/test_console_command_registry.gd" time="0.000229" >
+      </testcase>
+      <testcase name="test_get_valid_commands" assertions="3" status="pass" classname="test/unit/test_console_command_registry.gd" time="0.000248" >
+      </testcase>
+      <testcase name="test_autocomplete_matches_command_names" assertions="3" status="pass" classname="test/unit/test_console_command_registry.gd" time="0.000241" >
+      </testcase>
+      <testcase name="test_autocomplete_matches_argument_provider" assertions="2" status="pass" classname="test/unit/test_console_command_registry.gd" time="0.000296" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_console_history.gd" tests="5" failures="0" skipped="0" time="0.001424" >
+      <testcase name="test_initial_state" assertions="2" status="pass" classname="test/unit/test_console_history.gd" time="0.000247" >
+      </testcase>
+      <testcase name="test_add_command_and_whitespace_trimming" assertions="2" status="pass" classname="test/unit/test_console_history.gd" time="0.000264" >
+      </testcase>
+      <testcase name="test_ignore_consecutive_duplicates" assertions="2" status="pass" classname="test/unit/test_console_history.gd" time="0.000266" >
+      </testcase>
+      <testcase name="test_capacity_overflow_purges_oldest" assertions="4" status="pass" classname="test/unit/test_console_history.gd" time="0.000318" >
+      </testcase>
+      <testcase name="test_navigation_boundaries" assertions="5" status="pass" classname="test/unit/test_console_history.gd" time="0.000329" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_conveyor_belt.gd" tests="3" failures="0" skipped="0" time="0.001059" >
+      <testcase name="test_physics_linear_velocity_calculation" assertions="1" status="pass" classname="test/unit/test_conveyor_belt.gd" time="0.000435" >
+      </testcase>
+      <testcase name="test_physics_diagonal_move_direction" assertions="1" status="pass" classname="test/unit/test_conveyor_belt.gd" time="0.000321" >
+      </testcase>
+      <testcase name="test_conveyor_size_updates_collision_shape" assertions="1" status="pass" classname="test/unit/test_conveyor_belt.gd" time="0.000303" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_diagnostics_clouds_audit.gd" tests="4" failures="0" skipped="0" time="0.021134" >
+      <testcase name="test_format_clouds_summary_banner" assertions="3" status="pass" classname="test/unit/test_diagnostics_clouds_audit.gd" time="0.000292" >
+      </testcase>
+      <testcase name="test_audit_detects_multiple_clouds_in_compositors" assertions="2" status="pass" classname="test/unit/test_diagnostics_clouds_audit.gd" time="0.019862" >
+      </testcase>
+      <testcase name="test_spike_root_causes_detection" assertions="4" status="pass" classname="test/unit/test_diagnostics_clouds_audit.gd" time="0.000534" >
+      </testcase>
+      <testcase name="test_60fps_false_positive_suppression_and_cloud_details" assertions="5" status="pass" classname="test/unit/test_diagnostics_clouds_audit.gd" time="0.000446" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_dumpster.gd" tests="7" failures="0" skipped="0" time="0.00607" >
+      <testcase name="test_initial_hierarchy_and_components" assertions="7" status="pass" classname="test/unit/test_dumpster.gd" time="0.001108" >
+      </testcase>
+      <testcase name="test_default_scale_is_one" assertions="1" status="pass" classname="test/unit/test_dumpster.gd" time="0.0008" >
+      </testcase>
+      <testcase name="test_interior_area_configured" assertions="3" status="pass" classname="test/unit/test_dumpster.gd" time="0.000742" >
+      </testcase>
+      <testcase name="test_container_colliders_and_root_resolution" assertions="3" status="pass" classname="test/unit/test_dumpster.gd" time="0.001237" >
+      </testcase>
+      <testcase name="test_rim_collider_exists" assertions="1" status="pass" classname="test/unit/test_dumpster.gd" time="0.00079" >
+      </testcase>
+      <testcase name="test_player_interaction_and_toggle" assertions="3" status="pass" classname="test/unit/test_dumpster.gd" time="0.000744" >
+      </testcase>
+      <testcase name="test_interact_component_triggers_dumpster_once" assertions="4" status="pass" classname="test/unit/test_dumpster.gd" time="0.000649" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_enemy_squid.gd" tests="4" failures="0" skipped="0" time="0.004255" >
+      <testcase name="test_squid_initialization" assertions="4" status="pass" classname="test/unit/test_enemy_squid.gd" time="0.001517" >
+      </testcase>
+      <testcase name="test_squid_reset" assertions="2" status="pass" classname="test/unit/test_enemy_squid.gd" time="0.000875" >
+      </testcase>
+      <testcase name="test_squid_groups" assertions="2" status="pass" classname="test/unit/test_enemy_squid.gd" time="0.000731" >
+      </testcase>
+      <testcase name="test_squid_take_damage_and_flinch" assertions="2" status="pass" classname="test/unit/test_enemy_squid.gd" time="0.001132" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_enter_sign.gd" tests="2" failures="0" skipped="0" time="0.011142" >
+      <testcase name="test_initial_hierarchy_and_green_tint" assertions="9" status="pass" classname="test/unit/test_enter_sign.gd" time="0.009246" >
+      </testcase>
+      <testcase name="test_toggle_off_and_on" assertions="6" status="pass" classname="test/unit/test_enter_sign.gd" time="0.001896" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_environment_component.gd" tests="4" failures="0" skipped="0" time="0.001782" >
+      <testcase name="test_initialize" assertions="1" status="pass" classname="test/unit/test_environment_component.gd" time="0.000488" >
+      </testcase>
+      <testcase name="test_start_zipline_cooldown" assertions="1" status="pass" classname="test/unit/test_environment_component.gd" time="0.000426" >
+      </testcase>
+      <testcase name="test_enter_updraft" assertions="3" status="pass" classname="test/unit/test_environment_component.gd" time="0.000534" >
+      </testcase>
+      <testcase name="test_exit_updraft" assertions="2" status="pass" classname="test/unit/test_environment_component.gd" time="0.000334" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_event_sequence_trigger.gd" tests="4" failures="0" skipped="0" time="1.025609" >
+      <testcase name="test_wait_look_step_execution" assertions="2" status="pass" classname="test/unit/test_event_sequence_trigger.gd" time="0.391068" >
+      </testcase>
+      <testcase name="test_inspector_bounds_and_visualizer_synchronization" assertions="8" status="pass" classname="test/unit/test_event_sequence_trigger.gd" time="0.100377" >
+      </testcase>
+      <testcase name="test_cutscene_steps_execution" assertions="5" status="pass" classname="test/unit/test_event_sequence_trigger.gd" time="0.333768" >
+      </testcase>
+      <testcase name="test_npc_follow_step_execution" assertions="13" status="pass" classname="test/unit/test_event_sequence_trigger.gd" time="0.200396" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_events.gd" tests="4" failures="0" skipped="0" time="0.051024" >
+      <testcase name="test_events_initialization" assertions="1" status="pass" classname="test/unit/test_events.gd" time="0.000339" >
+      </testcase>
+      <testcase name="test_dynamic_signals_can_be_emitted" assertions="4" status="pass" classname="test/unit/test_events.gd" time="0.003865" >
+      </testcase>
+      <testcase name="test_load_registered_fonts" assertions="1" status="pass" classname="test/unit/test_events.gd" time="0.00019" >
+      </testcase>
+      <testcase name="test_on_font_changed" assertions="1" status="pass" classname="test/unit/test_events.gd" time="0.04663" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_example.gd" tests="2" failures="0" skipped="0" time="0.000343" >
+      <testcase name="test_passes" assertions="1" status="pass" classname="test/unit/test_example.gd" time="0.000183" >
+      </testcase>
+      <testcase name="test_fails" assertions="1" status="pass" classname="test/unit/test_example.gd" time="0.00016" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_exit_sign.gd" tests="2" failures="0" skipped="0" time="0.009047" >
+      <testcase name="test_initial_hierarchy_and_default_on" assertions="9" status="pass" classname="test/unit/test_exit_sign.gd" time="0.007576" >
+      </testcase>
+      <testcase name="test_toggle_off_and_on" assertions="6" status="pass" classname="test/unit/test_exit_sign.gd" time="0.001471" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_explosion_crysis.gd" tests="16" failures="0" skipped="0" time="0.335271" >
+      <testcase name="test_tier1_scene_instantiation" assertions="5" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.009091" >
+      </testcase>
+      <testcase name="test_tier1_node_hierarchy_presence_and_types" assertions="11" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000238" >
+      </testcase>
+      <testcase name="test_tier1_core_fireball_properties" assertions="18" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000268" >
+      </testcase>
+      <testcase name="test_tier1_lingering_smoke_properties" assertions="11" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000182" >
+      </testcase>
+      <testcase name="test_tier1_sparks_and_debris_properties" assertions="16" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000207" >
+      </testcase>
+      <testcase name="test_tier1_detonation_flash_properties" assertions="7" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000151" >
+      </testcase>
+      <testcase name="test_tier1_heat_distortion_properties" assertions="6" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000143" >
+      </testcase>
+      <testcase name="test_tier2_auto_play_disabled_behavior" assertions="5" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000189" >
+      </testcase>
+      <testcase name="test_tier2_manual_explode_triggers_emission" assertions="8" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000223" >
+      </testcase>
+      <testcase name="test_tier2_reset_returns_to_baseline" assertions="7" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000199" >
+      </testcase>
+      <testcase name="test_tier2_early_freeing_safety" assertions="2" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.040066" >
+      </testcase>
+      <testcase name="test_tier3_synchronized_detonation" assertions="2" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000667" >
+      </testcase>
+      <testcase name="test_tier3_flash_energy_decay_tween" assertions="5" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.21611" >
+      </testcase>
+      <testcase name="test_tier3_signals_declaration_and_emission" assertions="4" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000607" >
+      </testcase>
+      <testcase name="test_tier4_gameplay_burst_simulation" assertions="15" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.066352" >
+      </testcase>
+      <testcase name="test_tier4_lifecycle_free_on_finish_toggle" assertions="3" status="pass" classname="test/unit/test_explosion_crysis.gd" time="0.000578" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_faction_component.gd" tests="6" failures="0" skipped="0" time="0.001273" >
+      <testcase name="test_default_values" assertions="3" status="pass" classname="test/unit/test_faction_component.gd" time="0.000176" >
+      </testcase>
+      <testcase name="test_is_hostile_to" assertions="2" status="pass" classname="test/unit/test_faction_component.gd" time="0.000136" >
+      </testcase>
+      <testcase name="test_passive_immunity" assertions="2" status="pass" classname="test/unit/test_faction_component.gd" time="0.000116" >
+      </testcase>
+      <testcase name="test_set_faction" assertions="2" status="pass" classname="test/unit/test_faction_component.gd" time="0.000562" >
+      </testcase>
+      <testcase name="test_add_hostile_faction" assertions="1" status="pass" classname="test/unit/test_faction_component.gd" time="0.000129" >
+      </testcase>
+      <testcase name="test_get_faction_component" assertions="2" status="pass" classname="test/unit/test_faction_component.gd" time="0.000154" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_fence_door.gd" tests="5" failures="0" skipped="0" time="0.006603" >
+      <testcase name="test_hierarchy_and_layers" assertions="8" status="pass" classname="test/unit/test_fence_door.gd" time="0.000446" >
+      </testcase>
+      <testcase name="test_interact_toggles_when_unlocked" assertions="7" status="pass" classname="test/unit/test_fence_door.gd" time="0.001142" >
+      </testcase>
+      <testcase name="test_interact_blocked_when_locked" assertions="4" status="pass" classname="test/unit/test_fence_door.gd" time="0.001103" >
+      </testcase>
+      <testcase name="test_event_sequencer_full_control" assertions="5" status="pass" classname="test/unit/test_fence_door.gd" time="0.00342" >
+      </testcase>
+      <testcase name="test_touch_triggers_fence_shake_with_cooldown" assertions="2" status="pass" classname="test/unit/test_fence_door.gd" time="0.000492" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_fire_vfx.gd" tests="6" failures="0" skipped="0" time="0.011297" >
+      <testcase name="test_scene_instantiation_and_layers" assertions="15" status="pass" classname="test/unit/test_fire_vfx.gd" time="0.010129" >
+      </testcase>
+      <testcase name="test_process_disabled" assertions="2" status="pass" classname="test/unit/test_fire_vfx.gd" time="0.000253" >
+      </testcase>
+      <testcase name="test_all_fire_presets" assertions="9" status="pass" classname="test/unit/test_fire_vfx.gd" time="0.000264" >
+      </testcase>
+      <testcase name="test_is_active_toggle" assertions="12" status="pass" classname="test/unit/test_fire_vfx.gd" time="0.000207" >
+      </testcase>
+      <testcase name="test_fire_scale_bounds" assertions="6" status="pass" classname="test/unit/test_fire_vfx.gd" time="0.000208" >
+      </testcase>
+      <testcase name="test_fire_shaders_modes_and_uniforms" assertions="9" status="pass" classname="test/unit/test_fire_vfx.gd" time="0.000236" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_gesture_input_manager.gd" tests="4" failures="0" skipped="0" time="0.000603" >
+      <testcase name="test_consume_buffered_action" assertions="3" status="pass" classname="test/unit/test_gesture_input_manager.gd" time="0.000148" >
+      </testcase>
+      <testcase name="test_consume_expired_buffered_action" assertions="3" status="pass" classname="test/unit/test_gesture_input_manager.gd" time="0.000125" >
+      </testcase>
+      <testcase name="test_is_action_just_triggered" assertions="2" status="pass" classname="test/unit/test_gesture_input_manager.gd" time="0.000121" >
+      </testcase>
+      <testcase name="test_is_action_just_released" assertions="2" status="pass" classname="test/unit/test_gesture_input_manager.gd" time="0.000209" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_ghost_girl_face_rig.gd" tests="7" failures="0" skipped="0" time="0.857655" >
+      <testcase name="test_ghost_girl_scene_bones_and_modular_meshes" assertions="57" status="pass" classname="test/unit/test_ghost_girl_face_rig.gd" time="0.001109" >
+      </testcase>
+      <testcase name="test_ghost_girl_arkit_52_eyelash_sync_and_jaw_coupling" assertions="128" status="pass" classname="test/unit/test_ghost_girl_face_rig.gd" time="0.001284" >
+      </testcase>
+      <testcase name="test_ghost_girl_process_sleep_and_visibility_gating" assertions="22" status="pass" classname="test/unit/test_ghost_girl_face_rig.gd" time="0.000673" >
+      </testcase>
+      <testcase name="test_humanizer_registration_build_reset_and_face_rig_drive" assertions="40" status="pass" classname="test/unit/test_ghost_girl_face_rig.gd" time="0.186851" >
+      </testcase>
+      <testcase name="test_preview_scene_modes_expressions_visemes_and_synthetic_arkit" assertions="58" status="pass" classname="test/unit/test_ghost_girl_face_rig.gd" time="0.474828" >
+      </testcase>
+      <testcase name="test_arkit_recorder_configure_from_controller_both_modes" assertions="24" status="pass" classname="test/unit/test_ghost_girl_face_rig.gd" time="0.100637" >
+      </testcase>
+      <testcase name="test_preview_p_key_facial_clip_playback" assertions="13" status="pass" classname="test/unit/test_ghost_girl_face_rig.gd" time="0.092273" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_global_settings.gd" tests="2" failures="0" skipped="0" time="0.000723" >
+      <testcase name="test_get_setting_default" assertions="2" status="pass" classname="test/unit/test_global_settings.gd" time="0.000364" >
+      </testcase>
+      <testcase name="test_save_and_get_setting" assertions="2" status="pass" classname="test/unit/test_global_settings.gd" time="0.000359" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_godiva_follower.gd" tests="19" failures="0" skipped="0" time="17.925992" >
+      <testcase name="test_follower_navigation_and_idle_sleep" assertions="9" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.005574" >
+      </testcase>
+      <testcase name="test_start_stop_following_and_sequencer_hook" assertions="10" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.019111" >
+      </testcase>
+      <testcase name="test_walk_run_stop_distances_and_offscreen_follow" assertions="7" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.004655" >
+      </testcase>
+      <testcase name="test_elevated_player_within_stop_distance_does_not_stop_below_ledge" assertions="7" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.078888" >
+      </testcase>
+      <testcase name="test_unreachable_flying_player_projects_and_tracks_gaze" assertions="209" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.071317" >
+      </testcase>
+      <testcase name="test_link_traversal_metadata_contract_and_fallback" assertions="13" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.004964" >
+      </testcase>
+      <testcase name="test_crouch_prone_capsule_and_headroom_check" assertions="8" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.306187" >
+      </testcase>
+      <testcase name="test_climb_link_tween_pauses_gravity_and_reaches_exit" assertions="5" status="pass" classname="test/unit/test_godiva_follower.gd" time="1.151273" >
+      </testcase>
+      <testcase name="test_godiva_traversal_animation_clips_registered" assertions="23" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.005063" >
+      </testcase>
+      <testcase name="test_interactive_shelf_push_and_topple_state" assertions="13" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.264193" >
+      </testcase>
+      <testcase name="test_select_shelf_traversal_contextual_modes" assertions="8" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.052379" >
+      </testcase>
+      <testcase name="test_all_four_shelf_traversal_modes_execute_and_finish" assertions="14" status="pass" classname="test/unit/test_godiva_follower.gd" time="9.666696" >
+      </testcase>
+      <testcase name="test_doorway_chokepoint_yield_and_resume" assertions="33" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.019599" >
+      </testcase>
+      <testcase name="test_untagged_narrow_corridor_yield_and_timeout" assertions="45" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.016072" >
+      </testcase>
+      <testcase name="test_shelf_collision_trigger_cooldown_and_cleared_guard" assertions="8" status="pass" classname="test/unit/test_godiva_follower.gd" time="3.550211" >
+      </testcase>
+      <testcase name="test_ik_controller_setup_hand_targets_and_prone_suppression" assertions="90" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.006687" >
+      </testcase>
+      <testcase name="test_npc_actor_parametric_locomotion_blend_space" assertions="8" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.004619" >
+      </testcase>
+      <testcase name="test_motion_warping_anchor_probing_snaps_wall_ledge_and_floor" assertions="6" status="pass" classname="test/unit/test_godiva_follower.gd" time="0.007818" >
+      </testcase>
+      <testcase name="test_testbed_navmesh_covers_csgbox11_and_disables_floating_link" assertions="7" status="pass" classname="test/unit/test_godiva_follower.gd" time="2.690686" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_godot_arkit_recorder.gd" tests="4" failures="0" skipped="0" time="0.040161" >
+      <testcase name="test_arkit_packet_validation_and_binary_parsing" assertions="12" status="pass" classname="test/unit/test_godot_arkit_recorder.gd" time="0.000276" >
+      </testcase>
+      <testcase name="test_arkit_server_multi_packet_persistent_udp_stream" assertions="10" status="pass" classname="test/unit/test_godot_arkit_recorder.gd" time="0.016517" >
+      </testcase>
+      <testcase name="test_arkit_recorder_builds_and_saves_animation_tracks" assertions="21" status="pass" classname="test/unit/test_godot_arkit_recorder.gd" time="0.003321" >
+      </testcase>
+      <testcase name="test_live_preview_and_menu_recording_workflow" assertions="9" status="pass" classname="test/unit/test_godot_arkit_recorder.gd" time="0.020047" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_graphics_manager.gd" tests="8" failures="0" skipped="0" time="0.008434" >
+      <testcase name="test_reset_to_defaults_loads_high_preset" assertions="9" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.001035" >
+      </testcase>
+      <testcase name="test_apply_preset_updates_active_config" assertions="6" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.002283" >
+      </testcase>
+      <testcase name="test_all_presets_contain_clouds_key" assertions="12" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.000958" >
+      </testcase>
+      <testcase name="test_set_diorama_mode_toggles_isolation" assertions="2" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.001054" >
+      </testcase>
+      <testcase name="test_volumetric_fog_disables_zero_density_environments" assertions="4" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.001103" >
+      </testcase>
+      <testcase name="test_resolution_scale_applies_correctly" assertions="2" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.000802" >
+      </testcase>
+      <testcase name="test_subviewport_camera_gets_empty_compositor" assertions="2" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.000611" >
+      </testcase>
+      <testcase name="test_subviewport_camera_with_custom_compositor_is_untouched" assertions="1" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.000588" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_health_component.gd" tests="7" failures="0" skipped="0" time="0.002404" >
+      <testcase name="test_take_damage" assertions="2" status="pass" classname="test/unit/test_health_component.gd" time="0.000529" >
+      </testcase>
+      <testcase name="test_take_fatal_damage" assertions="2" status="pass" classname="test/unit/test_health_component.gd" time="0.000373" >
+      </testcase>
+      <testcase name="test_heal" assertions="2" status="pass" classname="test/unit/test_health_component.gd" time="0.000381" >
+      </testcase>
+      <testcase name="test_over_heal" assertions="2" status="pass" classname="test/unit/test_health_component.gd" time="0.000386" >
+      </testcase>
+      <testcase name="test_increase_max_health" assertions="3" status="pass" classname="test/unit/test_health_component.gd" time="0.000398" >
+      </testcase>
+      <testcase name="test_random_health_roll" assertions="2" status="pass" classname="test/unit/test_health_component.gd" time="0.000172" >
+      </testcase>
+      <testcase name="test_random_health_reset_rerolls" assertions="1" status="pass" classname="test/unit/test_health_component.gd" time="0.000165" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_health_dispenser.gd" tests="4" failures="0" skipped="0" time="0.006085" >
+      <testcase name="test_initialization" assertions="2" status="pass" classname="test/unit/test_health_dispenser.gd" time="0.000306" >
+      </testcase>
+      <testcase name="test_interact_held_healing" assertions="2" status="pass" classname="test/unit/test_health_dispenser.gd" time="0.000306" >
+      </testcase>
+      <testcase name="test_update_screen" assertions="2" status="pass" classname="test/unit/test_health_dispenser.gd" time="0.000311" >
+      </testcase>
+      <testcase name="test_depleted_state_closes_and_hides_parts" assertions="6" status="pass" classname="test/unit/test_health_dispenser.gd" time="0.005162" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_health_modifier.gd" tests="2" failures="0" skipped="0" time="0.00062" >
+      <testcase name="test_modifier_applies_damage" assertions="1" status="pass" classname="test/unit/test_health_modifier.gd" time="0.000333" >
+      </testcase>
+      <testcase name="test_modifier_applies_healing" assertions="1" status="pass" classname="test/unit/test_health_modifier.gd" time="0.000287" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_hitscan_weapon.gd" tests="9" failures="0" skipped="0" time="0.006405" >
+      <testcase name="test_default_properties" assertions="7" status="pass" classname="test/unit/test_hitscan_weapon.gd" time="0.000315" >
+      </testcase>
+      <testcase name="test_shoot_decrements_ammo_when_equipped" assertions="2" status="pass" classname="test/unit/test_hitscan_weapon.gd" time="0.000257" >
+      </testcase>
+      <testcase name="test_shoot_fails_when_not_equipped" assertions="2" status="pass" classname="test/unit/test_hitscan_weapon.gd" time="0.000209" >
+      </testcase>
+      <testcase name="test_shoot_dry_fire_when_empty" assertions="2" status="pass" classname="test/unit/test_hitscan_weapon.gd" time="0.000208" >
+      </testcase>
+      <testcase name="test_shoot_respects_fire_rate" assertions="2" status="pass" classname="test/unit/test_hitscan_weapon.gd" time="0.000225" >
+      </testcase>
+      <testcase name="test_reload_transfers_ammo_from_reserves" assertions="2" status="pass" classname="test/unit/test_hitscan_weapon.gd" time="0.000235" >
+      </testcase>
+      <testcase name="test_reload_when_full_or_empty_reserves_noops" assertions="2" status="pass" classname="test/unit/test_hitscan_weapon.gd" time="0.000239" >
+      </testcase>
+      <testcase name="test_sync_ammo_ui_emits_event" assertions="1" status="pass" classname="test/unit/test_hitscan_weapon.gd" time="0.002358" >
+      </testcase>
+      <testcase name="test_process_hit_emits_bullet_impact" assertions="1" status="pass" classname="test/unit/test_hitscan_weapon.gd" time="0.002359" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_humanizer_godot47.gd" tests="3" failures="0" skipped="0" time="0.09705" >
+      <testcase name="test_humanizer_api_scene_instantiates_cleanly" assertions="3" status="pass" classname="test/unit/test_humanizer_godot47.gd" time="0.096129" >
+      </testcase>
+      <testcase name="test_humanizer_registry_loads_rigs" assertions="4" status="pass" classname="test/unit/test_humanizer_godot47.gd" time="0.000406" >
+      </testcase>
+      <testcase name="test_physical_skeleton_builds_simulator_and_bones" assertions="3" status="pass" classname="test/unit/test_humanizer_godot47.gd" time="0.000515" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_imp_enemy.gd" tests="15" failures="0" skipped="0" time="0.565811" >
+      <testcase name="test_imp_initialization_and_components" assertions="11" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.000884" >
+      </testcase>
+      <testcase name="test_imp_mood_component_normalization_and_multipliers" assertions="13" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.000782" >
+      </testcase>
+      <testcase name="test_imp_leap_traversal" assertions="3" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.000596" >
+      </testcase>
+      <testcase name="test_imp_proactive_and_hit_cadence_hex_shield" assertions="6" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.030931" >
+      </testcase>
+      <testcase name="test_imp_scene_animations_loaded" assertions="9" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.001369" >
+      </testcase>
+      <testcase name="test_imp_line_lightning_telegraph_and_fire" assertions="3" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.005927" >
+      </testcase>
+      <testcase name="test_imp_line_lightning_aim_freeze_dodge" assertions="4" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.23351" >
+      </testcase>
+      <testcase name="test_imp_homing_orb_steering_and_attack" assertions="4" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.085225" >
+      </testcase>
+      <testcase name="test_imp_direct_steering_fallback_without_navmesh" assertions="1" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.001831" >
+      </testcase>
+      <testcase name="test_imp_aoe_circle_damage_radius" assertions="3" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.082505" >
+      </testcase>
+      <testcase name="test_imp_three_stack_slam" assertions="4" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.003085" >
+      </testcase>
+      <testcase name="test_imp_autonomous_stack_slam_without_coordinator" assertions="4" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.067861" >
+      </testcase>
+      <testcase name="test_imp_powered_light_flicker_and_restore" assertions="3" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.001452" >
+      </testcase>
+      <testcase name="test_imp_water_dive_bomb_electrifies_and_dies" assertions="3" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.048594" >
+      </testcase>
+      <testcase name="test_imp_scene_instantiation" assertions="5" status="pass" classname="test/unit/test_imp_enemy.gd" time="0.001259" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_impact_manager.gd" tests="8" failures="0" skipped="0" time="0.308924" >
+      <testcase name="test_static_environment_places_decal" assertions="3" status="pass" classname="test/unit/test_impact_manager.gd" time="0.038809" >
+      </testcase>
+      <testcase name="test_rigid_body_rejected" assertions="1" status="pass" classname="test/unit/test_impact_manager.gd" time="0.038452" >
+      </testcase>
+      <testcase name="test_non_environment_layer_rejected" assertions="1" status="pass" classname="test/unit/test_impact_manager.gd" time="0.038241" >
+      </testcase>
+      <testcase name="test_ring_index_wraps" assertions="1" status="pass" classname="test/unit/test_impact_manager.gd" time="0.038903" >
+      </testcase>
+      <testcase name="test_scene_changed_hides_all" assertions="164" status="pass" classname="test/unit/test_impact_manager.gd" time="0.038959" >
+      </testcase>
+      <testcase name="test_surface_decal_selection" assertions="5" status="pass" classname="test/unit/test_impact_manager.gd" time="0.038657" >
+      </testcase>
+      <testcase name="test_interactive_prop_triggers_vfx_without_decal" assertions="6" status="pass" classname="test/unit/test_impact_manager.gd" time="0.038516" >
+      </testcase>
+      <testcase name="test_shotgun_frame_vfx_burst_cap" assertions="3" status="pass" classname="test/unit/test_impact_manager.gd" time="0.038387" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_in_game_console.gd" tests="34" failures="0" skipped="0" time="0.056629" >
+      <testcase name="test_update_suggestion_ui_formatting" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001238" >
+      </testcase>
+      <testcase name="test_update_suggestion_ui_empty" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00082" >
+      </testcase>
+      <testcase name="test_infinite_ammo_console_command" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00149" >
+      </testcase>
+      <testcase name="test_toggle_command_double_invocation" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000755" >
+      </testcase>
+      <testcase name="test_toggle_command_boolean_tokens" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000806" >
+      </testcase>
+      <testcase name="test_toggle_command_invalid_argument" assertions="1" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000678" >
+      </testcase>
+      <testcase name="test_toggle_command_autocomplete_suggestions" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000682" >
+      </testcase>
+      <testcase name="test_give_command_autocomplete_suggestions" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000727" >
+      </testcase>
+      <testcase name="test_give_ammo_command_autocomplete_suggestions" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000718" >
+      </testcase>
+      <testcase name="test_give_keycard_clearance" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000773" >
+      </testcase>
+      <testcase name="test_weapon_ammo_defaults_and_clamp" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00125" >
+      </testcase>
+      <testcase name="test_map_command_autocomplete" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00113" >
+      </testcase>
+      <testcase name="test_checkpoint_command_unset_and_set" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000957" >
+      </testcase>
+      <testcase name="test_save_and_load_commands" assertions="1" status="pass" classname="test/unit/test_in_game_console.gd" time="0.003125" >
+      </testcase>
+      <testcase name="test_telemetry_commands_emit_signals" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.002959" >
+      </testcase>
+      <testcase name="test_fps_limit_command" assertions="6" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001343" >
+      </testcase>
+      <testcase name="test_stat_perf_command" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001076" >
+      </testcase>
+      <testcase name="test_infinite_swim_command" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.002636" >
+      </testcase>
+      <testcase name="test_noclip_speed_command" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.002199" >
+      </testcase>
+      <testcase name="test_giveall_keycard_grants" assertions="6" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000926" >
+      </testcase>
+      <testcase name="test_volume_command" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001249" >
+      </testcase>
+      <testcase name="test_fullscreen_command" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001163" >
+      </testcase>
+      <testcase name="test_resolution_command" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000959" >
+      </testcase>
+      <testcase name="test_tts_command" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.002923" >
+      </testcase>
+      <testcase name="test_freecam_command_toggle" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001013" >
+      </testcase>
+      <testcase name="test_freecam_controller_lifecycle_and_input" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00093" >
+      </testcase>
+      <testcase name="test_damage_and_heal_commands" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.002705" >
+      </testcase>
+      <testcase name="test_water_wipe_and_shockwave_commands" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.003776" >
+      </testcase>
+      <testcase name="test_outline_command" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.002451" >
+      </testcase>
+      <testcase name="test_chapter_command" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.002428" >
+      </testcase>
+      <testcase name="test_freecam_wheel_scaling_and_teleport" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001359" >
+      </testcase>
+      <testcase name="test_notarget_and_ai_disable_commands" assertions="6" status="pass" classname="test/unit/test_in_game_console.gd" time="0.002959" >
+      </testcase>
+      <testcase name="test_shortcuts_and_keybinds" assertions="7" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001632" >
+      </testcase>
+      <testcase name="test_showtriggers_and_hidetriggers_commands" assertions="9" status="pass" classname="test/unit/test_in_game_console.gd" time="0.004794" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_input_helper.gd" tests="3" failures="0" skipped="0" time="0.000624" >
+      <testcase name="test_sanitize_key_name" assertions="5" status="pass" classname="test/unit/test_input_helper.gd" time="0.000294" >
+      </testcase>
+      <testcase name="test_get_event_icon_keyboard" assertions="1" status="pass" classname="test/unit/test_input_helper.gd" time="0.00017" >
+      </testcase>
+      <testcase name="test_get_event_icon_mouse" assertions="1" status="pass" classname="test/unit/test_input_helper.gd" time="0.00016" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_interact_component.gd" tests="3" failures="0" skipped="0" time="0.000542" >
+      <testcase name="test_hover_cursor" assertions="6" status="pass" classname="test/unit/test_interact_component.gd" time="0.00022" >
+      </testcase>
+      <testcase name="test_interact_with" assertions="1" status="pass" classname="test/unit/test_interact_component.gd" time="0.000163" >
+      </testcase>
+      <testcase name="test_interact_held" assertions="1" status="pass" classname="test/unit/test_interact_component.gd" time="0.000159" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_interaction_manager.gd" tests="4" failures="0" skipped="0" time="0.000841" >
+      <testcase name="test_set_source_camera" assertions="1" status="pass" classname="test/unit/test_interaction_manager.gd" time="0.000282" >
+      </testcase>
+      <testcase name="test_clear_focus" assertions="1" status="pass" classname="test/unit/test_interaction_manager.gd" time="0.000193" >
+      </testcase>
+      <testcase name="test_try_interact_fails_with_no_target" assertions="1" status="pass" classname="test/unit/test_interaction_manager.gd" time="0.000195" >
+      </testcase>
+      <testcase name="test_scan_for_interactable_handles_no_camera" assertions="1" status="pass" classname="test/unit/test_interaction_manager.gd" time="0.000171" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_interaction_scanner.gd" tests="3" failures="0" skipped="0" time="0.001015" >
+      <testcase name="test_enter_terminal_mode" assertions="3" status="pass" classname="test/unit/test_interaction_scanner.gd" time="0.000452" >
+      </testcase>
+      <testcase name="test_exit_terminal_mode" assertions="3" status="pass" classname="test/unit/test_interaction_scanner.gd" time="0.00035" >
+      </testcase>
+      <testcase name="test_setup_master_link" assertions="1" status="pass" classname="test/unit/test_interaction_scanner.gd" time="0.000213" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_jump_pad.gd" tests="3" failures="0" skipped="0" time="0.000791" >
+      <testcase name="test_trajectory_calculation" assertions="2" status="pass" classname="test/unit/test_jump_pad.gd" time="0.00031" >
+      </testcase>
+      <testcase name="test_flight_speed_multiplier_effects" assertions="1" status="pass" classname="test/unit/test_jump_pad.gd" time="0.000219" >
+      </testcase>
+      <testcase name="test_on_body_entered_launches_player" assertions="1" status="pass" classname="test/unit/test_jump_pad.gd" time="0.000262" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_keycard_data.gd" tests="2" failures="0" skipped="0" time="0.000406" >
+      <testcase name="test_default_values" assertions="5" status="pass" classname="test/unit/test_keycard_data.gd" time="0.000215" >
+      </testcase>
+      <testcase name="test_custom_properties" assertions="4" status="pass" classname="test/unit/test_keycard_data.gd" time="0.000191" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_keycard_lock.gd" tests="5" failures="0" skipped="0" time="0.00138" >
+      <testcase name="test_default_required_card_id" assertions="1" status="pass" classname="test/unit/test_keycard_lock.gd" time="0.000246" >
+      </testcase>
+      <testcase name="test_on_focused_updates_label" assertions="1" status="pass" classname="test/unit/test_keycard_lock.gd" time="0.000222" >
+      </testcase>
+      <testcase name="test_on_unfocused_clears_label" assertions="1" status="pass" classname="test/unit/test_keycard_lock.gd" time="0.00023" >
+      </testcase>
+      <testcase name="test_interacted_without_card_denies_access" assertions="1" status="pass" classname="test/unit/test_keycard_lock.gd" time="0.000267" >
+      </testcase>
+      <testcase name="test_interacted_with_card_grants_access" assertions="2" status="pass" classname="test/unit/test_keycard_lock.gd" time="0.000415" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_keycard_system.gd" tests="4" failures="0" skipped="0" time="0.370164" >
+      <testcase name="test_add_card" assertions="2" status="pass" classname="test/unit/test_keycard_system.gd" time="0.052766" >
+      </testcase>
+      <testcase name="test_add_duplicate_card" assertions="1" status="pass" classname="test/unit/test_keycard_system.gd" time="0.116622" >
+      </testcase>
+      <testcase name="test_consume_card" assertions="2" status="pass" classname="test/unit/test_keycard_system.gd" time="0.100418" >
+      </testcase>
+      <testcase name="test_consume_nonexistent_card" assertions="1" status="pass" classname="test/unit/test_keycard_system.gd" time="0.100358" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_killfield.gd" tests="4" failures="0" skipped="0" time="0.10303" >
+      <testcase name="test_player_enters_killfield" assertions="2" status="pass" classname="test/unit/test_killfield.gd" time="0.002506" >
+      </testcase>
+      <testcase name="test_noclip_player_ignores_killfield" assertions="1" status="pass" classname="test/unit/test_killfield.gd" time="0.00056" >
+      </testcase>
+      <testcase name="test_non_player_enters_killfield" assertions="2" status="pass" classname="test/unit/test_killfield.gd" time="0.096298" >
+      </testcase>
+      <testcase name="test_no_checkpoint_set" assertions="1" status="pass" classname="test/unit/test_killfield.gd" time="0.003666" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_ladder.gd" tests="7" failures="0" skipped="0" time="0.002209" >
+      <testcase name="test_ladder_size_updates_collision_shape" assertions="2" status="pass" classname="test/unit/test_ladder.gd" time="0.000334" >
+      </testcase>
+      <testcase name="test_ready_hides_visuals_at_runtime" assertions="2" status="pass" classname="test/unit/test_ladder.gd" time="0.000217" >
+      </testcase>
+      <testcase name="test_body_entered_calls_climber" assertions="1" status="pass" classname="test/unit/test_ladder.gd" time="0.000236" >
+      </testcase>
+      <testcase name="test_body_exited_calls_climber" assertions="1" status="pass" classname="test/unit/test_ladder.gd" time="0.000216" >
+      </testcase>
+      <testcase name="test_non_climber_body_ignored" assertions="1" status="pass" classname="test/unit/test_ladder.gd" time="0.000176" >
+      </testcase>
+      <testcase name="test_default_ladder_depth_is_point_one" assertions="1" status="pass" classname="test/unit/test_ladder.gd" time="0.000153" >
+      </testcase>
+      <testcase name="test_ladder_4m_scene_clearance_and_climbable_toggle" assertions="8" status="pass" classname="test/unit/test_ladder.gd" time="0.000877" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_locomotion_component.gd" tests="4" failures="0" skipped="0" time="0.000965" >
+      <testcase name="test_initialize" assertions="1" status="pass" classname="test/unit/test_locomotion_component.gd" time="0.000367" >
+      </testcase>
+      <testcase name="test_set_physics_active" assertions="2" status="pass" classname="test/unit/test_locomotion_component.gd" time="0.000195" >
+      </testcase>
+      <testcase name="test_set_and_get_direction" assertions="1" status="pass" classname="test/unit/test_locomotion_component.gd" time="0.00019" >
+      </testcase>
+      <testcase name="test_reset_momentum" assertions="3" status="pass" classname="test/unit/test_locomotion_component.gd" time="0.000213" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_mannequin_attractor.gd" tests="3" failures="0" skipped="0" time="0.009339" >
+      <testcase name="test_target_arrival_box_containment" assertions="4" status="pass" classname="test/unit/test_mannequin_attractor.gd" time="0.002796" >
+      </testcase>
+      <testcase name="test_attractor_preset_switching" assertions="4" status="pass" classname="test/unit/test_mannequin_attractor.gd" time="0.001039" >
+      </testcase>
+      <testcase name="test_attractor_sequence_flow" assertions="9" status="pass" classname="test/unit/test_mannequin_attractor.gd" time="0.005504" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_mannequin_ragdoll.gd" tests="1" failures="0" skipped="0" time="0.049192" >
+      <testcase name="test_mannequin_ragdoll_setup_and_activation" assertions="12" status="pass" classname="test/unit/test_mannequin_ragdoll.gd" time="0.049192" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_mannequin_volume.gd" tests="2" failures="0" skipped="0" time="0.003511" >
+      <testcase name="test_sync_with_target" assertions="9" status="pass" classname="test/unit/test_mannequin_volume.gd" time="0.003259" >
+      </testcase>
+      <testcase name="test_not_climbable_rejection" assertions="2" status="pass" classname="test/unit/test_mannequin_volume.gd" time="0.000252" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_material_cache.gd" tests="3" failures="0" skipped="0" time="0.000777" >
+      <testcase name="test_get_instance" assertions="3" status="pass" classname="test/unit/test_material_cache.gd" time="0.000412" >
+      </testcase>
+      <testcase name="test_get_instance_null" assertions="1" status="pass" classname="test/unit/test_material_cache.gd" time="0.000114" >
+      </testcase>
+      <testcase name="test_clear_cache" assertions="1" status="pass" classname="test/unit/test_material_cache.gd" time="0.000251" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_math_utils.gd" tests="11" failures="0" skipped="0" time="0.001266" >
+      <testcase name="test_damped_spring" assertions="3" status="pass" classname="test/unit/test_math_utils.gd" time="0.00013" >
+      </testcase>
+      <testcase name="test_damped_spring_v3" assertions="3" status="pass" classname="test/unit/test_math_utils.gd" time="0.000118" >
+      </testcase>
+      <testcase name="test_quadratic_bezier" assertions="3" status="pass" classname="test/unit/test_math_utils.gd" time="0.000146" >
+      </testcase>
+      <testcase name="test_cubic_bezier" assertions="3" status="pass" classname="test/unit/test_math_utils.gd" time="0.000138" >
+      </testcase>
+      <testcase name="test_sine_wave" assertions="2" status="pass" classname="test/unit/test_math_utils.gd" time="0.000109" >
+      </testcase>
+      <testcase name="test_gerstner_wave" assertions="2" status="pass" classname="test/unit/test_math_utils.gd" time="0.000098" >
+      </testcase>
+      <testcase name="test_calculate_wave_height" assertions="1" status="pass" classname="test/unit/test_math_utils.gd" time="0.000103" >
+      </testcase>
+      <testcase name="test_compound_wave_height" assertions="1" status="pass" classname="test/unit/test_math_utils.gd" time="0.000102" >
+      </testcase>
+      <testcase name="test_clamp_angle_deg" assertions="2" status="pass" classname="test/unit/test_math_utils.gd" time="0.000111" >
+      </testcase>
+      <testcase name="test_clamp_angle_rad" assertions="2" status="pass" classname="test/unit/test_math_utils.gd" time="0.000103" >
+      </testcase>
+      <testcase name="test_smooth_damp_angle" assertions="1" status="pass" classname="test/unit/test_math_utils.gd" time="0.000108" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_math_utils_extended.gd" tests="8" failures="0" skipped="0" time="0.000919" >
+      <testcase name="test_damp_scalar" assertions="2" status="pass" classname="test/unit/test_math_utils_extended.gd" time="0.000113" >
+      </testcase>
+      <testcase name="test_damp_v2" assertions="2" status="pass" classname="test/unit/test_math_utils_extended.gd" time="0.000104" >
+      </testcase>
+      <testcase name="test_damp_v3" assertions="3" status="pass" classname="test/unit/test_math_utils_extended.gd" time="0.000106" >
+      </testcase>
+      <testcase name="test_get_midpoint" assertions="1" status="pass" classname="test/unit/test_math_utils_extended.gd" time="0.000114" >
+      </testcase>
+      <testcase name="test_snap_to_grid_3d" assertions="4" status="pass" classname="test/unit/test_math_utils_extended.gd" time="0.000134" >
+      </testcase>
+      <testcase name="test_normalize_angle" assertions="3" status="pass" classname="test/unit/test_math_utils_extended.gd" time="0.000112" >
+      </testcase>
+      <testcase name="test_is_within_distance_3d" assertions="4" status="pass" classname="test/unit/test_math_utils_extended.gd" time="0.000103" >
+      </testcase>
+      <testcase name="test_calculate_cylinder_span_transform" assertions="2" status="pass" classname="test/unit/test_math_utils_extended.gd" time="0.000133" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_muzzle_flash.gd" tests="4" failures="0" skipped="0" time="0.005548" >
+      <testcase name="test_revolver_mounts_muzzle_flash_and_keeps_five_meshes" assertions="29" status="pass" classname="test/unit/test_muzzle_flash.gd" time="0.003756" >
+      </testcase>
+      <testcase name="test_shotgun_mounts_muzzle_flash_and_render_layers" assertions="28" status="pass" classname="test/unit/test_muzzle_flash.gd" time="0.000639" >
+      </testcase>
+      <testcase name="test_firing_weapons_triggers_muzzle_flash" assertions="6" status="pass" classname="test/unit/test_muzzle_flash.gd" time="0.000949" >
+      </testcase>
+      <testcase name="test_bare_new_weapon_remains_safe_without_muzzle_flash" assertions="2" status="pass" classname="test/unit/test_muzzle_flash.gd" time="0.000204" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_node_query.gd" tests="2" failures="0" skipped="0" time="0.185768" >
+      <testcase name="test_find_ancestor_of_type" assertions="2" status="pass" classname="test/unit/test_node_query.gd" time="0.085385" >
+      </testcase>
+      <testcase name="test_find_ancestor_in_group" assertions="2" status="pass" classname="test/unit/test_node_query.gd" time="0.100383" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_npc_actor.gd" tests="6" failures="0" skipped="0" time="0.056095" >
+      <testcase name="test_godiva_scale_and_humanoid_skeleton" assertions="16" status="pass" classname="test/unit/test_npc_actor.gd" time="0.005551" >
+      </testcase>
+      <testcase name="test_animation_tree_idle_and_air_hump" assertions="101" status="pass" classname="test/unit/test_npc_actor.gd" time="0.009015" >
+      </testcase>
+      <testcase name="test_event_sequence_trigger_integration" assertions="2" status="pass" classname="test/unit/test_npc_actor.gd" time="0.015095" >
+      </testcase>
+      <testcase name="test_global_events_dispatcher_mapping" assertions="7" status="pass" classname="test/unit/test_npc_actor.gd" time="0.005818" >
+      </testcase>
+      <testcase name="test_look_at_modifiers_and_body_turn" assertions="189" status="pass" classname="test/unit/test_npc_actor.gd" time="0.014671" >
+      </testcase>
+      <testcase name="test_offscreen_visibility_gating" assertions="4" status="pass" classname="test/unit/test_npc_actor.gd" time="0.005945" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_object_pool.gd" tests="6" failures="0" skipped="0" time="0.003628" >
+      <testcase name="test_initialization_and_preallocation" assertions="2" status="pass" classname="test/unit/test_object_pool.gd" time="0.000541" >
+      </testcase>
+      <testcase name="test_spawn_and_recycle" assertions="13" status="pass" classname="test/unit/test_object_pool.gd" time="0.000904" >
+      </testcase>
+      <testcase name="test_spawn_with_transform" assertions="3" status="pass" classname="test/unit/test_object_pool.gd" time="0.000368" >
+      </testcase>
+      <testcase name="test_pool_growth" assertions="5" status="pass" classname="test/unit/test_object_pool.gd" time="0.00057" >
+      </testcase>
+      <testcase name="test_recycle_all" assertions="4" status="pass" classname="test/unit/test_object_pool.gd" time="0.00046" >
+      </testcase>
+      <testcase name="test_clear_pool" assertions="3" status="pass" classname="test/unit/test_object_pool.gd" time="0.000785" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_ocean_clouds.gd" tests="3" failures="0" skipped="0" time="0.001305" >
+      <testcase name="test_instantiation_and_export_uniforms" assertions="8" status="pass" classname="test/unit/test_ocean_clouds.gd" time="0.000727" >
+      </testcase>
+      <testcase name="test_sync_sun_light_updates_shader" assertions="2" status="pass" classname="test/unit/test_ocean_clouds.gd" time="0.000307" >
+      </testcase>
+      <testcase name="test_follow_camera_xz_preserves_altitude" assertions="4" status="pass" classname="test/unit/test_ocean_clouds.gd" time="0.000271" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_pickable_paint_can.gd" tests="2" failures="0" skipped="0" time="0.00159" >
+      <testcase name="test_instantiation_layers_and_geometry" assertions="26" status="pass" classname="test/unit/test_pickable_paint_can.gd" time="0.001131" >
+      </testcase>
+      <testcase name="test_drop_impulse_is_mass_proportional" assertions="2" status="pass" classname="test/unit/test_pickable_paint_can.gd" time="0.000459" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_pickable_tin_can.gd" tests="4" failures="0" skipped="0" time="0.002048" >
+      <testcase name="test_instantiation_layers_and_dimensions" assertions="19" status="pass" classname="test/unit/test_pickable_tin_can.gd" time="0.000603" >
+      </testcase>
+      <testcase name="test_instance_tint_updates_shader_parameter" assertions="2" status="pass" classname="test/unit/test_pickable_tin_can.gd" time="0.000415" >
+      </testcase>
+      <testcase name="test_drop_impulse_is_mass_proportional" assertions="2" status="pass" classname="test/unit/test_pickable_tin_can.gd" time="0.000358" >
+      </testcase>
+      <testcase name="test_impact_detected_signal_threshold" assertions="2" status="pass" classname="test/unit/test_pickable_tin_can.gd" time="0.000672" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_pickable_tire.gd" tests="1" failures="0" skipped="0" time="0.000546" >
+      <testcase name="test_tire_instantiation_and_properties" assertions="17" status="pass" classname="test/unit/test_pickable_tire.gd" time="0.000546" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_pickable_wheel.gd" tests="1" failures="0" skipped="0" time="0.00048" >
+      <testcase name="test_wheel_instantiation_and_properties" assertions="13" status="pass" classname="test/unit/test_pickable_wheel.gd" time="0.00048" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_player_body_controller.gd" tests="6" failures="0" skipped="0" time="3.932211" >
+      <testcase name="test_bella_npc_scene_untouched" assertions="6" status="pass" classname="test/unit/test_player_body_controller.gd" time="0.000867" >
+      </testcase>
+      <testcase name="test_bella_player_meshes_layers_and_head_cube" assertions="70" status="pass" classname="test/unit/test_player_body_controller.gd" time="0.001222" >
+      </testcase>
+      <testcase name="test_11_clips_and_animation_tree_graph" assertions="40" status="pass" classname="test/unit/test_player_body_controller.gd" time="0.000735" >
+      </testcase>
+      <testcase name="test_locomotion_crouch_air_wolf_and_pitch_reactions" assertions="20" status="pass" classname="test/unit/test_player_body_controller.gd" time="0.0213" >
+      </testcase>
+      <testcase name="test_weapon_equip_reactions_and_initial_sync" assertions="12" status="pass" classname="test/unit/test_player_body_controller.gd" time="0.002788" >
+      </testcase>
+      <testcase name="test_player_scene_integration" assertions="14" status="pass" classname="test/unit/test_player_body_controller.gd" time="3.905299" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_player_interaction_component.gd" tests="5" failures="0" skipped="0" time="0.001809" >
+      <testcase name="test_initialize" assertions="1" status="pass" classname="test/unit/test_player_interaction_component.gd" time="0.000542" >
+      </testcase>
+      <testcase name="test_throw_held_item" assertions="2" status="pass" classname="test/unit/test_player_interaction_component.gd" time="0.00047" >
+      </testcase>
+      <testcase name="test_drop_held_item" assertions="2" status="pass" classname="test/unit/test_player_interaction_component.gd" time="0.000292" >
+      </testcase>
+      <testcase name="test_force_clear_hands" assertions="1" status="pass" classname="test/unit/test_player_interaction_component.gd" time="0.00025" >
+      </testcase>
+      <testcase name="test_set_heavy_lifting" assertions="2" status="pass" classname="test/unit/test_player_interaction_component.gd" time="0.000255" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_player_state_machine.gd" tests="3" failures="0" skipped="0" time="0.297746" >
+      <testcase name="test_initialization" assertions="5" status="pass" classname="test/unit/test_player_state_machine.gd" time="0.080828" >
+      </testcase>
+      <testcase name="test_transition_to_valid_state" assertions="6" status="pass" classname="test/unit/test_player_state_machine.gd" time="0.116605" >
+      </testcase>
+      <testcase name="test_transition_to_invalid_state" assertions="4" status="pass" classname="test/unit/test_player_state_machine.gd" time="0.100313" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_portal_and_drone_optimizations.gd" tests="3" failures="0" skipped="0" time="0.004828" >
+      <testcase name="test_state_machine_lock_preserves_captured_mouse_mode" assertions="5" status="pass" classname="test/unit/test_portal_and_drone_optimizations.gd" time="0.000457" >
+      </testcase>
+      <testcase name="test_portal_viewport_limits_and_far_plane" assertions="7" status="pass" classname="test/unit/test_portal_and_drone_optimizations.gd" time="0.000865" >
+      </testcase>
+      <testcase name="test_rain_controller_reuses_heightfield" assertions="2" status="pass" classname="test/unit/test_portal_and_drone_optimizations.gd" time="0.003506" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_power_component.gd" tests="3" failures="0" skipped="0" time="0.001148" >
+      <testcase name="test_add_power_meets_threshold" assertions="6" status="pass" classname="test/unit/test_power_component.gd" time="0.000544" >
+      </testcase>
+      <testcase name="test_remove_power_below_threshold" assertions="3" status="pass" classname="test/unit/test_power_component.gd" time="0.000402" >
+      </testcase>
+      <testcase name="test_power_does_not_go_below_zero" assertions="1" status="pass" classname="test/unit/test_power_component.gd" time="0.000202" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_procedural_blockout.gd" tests="7" failures="0" skipped="0" time="0.127551" >
+      <testcase name="test_level_generation_populates_grid" assertions="1" status="pass" classname="test/unit/test_procedural_blockout.gd" time="0.013211" >
+      </testcase>
+      <testcase name="test_radial_room_shape_selection" assertions="1" status="pass" classname="test/unit/test_procedural_blockout.gd" time="0.012583" >
+      </testcase>
+      <testcase name="test_ceilings_and_roofs_generation" assertions="2" status="pass" classname="test/unit/test_procedural_blockout.gd" time="0.024678" >
+      </testcase>
+      <testcase name="test_nested_rooms_generation" assertions="1" status="pass" classname="test/unit/test_procedural_blockout.gd" time="0.030918" >
+      </testcase>
+      <testcase name="test_parkour_elements_generation" assertions="2" status="pass" classname="test/unit/test_procedural_blockout.gd" time="0.023828" >
+      </testcase>
+      <testcase name="test_inner_area_fully_in_room" assertions="1" status="pass" classname="test/unit/test_procedural_blockout.gd" time="0.010854" >
+      </testcase>
+      <testcase name="test_grid_to_world_conversion" assertions="1" status="pass" classname="test/unit/test_procedural_blockout.gd" time="0.011479" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_puzzle_socket.gd" tests="2" failures="0" skipped="0" time="0.00523" >
+      <testcase name="test_plug_in" assertions="3" status="pass" classname="test/unit/test_puzzle_socket.gd" time="0.003841" >
+      </testcase>
+      <testcase name="test_unplug" assertions="2" status="pass" classname="test/unit/test_puzzle_socket.gd" time="0.001389" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_raft_platform.gd" tests="4" failures="0" skipped="0" time="0.003662" >
+      <testcase name="test_raft_physical_properties" assertions="6" status="pass" classname="test/unit/test_raft_platform.gd" time="0.000916" >
+      </testcase>
+      <testcase name="test_buoyancy_probes" assertions="10" status="pass" classname="test/unit/test_raft_platform.gd" time="0.000845" >
+      </testcase>
+      <testcase name="test_platform_and_barrel_geometry" assertions="8" status="pass" classname="test/unit/test_raft_platform.gd" time="0.000622" >
+      </testcase>
+      <testcase name="test_initial_underwater_overlap" assertions="3" status="pass" classname="test/unit/test_raft_platform.gd" time="0.001279" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_revolver.gd" tests="2" failures="0" skipped="0" time="0.001507" >
+      <testcase name="test_revolver_scene_rig_and_world_layer" assertions="8" status="pass" classname="test/unit/test_revolver.gd" time="0.00064" >
+      </testcase>
+      <testcase name="test_revolver_equip_layer_and_fire_cycles_chamber" assertions="5" status="pass" classname="test/unit/test_revolver.gd" time="0.000867" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_roar_screen_effect.gd" tests="3" failures="0" skipped="0" time="0.028672" >
+      <testcase name="test_monster_roared_signal_exists" assertions="1" status="pass" classname="test/unit/test_roar_screen_effect.gd" time="0.000161" >
+      </testcase>
+      <testcase name="test_roar_overlay_configured_in_ui" assertions="5" status="pass" classname="test/unit/test_roar_screen_effect.gd" time="0.014039" >
+      </testcase>
+      <testcase name="test_monster_roared_activates_overlay" assertions="2" status="pass" classname="test/unit/test_roar_screen_effect.gd" time="0.014472" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_rotator_component.gd" tests="3" failures="0" skipped="0" time="0.000571" >
+      <testcase name="test_process_x_axis" assertions="3" status="pass" classname="test/unit/test_rotator_component.gd" time="0.00023" >
+      </testcase>
+      <testcase name="test_process_y_axis" assertions="3" status="pass" classname="test/unit/test_rotator_component.gd" time="0.000175" >
+      </testcase>
+      <testcase name="test_process_z_axis" assertions="3" status="pass" classname="test/unit/test_rotator_component.gd" time="0.000166" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_save_integrity.gd" tests="4" failures="0" skipped="0" time="0.371639" >
+      <testcase name="test_compute_file_sha256" assertions="4" status="pass" classname="test/unit/test_save_integrity.gd" time="0.070377" >
+      </testcase>
+      <testcase name="test_level_path_validation" assertions="6" status="pass" classname="test/unit/test_save_integrity.gd" time="0.100442" >
+      </testcase>
+      <testcase name="test_validate_state_dictionary" assertions="4" status="pass" classname="test/unit/test_save_integrity.gd" time="0.100363" >
+      </testcase>
+      <testcase name="test_metadata_checksum_encoding" assertions="5" status="pass" classname="test/unit/test_save_integrity.gd" time="0.100457" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_save_manager.gd" tests="4" failures="0" skipped="0" time="0.401038" >
+      <testcase name="test_get_all_saves" assertions="2" status="pass" classname="test/unit/test_save_manager.gd" time="0.099391" >
+      </testcase>
+      <testcase name="test_has_saves_with_no_dir" assertions="1" status="pass" classname="test/unit/test_save_manager.gd" time="0.100487" >
+      </testcase>
+      <testcase name="test_sort_saves" assertions="4" status="pass" classname="test/unit/test_save_manager.gd" time="0.100707" >
+      </testcase>
+      <testcase name="test_load_save_game" assertions="1" status="pass" classname="test/unit/test_save_manager.gd" time="0.100453" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_save_slot.gd" tests="5" failures="0" skipped="0" time="0.007046" >
+      <testcase name="test_setup_load_mode" assertions="4" status="pass" classname="test/unit/test_save_slot.gd" time="0.001493" >
+      </testcase>
+      <testcase name="test_setup_save_mode" assertions="2" status="pass" classname="test/unit/test_save_slot.gd" time="0.000982" >
+      </testcase>
+      <testcase name="test_action_button_pressed_signal" assertions="1" status="pass" classname="test/unit/test_save_slot.gd" time="0.001486" >
+      </testcase>
+      <testcase name="test_favorite_toggled_signal" assertions="1" status="pass" classname="test/unit/test_save_slot.gd" time="0.001626" >
+      </testcase>
+      <testcase name="test_delete_button_pressed_signal" assertions="1" status="pass" classname="test/unit/test_save_slot.gd" time="0.001459" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_save_tampering_defense.gd" tests="5" failures="0" skipped="0" time="0.494442" >
+      <testcase name="test_empty_checksum_rejection" assertions="3" status="pass" classname="test/unit/test_save_tampering_defense.gd" time="0.092058" >
+      </testcase>
+      <testcase name="test_tampered_checksum_mismatch" assertions="3" status="pass" classname="test/unit/test_save_tampering_defense.gd" time="0.100654" >
+      </testcase>
+      <testcase name="test_unencrypted_dat_rejection" assertions="2" status="pass" classname="test/unit/test_save_tampering_defense.gd" time="0.100455" >
+      </testcase>
+      <testcase name="test_player_nan_inf_sanitization" assertions="4" status="pass" classname="test/unit/test_save_tampering_defense.gd" time="0.100479" >
+      </testcase>
+      <testcase name="test_stats_component_health_clamping" assertions="2" status="pass" classname="test/unit/test_save_tampering_defense.gd" time="0.100796" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_sewer_grate.gd" tests="4" failures="0" skipped="0" time="0.050855" >
+      <testcase name="test_initial_hierarchy_and_components" assertions="7" status="pass" classname="test/unit/test_sewer_grate.gd" time="0.001562" >
+      </testcase>
+      <testcase name="test_player_interaction_and_permission" assertions="3" status="pass" classname="test/unit/test_sewer_grate.gd" time="0.001158" >
+      </testcase>
+      <testcase name="test_event_sequencer_methods_and_signals" assertions="3" status="pass" classname="test/unit/test_sewer_grate.gd" time="0.001414" >
+      </testcase>
+      <testcase name="test_detach_leaf_breakaway" assertions="2" status="pass" classname="test/unit/test_sewer_grate.gd" time="0.046721" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_shader_cache.gd" tests="1" failures="0" skipped="0" time="0.000329" >
+      <testcase name="test_initialize" assertions="1" status="pass" classname="test/unit/test_shader_cache.gd" time="0.000329" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_shotgun.gd" tests="3" failures="0" skipped="0" time="0.001311" >
+      <testcase name="test_inherits_hitscan_weapon" assertions="1" status="pass" classname="test/unit/test_shotgun.gd" time="0.000375" >
+      </testcase>
+      <testcase name="test_shotgun_archetype_configuration" assertions="7" status="pass" classname="test/unit/test_shotgun.gd" time="0.000418" >
+      </testcase>
+      <testcase name="test_shotgun_fire_and_reload" assertions="3" status="pass" classname="test/unit/test_shotgun.gd" time="0.000518" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_signal_rocket.gd" tests="8" failures="0" skipped="0" time="0.164776" >
+      <testcase name="test_equip_ignites_flare" assertions="6" status="pass" classname="test/unit/test_signal_rocket.gd" time="0.000733" >
+      </testcase>
+      <testcase name="test_shoot_launches_and_cleans_inventory" assertions="4" status="pass" classname="test/unit/test_signal_rocket.gd" time="0.002201" >
+      </testcase>
+      <testcase name="test_switch_drops_lit_rocket" assertions="3" status="pass" classname="test/unit/test_signal_rocket.gd" time="0.000926" >
+      </testcase>
+      <testcase name="test_burnout_in_hand" assertions="4" status="pass" classname="test/unit/test_signal_rocket.gd" time="0.058472" >
+      </testcase>
+      <testcase name="test_repick_thrown_rocket" assertions="9" status="pass" classname="test/unit/test_signal_rocket.gd" time="0.017933" >
+      </testcase>
+      <testcase name="test_projectile_repick_no_duplication" assertions="8" status="pass" classname="test/unit/test_signal_rocket.gd" time="0.016563" >
+      </testcase>
+      <testcase name="test_projectile_prompts_and_burnout" assertions="8" status="pass" classname="test/unit/test_signal_rocket.gd" time="0.066541" >
+      </testcase>
+      <testcase name="test_weapon_scene_has_highlight_component" assertions="2" status="pass" classname="test/unit/test_signal_rocket.gd" time="0.001407" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_smoke_explosion_vfx.gd" tests="2" failures="0" skipped="0" time="0.005999" >
+      <testcase name="test_scene_instantiation" assertions="7" status="pass" classname="test/unit/test_smoke_explosion_vfx.gd" time="0.005689" >
+      </testcase>
+      <testcase name="test_preview_and_loop_mutations" assertions="3" status="pass" classname="test/unit/test_smoke_explosion_vfx.gd" time="0.00031" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_smoke_grenade_pickup.gd" tests="2" failures="0" skipped="0" time="0.002374" >
+      <testcase name="test_pickup_emits_weapon_tag_displayed" assertions="2" status="pass" classname="test/unit/test_smoke_grenade_pickup.gd" time="0.001933" >
+      </testcase>
+      <testcase name="test_tag_notification_registers_smoke_grenade" assertions="4" status="pass" classname="test/unit/test_smoke_grenade_pickup.gd" time="0.000441" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_sonar_manager_benchmark.gd" tests="1" failures="0" skipped="0" time="0.029159" >
+      <testcase name="test_sonar_trigger_performance" assertions="2" status="pass" classname="test/unit/test_sonar_manager_benchmark.gd" time="0.029159" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_spike_forensics.gd" tests="2" failures="0" skipped="0" time="0.000859" >
+      <testcase name="test_normal_frame_ignored" assertions="3" status="pass" classname="test/unit/test_spike_forensics.gd" time="0.000358" >
+      </testcase>
+      <testcase name="test_spike_frame_attributes_scope_and_nodes" assertions="5" status="pass" classname="test/unit/test_spike_forensics.gd" time="0.000501" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_squid_puddle.gd" tests="4" failures="0" skipped="0" time="0.00241" >
+      <testcase name="test_puddle_activation" assertions="2" status="pass" classname="test/unit/test_squid_puddle.gd" time="0.000931" >
+      </testcase>
+      <testcase name="test_locomotion_sand_hazard_blocks_sprint" assertions="5" status="pass" classname="test/unit/test_squid_puddle.gd" time="0.000517" >
+      </testcase>
+      <testcase name="test_locomotion_sprint_debuff_timer" assertions="4" status="pass" classname="test/unit/test_squid_puddle.gd" time="0.000482" >
+      </testcase>
+      <testcase name="test_locomotion_ice_hazard_tracking" assertions="3" status="pass" classname="test/unit/test_squid_puddle.gd" time="0.00048" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state.gd" tests="6" failures="0" skipped="0" time="0.001024" >
+      <testcase name="test_enter" assertions="1" status="pass" classname="test/unit/test_state.gd" time="0.000141" >
+      </testcase>
+      <testcase name="test_exit" assertions="1" status="pass" classname="test/unit/test_state.gd" time="0.000138" >
+      </testcase>
+      <testcase name="test_update" assertions="1" status="pass" classname="test/unit/test_state.gd" time="0.000136" >
+      </testcase>
+      <testcase name="test_physics_update" assertions="1" status="pass" classname="test/unit/test_state.gd" time="0.000123" >
+      </testcase>
+      <testcase name="test_handle_input" assertions="1" status="pass" classname="test/unit/test_state.gd" time="0.000124" >
+      </testcase>
+      <testcase name="test_transition_requested_signal" assertions="1" status="pass" classname="test/unit/test_state.gd" time="0.000362" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_air.gd" tests="6" failures="0" skipped="0" time="0.002445" >
+      <testcase name="test_enter_defaults" assertions="4" status="pass" classname="test/unit/test_state_air.gd" time="0.000527" >
+      </testcase>
+      <testcase name="test_enter_with_jump_flag" assertions="1" status="pass" classname="test/unit/test_state_air.gd" time="0.000383" >
+      </testcase>
+      <testcase name="test_enter_with_knockback" assertions="3" status="pass" classname="test/unit/test_state_air.gd" time="0.000429" >
+      </testcase>
+      <testcase name="test_enter_with_launch_payload" assertions="4" status="pass" classname="test/unit/test_state_air.gd" time="0.000375" >
+      </testcase>
+      <testcase name="test_enter_with_wall_coyote" assertions="3" status="pass" classname="test/unit/test_state_air.gd" time="0.000382" >
+      </testcase>
+      <testcase name="test_enter_with_coyote_time" assertions="1" status="pass" classname="test/unit/test_state_air.gd" time="0.000349" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_ground.gd" tests="2" failures="0" skipped="0" time="0.156854" >
+      <testcase name="test_enter" assertions="2" status="pass" classname="test/unit/test_state_ground.gd" time="0.060755" >
+      </testcase>
+      <testcase name="test_jump_buffered" assertions="2" status="pass" classname="test/unit/test_state_ground.gd" time="0.096099" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_ladder.gd" tests="6" failures="0" skipped="0" time="0.065677" >
+      <testcase name="test_depth_pull_targets_point_one_monotonically" assertions="2" status="pass" classname="test/unit/test_state_ladder.gd" time="0.000714" >
+      </testcase>
+      <testcase name="test_lateral_look_threshold_blocks_slight_side_look" assertions="3" status="pass" classname="test/unit/test_state_ladder.gd" time="0.000571" >
+      </testcase>
+      <testcase name="test_climb_down_pitch_threshold_ignores_slight_down_look" assertions="2" status="pass" classname="test/unit/test_state_ladder.gd" time="0.000428" >
+      </testcase>
+      <testcase name="test_opposite_facing_climbs_and_inverts_when_looking_down" assertions="3" status="pass" classname="test/unit/test_state_ladder.gd" time="0.000403" >
+      </testcase>
+      <testcase name="test_ground_touch_unglues_when_not_ascending" assertions="4" status="pass" classname="test/unit/test_state_ladder.gd" time="0.030481" >
+      </testcase>
+      <testcase name="test_ground_vs_air_attach_rules" assertions="4" status="pass" classname="test/unit/test_state_ladder.gd" time="0.03308" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_machine.gd" tests="7" failures="0" skipped="0" time="0.002965" >
+      <testcase name="test_initialization_with_initial_state" assertions="2" status="pass" classname="test/unit/test_state_machine.gd" time="0.000446" >
+      </testcase>
+      <testcase name="test_initialization_fallback" assertions="2" status="pass" classname="test/unit/test_state_machine.gd" time="0.000371" >
+      </testcase>
+      <testcase name="test_state_lifecycle_updates" assertions="3" status="pass" classname="test/unit/test_state_machine.gd" time="0.000309" >
+      </testcase>
+      <testcase name="test_change_state_success" assertions="5" status="pass" classname="test/unit/test_state_machine.gd" time="0.000606" >
+      </testcase>
+      <testcase name="test_change_state_locked" assertions="3" status="pass" classname="test/unit/test_state_machine.gd" time="0.000416" >
+      </testcase>
+      <testcase name="test_change_state_not_found" assertions="1" status="pass" classname="test/unit/test_state_machine.gd" time="0.000407" >
+      </testcase>
+      <testcase name="test_transition_requested_signal" assertions="1" status="pass" classname="test/unit/test_state_machine.gd" time="0.00041" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_slide.gd" tests="3" failures="0" skipped="0" time="0.002194" >
+      <testcase name="test_default_properties" assertions="3" status="pass" classname="test/unit/test_state_slide.gd" time="0.000822" >
+      </testcase>
+      <testcase name="test_enter_swaps_to_crouching_collision" assertions="3" status="pass" classname="test/unit/test_state_slide.gd" time="0.000685" >
+      </testcase>
+      <testcase name="test_exit_restores_standing_collision_when_clear" assertions="3" status="pass" classname="test/unit/test_state_slide.gd" time="0.000687" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_vault.gd" tests="4" failures="0" skipped="0" time="0.002013" >
+      <testcase name="test_enter_zeroes_velocity_and_binds_signal" assertions="2" status="pass" classname="test/unit/test_state_vault.gd" time="0.000593" >
+      </testcase>
+      <testcase name="test_exit_disconnects_signal" assertions="1" status="pass" classname="test/unit/test_state_vault.gd" time="0.000539" >
+      </testcase>
+      <testcase name="test_physics_update_maintains_zero_velocity" assertions="1" status="pass" classname="test/unit/test_state_vault.gd" time="0.000395" >
+      </testcase>
+      <testcase name="test_on_vault_finished_transitions_to_air" assertions="2" status="pass" classname="test/unit/test_state_vault.gd" time="0.000486" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_zipline.gd" tests="5" failures="0" skipped="0" time="0.002645" >
+      <testcase name="test_constants" assertions="3" status="pass" classname="test/unit/test_state_zipline.gd" time="0.000427" >
+      </testcase>
+      <testcase name="test_enter_missing_payload_transitions_to_air" assertions="1" status="pass" classname="test/unit/test_state_zipline.gd" time="0.000444" >
+      </testcase>
+      <testcase name="test_enter_valid_payload_configures_kinematics" assertions="6" status="pass" classname="test/unit/test_state_zipline.gd" time="0.000604" >
+      </testcase>
+      <testcase name="test_exit_cleans_up_state" assertions="3" status="pass" classname="test/unit/test_state_zipline.gd" time="0.000528" >
+      </testcase>
+      <testcase name="test_start_boundary_no_instant_eject" assertions="4" status="pass" classname="test/unit/test_state_zipline.gd" time="0.000642" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_stats_component.gd" tests="1" failures="0" skipped="0" time="0.000203" >
+      <testcase name="test_save_load_data" assertions="2" status="pass" classname="test/unit/test_stats_component.gd" time="0.000203" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_sunshine_clouds_driver.gd" tests="5" failures="0" skipped="0" time="0.002666" >
+      <testcase name="test_driver_joins_sunshine_clouds_group" assertions="1" status="pass" classname="test/unit/test_sunshine_clouds_driver.gd" time="0.000488" >
+      </testcase>
+      <testcase name="test_enabled_formula_all_combinations" assertions="32" status="pass" classname="test/unit/test_sunshine_clouds_driver.gd" time="0.000902" >
+      </testcase>
+      <testcase name="test_tier_values_applied_to_resource" assertions="16" status="pass" classname="test/unit/test_sunshine_clouds_driver.gd" time="0.000492" >
+      </testcase>
+      <testcase name="test_weather_transition_immediate_and_gradient_swap" assertions="10" status="pass" classname="test/unit/test_sunshine_clouds_driver.gd" time="0.000426" >
+      </testcase>
+      <testcase name="test_weather_transition_kills_previous_tween" assertions="5" status="pass" classname="test/unit/test_sunshine_clouds_driver.gd" time="0.000358" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" tests="2" failures="0" skipped="0" time="0.000365" >
+      <testcase name="test_resolution_scale_setter_redundancy_guard" assertions="2" status="pass" classname="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" time="0.000218" >
+      </testcase>
+      <testcase name="test_temporal_accumulation_decoupling_logic" assertions="2" status="pass" classname="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" time="0.000147" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_surface_classifier.gd" tests="7" failures="0" skipped="0" time="0.001783" >
+      <testcase name="test_collider_groups" assertions="9" status="pass" classname="test/unit/test_surface_classifier.gd" time="0.00031" >
+      </testcase>
+      <testcase name="test_parent_group_fallback" assertions="1" status="pass" classname="test/unit/test_surface_classifier.gd" time="0.000147" >
+      </testcase>
+      <testcase name="test_metadata_surface_type" assertions="6" status="pass" classname="test/unit/test_surface_classifier.gd" time="0.000262" >
+      </testcase>
+      <testcase name="test_precedence_order" assertions="2" status="pass" classname="test/unit/test_surface_classifier.gd" time="0.000155" >
+      </testcase>
+      <testcase name="test_material_resource_path_fallback" assertions="2" status="pass" classname="test/unit/test_surface_classifier.gd" time="0.000256" >
+      </testcase>
+      <testcase name="test_node_and_parent_name_fallback" assertions="15" status="pass" classname="test/unit/test_surface_classifier.gd" time="0.000483" >
+      </testcase>
+      <testcase name="test_concrete_default_fallback" assertions="3" status="pass" classname="test/unit/test_surface_classifier.gd" time="0.00017" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_system_locator.gd" tests="4" failures="0" skipped="0" time="0.001341" >
+      <testcase name="test_ready_resolves_all_systems_safely" assertions="3" status="pass" classname="test/unit/test_system_locator.gd" time="0.000523" >
+      </testcase>
+      <testcase name="test_register_and_get_service" assertions="1" status="pass" classname="test/unit/test_system_locator.gd" time="0.000239" >
+      </testcase>
+      <testcase name="test_get_service_dynamic_fallback" assertions="1" status="pass" classname="test/unit/test_system_locator.gd" time="0.000313" >
+      </testcase>
+      <testcase name="test_clear_cache" assertions="4" status="pass" classname="test/unit/test_system_locator.gd" time="0.000266" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_system_menu_controller.gd" tests="5" failures="0" skipped="0" time="19.679477" >
+      <testcase name="test_toggle_pause" assertions="5" status="pass" classname="test/unit/test_system_menu_controller.gd" time="3.897202" >
+      </testcase>
+      <testcase name="test_toggle_noclip" assertions="3" status="pass" classname="test/unit/test_system_menu_controller.gd" time="3.919815" >
+      </testcase>
+      <testcase name="test_fullbright_toggled" assertions="3" status="pass" classname="test/unit/test_system_menu_controller.gd" time="3.955211" >
+      </testcase>
+      <testcase name="test_noclip_wheel_speed_scaling" assertions="3" status="pass" classname="test/unit/test_system_menu_controller.gd" time="3.907804" >
+      </testcase>
+      <testcase name="test_noclip_sprint_velocity_scaling" assertions="2" status="pass" classname="test/unit/test_system_menu_controller.gd" time="3.999445" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_tactical_ai.gd" tests="6" failures="0" skipped="0" time="0.00259" >
+      <testcase name="test_clustering_cap_and_dissolution" assertions="12" status="pass" classname="test/unit/test_tactical_ai.gd" time="0.00092" >
+      </testcase>
+      <testcase name="test_morale_and_mood_transitions" assertions="9" status="pass" classname="test/unit/test_tactical_ai.gd" time="0.000506" >
+      </testcase>
+      <testcase name="test_role_auction_hysteresis_climb_and_stack_slam" assertions="6" status="pass" classname="test/unit/test_tactical_ai.gd" time="0.000702" >
+      </testcase>
+      <testcase name="test_smart_object_reservation" assertions="3" status="pass" classname="test/unit/test_tactical_ai.gd" time="0.000183" >
+      </testcase>
+      <testcase name="test_ballistic_solver_dual_mode" assertions="9" status="pass" classname="test/unit/test_tactical_ai.gd" time="0.00015" >
+      </testcase>
+      <testcase name="test_eight_point_cover_probe" assertions="4" status="pass" classname="test/unit/test_tactical_ai.gd" time="0.000129" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_tag_notification.gd" tests="3" failures="0" skipped="0" time="0.001207" >
+      <testcase name="test_weapon_pickup_registers_and_starts_timer" assertions="4" status="pass" classname="test/unit/test_tag_notification.gd" time="0.000349" >
+      </testcase>
+      <testcase name="test_same_weapon_swap_restarts_dismiss_timer" assertions="3" status="pass" classname="test/unit/test_tag_notification.gd" time="0.000295" >
+      </testcase>
+      <testcase name="test_swap_between_collected_weapons" assertions="4" status="pass" classname="test/unit/test_tag_notification.gd" time="0.000563" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_teleport.gd" tests="4" failures="0" skipped="0" time="0.29591" >
+      <testcase name="test_player_enters_teleport" assertions="2" status="pass" classname="test/unit/test_teleport.gd" time="0.004259" >
+      </testcase>
+      <testcase name="test_non_player_enters_teleport" assertions="2" status="pass" classname="test/unit/test_teleport.gd" time="0.090969" >
+      </testcase>
+      <testcase name="test_no_connect_portal_assigned" assertions="2" status="pass" classname="test/unit/test_teleport.gd" time="0.100358" >
+      </testcase>
+      <testcase name="test_no_portal_sound_assigned" assertions="1" status="pass" classname="test/unit/test_teleport.gd" time="0.100324" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_throwable_weapon.gd" tests="6" failures="0" skipped="0" time="0.003909" >
+      <testcase name="test_default_properties" assertions="5" status="pass" classname="test/unit/test_throwable_weapon.gd" time="0.000895" >
+      </testcase>
+      <testcase name="test_shoot_fails_when_not_equipped" assertions="2" status="pass" classname="test/unit/test_throwable_weapon.gd" time="0.000477" >
+      </testcase>
+      <testcase name="test_shoot_consumes_grenade_when_equipped" assertions="2" status="pass" classname="test/unit/test_throwable_weapon.gd" time="0.000756" >
+      </testcase>
+      <testcase name="test_shoot_fails_when_empty" assertions="2" status="pass" classname="test/unit/test_throwable_weapon.gd" time="0.000591" >
+      </testcase>
+      <testcase name="test_add_grenade_stacks_to_max" assertions="6" status="pass" classname="test/unit/test_throwable_weapon.gd" time="0.000581" >
+      </testcase>
+      <testcase name="test_inventory_quick_throw_grenade" assertions="2" status="pass" classname="test/unit/test_throwable_weapon.gd" time="0.000609" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_timber_jib_crane.gd" tests="4" failures="0" skipped="0" time="8.206948" >
+      <testcase name="test_single_circle_base_wide_boom_and_scoped_highlights" assertions="23" status="pass" classname="test/unit/test_timber_jib_crane.gd" time="0.012721" >
+      </testcase>
+      <testcase name="test_base_capstan_mount_and_push_wheel_state_contract" assertions="8" status="pass" classname="test/unit/test_timber_jib_crane.gd" time="4.006377" >
+      </testcase>
+      <testcase name="test_clamped_base_push_and_progress" assertions="4" status="pass" classname="test/unit/test_timber_jib_crane.gd" time="0.002546" >
+      </testcase>
+      <testcase name="test_state_jib_crane_swing_and_below_bar_lock" assertions="8" status="pass" classname="test/unit/test_timber_jib_crane.gd" time="4.185304" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_trigger_look.gd" tests="4" failures="0" skipped="0" time="0.401319" >
+      <testcase name="test_initial_state" assertions="2" status="pass" classname="test/unit/test_trigger_look.gd" time="0.100265" >
+      </testcase>
+      <testcase name="test_entry_activates_process_without_consuming" assertions="2" status="pass" classname="test/unit/test_trigger_look.gd" time="0.100548" >
+      </testcase>
+      <testcase name="test_exit_stops_processing_and_resets_gaze" assertions="2" status="pass" classname="test/unit/test_trigger_look.gd" time="0.083831" >
+      </testcase>
+      <testcase name="test_gaze_threshold_triggers_target" assertions="4" status="pass" classname="test/unit/test_trigger_look.gd" time="0.116675" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_tts_interact_component.gd" tests="2" failures="0" skipped="0" time="0.005182" >
+      <testcase name="test_hover_cursor_emits_label_text" assertions="1" status="pass" classname="test/unit/test_tts_interact_component.gd" time="0.002911" >
+      </testcase>
+      <testcase name="test_hover_cursor_emits_alt_text" assertions="1" status="pass" classname="test/unit/test_tts_interact_component.gd" time="0.002271" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_turret.gd" tests="4" failures="0" skipped="0" time="0.001864" >
+      <testcase name="test_set_target" assertions="2" status="pass" classname="test/unit/test_turret.gd" time="0.000712" >
+      </testcase>
+      <testcase name="test_change_state" assertions="1" status="pass" classname="test/unit/test_turret.gd" time="0.000405" >
+      </testcase>
+      <testcase name="test_damage_player" assertions="1" status="pass" classname="test/unit/test_turret.gd" time="0.000415" >
+      </testcase>
+      <testcase name="test_is_hostile" assertions="2" status="pass" classname="test/unit/test_turret.gd" time="0.000332" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_types.gd" tests="4" failures="0" skipped="0" time="0.000982" >
+      <testcase name="test_item_category_to_string" assertions="7" status="pass" classname="test/unit/test_types.gd" time="0.000299" >
+      </testcase>
+      <testcase name="test_faction_to_string" assertions="6" status="pass" classname="test/unit/test_types.gd" time="0.000275" >
+      </testcase>
+      <testcase name="test_damage_type_to_string" assertions="7" status="pass" classname="test/unit/test_types.gd" time="0.000271" >
+      </testcase>
+      <testcase name="test_collision_masks" assertions="2" status="pass" classname="test/unit/test_types.gd" time="0.000137" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_updraft_vent.gd" tests="5" failures="0" skipped="0" time="0.014389" >
+      <testcase name="test_initialization" assertions="5" status="pass" classname="test/unit/test_updraft_vent.gd" time="0.012325" >
+      </testcase>
+      <testcase name="test_reconfigure_dimensions" assertions="4" status="pass" classname="test/unit/test_updraft_vent.gd" time="0.000765" >
+      </testcase>
+      <testcase name="test_player_entry_and_exit" assertions="4" status="pass" classname="test/unit/test_updraft_vent.gd" time="0.000459" >
+      </testcase>
+      <testcase name="test_pickable_physics_registration" assertions="3" status="pass" classname="test/unit/test_updraft_vent.gd" time="0.000366" >
+      </testcase>
+      <testcase name="test_heavy_box_exclusion" assertions="1" status="pass" classname="test/unit/test_updraft_vent.gd" time="0.000474" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_utilities.gd" tests="19" failures="0" skipped="0" time="0.026774" >
+      <testcase name="test_center_control_with_size" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000195" >
+      </testcase>
+      <testcase name="test_center_control_with_custom_minimum_size" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000163" >
+      </testcase>
+      <testcase name="test_center_control_null_guard" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000138" >
+      </testcase>
+      <testcase name="test_clear_children_valid_parent" assertions="3" status="pass" classname="test/unit/test_utilities.gd" time="0.000193" >
+      </testcase>
+      <testcase name="test_clear_children_null_guard" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000129" >
+      </testcase>
+      <testcase name="test_reset_tween_null_existing" assertions="2" status="pass" classname="test/unit/test_utilities.gd" time="0.000163" >
+      </testcase>
+      <testcase name="test_reset_tween_replaces_active_tween" assertions="4" status="pass" classname="test/unit/test_utilities.gd" time="0.000158" >
+      </testcase>
+      <testcase name="test_reset_tween_orphan_node_guard" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000136" >
+      </testcase>
+      <testcase name="test_safe_connect_success" assertions="3" status="pass" classname="test/unit/test_utilities.gd" time="0.000153" >
+      </testcase>
+      <testcase name="test_safe_connect_prevents_duplicate" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000125" >
+      </testcase>
+      <testcase name="test_reparent_keep_transform" assertions="4" status="pass" classname="test/unit/test_utilities.gd" time="0.000235" >
+      </testcase>
+      <testcase name="test_reparent_null_and_orphan_guards" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000139" >
+      </testcase>
+      <testcase name="test_raycast_3d_null_space_state" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000206" >
+      </testcase>
+      <testcase name="test_raycast_3d_query_cache_mutation" assertions="4" status="pass" classname="test/unit/test_utilities.gd" time="0.000262" >
+      </testcase>
+      <testcase name="test_delay_call_execution" assertions="3" status="pass" classname="test/unit/test_utilities.gd" time="0.02307" >
+      </testcase>
+      <testcase name="test_delay_call_orphan_node_guard" assertions="2" status="pass" classname="test/unit/test_utilities.gd" time="0.000389" >
+      </testcase>
+      <testcase name="test_find_ancestor_of_type_success" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000468" >
+      </testcase>
+      <testcase name="test_find_ancestor_of_type_missing" assertions="1" status="pass" classname="test/unit/test_utilities.gd" time="0.000315" >
+      </testcase>
+      <testcase name="test_find_ancestor_of_type_null_guards" assertions="2" status="pass" classname="test/unit/test_utilities.gd" time="0.000137" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_vision_assist_benchmark.gd" tests="1" failures="0" skipped="0" time="0.09733" >
+      <testcase name="test_vision_assist_toggled_benchmark" assertions="1" status="pass" classname="test/unit/test_vision_assist_benchmark.gd" time="0.09733" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wall_support_graph.gd" tests="6" failures="0" skipped="0" time="4.346032" >
+      <testcase name="test_bitmask_helpers_and_64_chunk_cap" assertions="22" status="pass" classname="test/unit/test_wall_support_graph.gd" time="0.001445" >
+      </testcase>
+      <testcase name="test_synthetic_support_graph_bfs" assertions="16" status="pass" classname="test/unit/test_wall_support_graph.gd" time="0.014967" >
+      </testcase>
+      <testcase name="test_baked_wall_panel_2x3_data" assertions="1086" status="pass" classname="test/unit/test_wall_support_graph.gd" time="0.020943" >
+      </testcase>
+      <testcase name="test_debris_budget_fifo_eviction" assertions="10" status="pass" classname="test/unit/test_wall_support_graph.gd" time="0.112621" >
+      </testcase>
+      <testcase name="test_destructible_wall_panel_runtime" assertions="34" status="pass" classname="test/unit/test_wall_support_graph.gd" time="0.16714" >
+      </testcase>
+      <testcase name="test_destructible_wall_level_scene_loads" assertions="6" status="pass" classname="test/unit/test_wall_support_graph.gd" time="4.028916" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_water_level_control.gd" tests="4" failures="0" skipped="0" time="0.585639" >
+      <testcase name="test_water_level_lowering_anchors_floor" assertions="9" status="pass" classname="test/unit/test_water_level_control.gd" time="0.116721" >
+      </testcase>
+      <testcase name="test_water_level_toggle_restores_baseline" assertions="3" status="pass" classname="test/unit/test_water_level_control.gd" time="0.234419" >
+      </testcase>
+      <testcase name="test_water_level_one_shot_ignores_power_off" assertions="2" status="pass" classname="test/unit/test_water_level_control.gd" time="0.167446" >
+      </testcase>
+      <testcase name="test_water_level_depth_clamping" assertions="2" status="pass" classname="test/unit/test_water_level_control.gd" time="0.067053" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave10_characterization.gd" tests="25" failures="0" skipped="0" time="0.047772" >
+      <testcase name="test_cell_recharger_contracts" assertions="17" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.002774" >
+      </testcase>
+      <testcase name="test_energy_cell_contracts" assertions="15" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.002323" >
+      </testcase>
+      <testcase name="test_glider_item_contracts" assertions="12" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001352" >
+      </testcase>
+      <testcase name="test_health_dispenser_contracts" assertions="14" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.004799" >
+      </testcase>
+      <testcase name="test_heavy_pickable_box_contracts" assertions="13" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001302" >
+      </testcase>
+      <testcase name="test_industrial_door_contracts" assertions="19" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001679" >
+      </testcase>
+      <testcase name="test_jump_pad_contracts" assertions="5" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.000768" >
+      </testcase>
+      <testcase name="test_lever_stick_item_contracts" assertions="9" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001698" >
+      </testcase>
+      <testcase name="test_pickable_liquid_bottle_contracts" assertions="11" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001269" >
+      </testcase>
+      <testcase name="test_mirror_contracts" assertions="7" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.000947" >
+      </testcase>
+      <testcase name="test_destructible_glass_contracts" assertions="16" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.008876" >
+      </testcase>
+      <testcase name="test_destructible_glass_partial_voronoi_fracture" assertions="7" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.008201" >
+      </testcase>
+      <testcase name="test_path_stick_contracts" assertions="9" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.000503" >
+      </testcase>
+      <testcase name="test_pickable_box_contracts" assertions="4" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.000777" >
+      </testcase>
+      <testcase name="test_pickable_tire_contracts" assertions="9" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.000619" >
+      </testcase>
+      <testcase name="test_pickable_valve_contracts" assertions="9" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001101" >
+      </testcase>
+      <testcase name="test_pneumatic_tube_contracts" assertions="11" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.00049" >
+      </testcase>
+      <testcase name="test_push_wheel_contracts" assertions="12" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001454" >
+      </testcase>
+      <testcase name="test_raft_platform_contracts" assertions="9" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001052" >
+      </testcase>
+      <testcase name="test_scissor_gate_contracts" assertions="9" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001013" >
+      </testcase>
+      <testcase name="test_sewer_grate_contracts" assertions="14" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001208" >
+      </testcase>
+      <testcase name="test_shooting_target_contracts" assertions="8" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.000473" >
+      </testcase>
+      <testcase name="test_tethered_plug_contracts" assertions="9" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.00094" >
+      </testcase>
+      <testcase name="test_wall_generator_contracts" assertions="10" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.001269" >
+      </testcase>
+      <testcase name="test_wall_lever_contracts" assertions="11" status="pass" classname="test/unit/test_wave10_characterization.gd" time="0.000885" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave11_characterization.gd" tests="9" failures="0" skipped="0" time="0.028607" >
+      <testcase name="test_dark_man_visuals_contracts" assertions="15" status="pass" classname="test/unit/test_wave11_characterization.gd" time="0.000843" >
+      </testcase>
+      <testcase name="test_elf_drone_contracts" assertions="14" status="pass" classname="test/unit/test_wave11_characterization.gd" time="0.002045" >
+      </testcase>
+      <testcase name="test_flying_tile_contracts" assertions="13" status="pass" classname="test/unit/test_wave11_characterization.gd" time="0.000534" >
+      </testcase>
+      <testcase name="test_hex_shield_sphere_contracts" assertions="24" status="pass" classname="test/unit/test_wave11_characterization.gd" time="0.015351" >
+      </testcase>
+      <testcase name="test_dumpster_contracts" assertions="17" status="pass" classname="test/unit/test_wave11_characterization.gd" time="0.00141" >
+      </testcase>
+      <testcase name="test_climb_rope_contracts" assertions="12" status="pass" classname="test/unit/test_wave11_characterization.gd" time="0.001484" >
+      </testcase>
+      <testcase name="test_slide_track_contracts" assertions="12" status="pass" classname="test/unit/test_wave11_characterization.gd" time="0.000844" >
+      </testcase>
+      <testcase name="test_stationary_laser_stand_contracts" assertions="17" status="pass" classname="test/unit/test_wave11_characterization.gd" time="0.004316" >
+      </testcase>
+      <testcase name="test_timber_jib_crane_contracts" assertions="29" status="pass" classname="test/unit/test_wave11_characterization.gd" time="0.00178" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave12_characterization.gd" tests="21" failures="0" skipped="0" time="0.019088" >
+      <testcase name="test_bear_trap_contracts" assertions="9" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000582" >
+      </testcase>
+      <testcase name="test_drone_swarm_controller_contracts" assertions="20" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000685" >
+      </testcase>
+      <testcase name="test_evil_goon_contracts" assertions="13" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.00091" >
+      </testcase>
+      <testcase name="test_volumetric_fire_contracts" assertions="15" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.005161" >
+      </testcase>
+      <testcase name="test_guardian_pillar_contracts" assertions="17" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000875" >
+      </testcase>
+      <testcase name="test_energy_blast_contracts" assertions="9" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000656" >
+      </testcase>
+      <testcase name="test_rook_trap_contracts" assertions="12" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000795" >
+      </testcase>
+      <testcase name="test_sensor_turret_contracts" assertions="7" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000557" >
+      </testcase>
+      <testcase name="test_enemy_squid_contracts" assertions="18" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.001025" >
+      </testcase>
+      <testcase name="test_squid_puddle_contracts" assertions="12" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000501" >
+      </testcase>
+      <testcase name="test_procedural_tentacle_contracts" assertions="3" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000396" >
+      </testcase>
+      <testcase name="test_tentacle_enemy_contracts" assertions="15" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000755" >
+      </testcase>
+      <testcase name="test_tripmine_contracts" assertions="12" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.00104" >
+      </testcase>
+      <testcase name="test_turret_contracts" assertions="12" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.00058" >
+      </testcase>
+      <testcase name="test_wave_spawner_contracts" assertions="4" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000702" >
+      </testcase>
+      <testcase name="test_signal_rocket_projectile_contracts" assertions="9" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000773" >
+      </testcase>
+      <testcase name="test_signal_rocket_weapon_contracts" assertions="8" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.00075" >
+      </testcase>
+      <testcase name="test_smoke_grenade_cloud_contracts" assertions="13" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000648" >
+      </testcase>
+      <testcase name="test_smoke_grenade_projectile_contracts" assertions="6" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000378" >
+      </testcase>
+      <testcase name="test_smoke_grenade_weapon_contracts" assertions="6" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000631" >
+      </testcase>
+      <testcase name="test_throwable_weapon_contracts" assertions="13" status="pass" classname="test/unit/test_wave12_characterization.gd" time="0.000688" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave13_characterization.gd" tests="18" failures="0" skipped="0" time="0.099002" >
+      <testcase name="test_ammo_hud_contracts" assertions="6" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.000945" >
+      </testcase>
+      <testcase name="test_audio_panel_contracts" assertions="6" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.003287" >
+      </testcase>
+      <testcase name="test_chapter_display_contracts" assertions="8" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.000848" >
+      </testcase>
+      <testcase name="test_crosshair_hud_contracts" assertions="9" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.000569" >
+      </testcase>
+      <testcase name="test_debug_overlay_contracts" assertions="12" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.001748" >
+      </testcase>
+      <testcase name="test_diagnostics_panel_contracts" assertions="16" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.00054" >
+      </testcase>
+      <testcase name="test_diorama_post_process_contracts" assertions="3" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.00044" >
+      </testcase>
+      <testcase name="test_display_and_hardware_section_contracts" assertions="12" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.018162" >
+      </testcase>
+      <testcase name="test_display_ui_section_contracts" assertions="6" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.044129" >
+      </testcase>
+      <testcase name="test_gameplay_panel_contracts" assertions="4" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.020526" >
+      </testcase>
+      <testcase name="test_gel_stream_3d_contracts" assertions="6" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.000858" >
+      </testcase>
+      <testcase name="test_magnifying_glass_ui_contracts" assertions="12" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.000469" >
+      </testcase>
+      <testcase name="test_notification_hud_contracts" assertions="8" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.00151" >
+      </testcase>
+      <testcase name="test_save_load_panel_contracts" assertions="7" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.001451" >
+      </testcase>
+      <testcase name="test_subs_audio_section_contracts" assertions="11" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.00039" >
+      </testcase>
+      <testcase name="test_vision_section_contracts" assertions="5" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.000323" >
+      </testcase>
+      <testcase name="test_water_wipe_controller_contracts" assertions="18" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.000381" >
+      </testcase>
+      <testcase name="test_chunk_root_contracts" assertions="14" status="pass" classname="test/unit/test_wave13_characterization.gd" time="0.002426" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave14_characterization.gd" tests="13" failures="0" skipped="0" time="0.94494" >
+      <testcase name="test_advisor_psychic_effect_contracts" assertions="15" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.000569" >
+      </testcase>
+      <testcase name="test_harsh_contrast_effect_contracts" assertions="16" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.000419" >
+      </testcase>
+      <testcase name="test_roar_screen_effect_contracts" assertions="9" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.000312" >
+      </testcase>
+      <testcase name="test_juicy_button_contracts" assertions="10" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.000425" >
+      </testcase>
+      <testcase name="test_horror_button_contracts" assertions="11" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.000995" >
+      </testcase>
+      <testcase name="test_tag_notification_contracts" assertions="17" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.000479" >
+      </testcase>
+      <testcase name="test_chunk_manager_contracts" assertions="16" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.000398" >
+      </testcase>
+      <testcase name="test_player_chunk_tracker_contracts" assertions="7" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.0002" >
+      </testcase>
+      <testcase name="test_chunk_debug_hud_contracts" assertions="9" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.000266" >
+      </testcase>
+      <testcase name="test_controls_panel_contracts" assertions="11" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.897427" >
+      </testcase>
+      <testcase name="test_accessibility_sections_contracts" assertions="20" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.019595" >
+      </testcase>
+      <testcase name="test_death_screen_contracts" assertions="12" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.00771" >
+      </testcase>
+      <testcase name="test_ui_hud_and_screen_effects_contracts" assertions="13" status="pass" classname="test/unit/test_wave14_characterization.gd" time="0.016145" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave15_characterization.gd" tests="14" failures="0" skipped="0" time="0.099562" >
+      <testcase name="test_procedural_blockout_contracts" assertions="36" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.01217" >
+      </testcase>
+      <testcase name="test_dev_testbed_loader_contracts" assertions="6" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.000593" >
+      </testcase>
+      <testcase name="test_cctv_contracts" assertions="13" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.000473" >
+      </testcase>
+      <testcase name="test_accessibility_panel_contracts" assertions="7" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.019318" >
+      </testcase>
+      <testcase name="test_danny_cast_screen_contracts" assertions="10" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.009166" >
+      </testcase>
+      <testcase name="test_video_options_and_sections_contracts" assertions="13" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.021285" >
+      </testcase>
+      <testcase name="test_loading_screen_contracts" assertions="14" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.000656" >
+      </testcase>
+      <testcase name="test_main_menu_contracts" assertions="5" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.000253" >
+      </testcase>
+      <testcase name="test_chapter_screen_contracts" assertions="7" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.011474" >
+      </testcase>
+      <testcase name="test_options_router_contracts" assertions="4" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.000828" >
+      </testcase>
+      <testcase name="test_ui_controller_contracts" assertions="13" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.019691" >
+      </testcase>
+      <testcase name="test_universal_setting_highlighter_contracts" assertions="14" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.002441" >
+      </testcase>
+      <testcase name="test_video_applier_contracts" assertions="10" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.000718" >
+      </testcase>
+      <testcase name="test_test_player_contracts" assertions="15" status="pass" classname="test/unit/test_wave15_characterization.gd" time="0.000496" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave16_characterization.gd" tests="20" failures="0" skipped="0" time="4.003159" >
+      <testcase name="test_breakable_rope_contracts" assertions="14" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000995" >
+      </testcase>
+      <testcase name="test_extended_camera_3d_contracts" assertions="9" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000981" >
+      </testcase>
+      <testcase name="test_camera_controller_contracts" assertions="25" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000514" >
+      </testcase>
+      <testcase name="test_drunk_effect_contracts" assertions="8" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.00033" >
+      </testcase>
+      <testcase name="test_environment_component_contracts" assertions="18" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000461" >
+      </testcase>
+      <testcase name="test_fast_rope_contracts" assertions="9" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000611" >
+      </testcase>
+      <testcase name="test_flashlight_controller_contracts" assertions="10" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000241" >
+      </testcase>
+      <testcase name="test_footstep_manager_contracts" assertions="18" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000312" >
+      </testcase>
+      <testcase name="test_note_reader_contracts" assertions="14" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.001158" >
+      </testcase>
+      <testcase name="test_player_interaction_component_contracts" assertions="21" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000566" >
+      </testcase>
+      <testcase name="test_interaction_scanner_contracts" assertions="16" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000641" >
+      </testcase>
+      <testcase name="test_player_state_contracts" assertions="15" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000267" >
+      </testcase>
+      <testcase name="test_player_state_machine_contracts" assertions="5" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000661" >
+      </testcase>
+      <testcase name="test_procedural_revolver_contracts" assertions="11" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000561" >
+      </testcase>
+      <testcase name="test_procedural_stairs_contracts" assertions="12" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000587" >
+      </testcase>
+      <testcase name="test_screen_vfx_manager_contracts" assertions="8" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000194" >
+      </testcase>
+      <testcase name="test_state_ladder_contracts" assertions="14" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.00025" >
+      </testcase>
+      <testcase name="test_system_menu_controller_contracts" assertions="13" status="pass" classname="test/unit/test_wave16_characterization.gd" time="3.992251" >
+      </testcase>
+      <testcase name="test_vault_controller_contracts" assertions="11" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.0006" >
+      </testcase>
+      <testcase name="test_zipline_contracts" assertions="9" status="pass" classname="test/unit/test_wave16_characterization.gd" time="0.000978" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave17_characterization.gd" tests="23" failures="0" skipped="0" time="0.006486" >
+      <testcase name="test_state_machine_lock_contracts" assertions="7" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000602" >
+      </testcase>
+      <testcase name="test_locomotion_component_contracts" assertions="34" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000474" >
+      </testcase>
+      <testcase name="test_player_contracts" assertions="41" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.00068" >
+      </testcase>
+      <testcase name="test_push_wheel_state_contracts" assertions="14" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000265" >
+      </testcase>
+      <testcase name="test_state_air_contracts" assertions="16" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000263" >
+      </testcase>
+      <testcase name="test_state_fast_rope_contracts" assertions="3" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000105" >
+      </testcase>
+      <testcase name="test_state_glide_contracts" assertions="9" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000138" >
+      </testcase>
+      <testcase name="test_state_ground_contracts" assertions="13" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000211" >
+      </testcase>
+      <testcase name="test_state_jib_crane_contracts" assertions="27" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.00027" >
+      </testcase>
+      <testcase name="test_state_monkey_bars_contracts" assertions="5" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000116" >
+      </testcase>
+      <testcase name="test_state_path_slide_contracts" assertions="4" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000103" >
+      </testcase>
+      <testcase name="test_state_rope_contracts" assertions="37" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000306" >
+      </testcase>
+      <testcase name="test_state_slide_contracts" assertions="6" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.00012" >
+      </testcase>
+      <testcase name="test_state_swim_contracts" assertions="18" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000216" >
+      </testcase>
+      <testcase name="test_state_terminal_contracts" assertions="4" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000374" >
+      </testcase>
+      <testcase name="test_state_tube_contracts" assertions="5" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000112" >
+      </testcase>
+      <testcase name="test_state_vault_contracts" assertions="2" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000305" >
+      </testcase>
+      <testcase name="test_state_wolf_climb_contracts" assertions="7" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000154" >
+      </testcase>
+      <testcase name="test_state_wolf_wall_run_contracts" assertions="10" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.00016" >
+      </testcase>
+      <testcase name="test_state_zipline_contracts" assertions="6" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000123" >
+      </testcase>
+      <testcase name="test_stats_component_contracts" assertions="5" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000424" >
+      </testcase>
+      <testcase name="test_weapon_inventory_component_contracts" assertions="13" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000358" >
+      </testcase>
+      <testcase name="test_weapon_procedural_animator_contracts" assertions="21" status="pass" classname="test/unit/test_wave17_characterization.gd" time="0.000607" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave18_characterization.gd" tests="17" failures="0" skipped="0" time="0.009422" >
+      <testcase name="test_keycard_system_contracts" assertions="8" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.00043" >
+      </testcase>
+      <testcase name="test_sonar_manager_contracts" assertions="9" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000176" >
+      </testcase>
+      <testcase name="test_spatial_describer_contracts" assertions="10" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000161" >
+      </testcase>
+      <testcase name="test_audio_pool_contracts" assertions="10" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000175" >
+      </testcase>
+      <testcase name="test_audio_manager_contracts" assertions="7" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000197" >
+      </testcase>
+      <testcase name="test_camera_shake_manager_contracts" assertions="18" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000446" >
+      </testcase>
+      <testcase name="test_console_core_data_contracts" assertions="21" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000431" >
+      </testcase>
+      <testcase name="test_console_context_contracts" assertions="10" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000278" >
+      </testcase>
+      <testcase name="test_console_command_modules_registration" assertions="20" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000491" >
+      </testcase>
+      <testcase name="test_freecam_controller_contracts" assertions="11" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.00227" >
+      </testcase>
+      <testcase name="test_dev_metrics_panel_contracts" assertions="7" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000592" >
+      </testcase>
+      <testcase name="test_events_bus_contracts" assertions="25" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000145" >
+      </testcase>
+      <testcase name="test_interaction_manager_contracts" assertions="13" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000386" >
+      </testcase>
+      <testcase name="test_shader_cache_builder_contracts" assertions="5" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.00025" >
+      </testcase>
+      <testcase name="test_start_screen_contracts" assertions="2" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000319" >
+      </testcase>
+      <testcase name="test_tts_interact_component_contracts" assertions="3" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.00252" >
+      </testcase>
+      <testcase name="test_screen_effects_core_contracts" assertions="7" status="pass" classname="test/unit/test_wave18_characterization.gd" time="0.000155" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave19_characterization.gd" tests="18" failures="0" skipped="0" time="0.004077" >
+      <testcase name="test_global_contracts" assertions="12" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000567" >
+      </testcase>
+      <testcase name="test_gesture_input_manager_contracts" assertions="13" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000164" >
+      </testcase>
+      <testcase name="test_global_settings_contracts" assertions="20" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.00041" >
+      </testcase>
+      <testcase name="test_graphics_manager_contracts" assertions="15" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000173" >
+      </testcase>
+      <testcase name="test_save_manager_contracts" assertions="26" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000359" >
+      </testcase>
+      <testcase name="test_scene_transition_contracts" assertions="8" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000136" >
+      </testcase>
+      <testcase name="test_spike_forensics_contracts" assertions="14" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000255" >
+      </testcase>
+      <testcase name="test_smoke_manager_contracts" assertions="7" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000136" >
+      </testcase>
+      <testcase name="test_high_contrast_manager_contracts" assertions="7" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000156" >
+      </testcase>
+      <testcase name="test_input_helper_contracts" assertions="7" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000238" >
+      </testcase>
+      <testcase name="test_vision_assist_manager_contracts" assertions="16" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000143" >
+      </testcase>
+      <testcase name="test_debug_manager_contracts" assertions="5" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000161" >
+      </testcase>
+      <testcase name="test_in_game_console_contracts" assertions="21" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000244" >
+      </testcase>
+      <testcase name="test_subtitle_layer_contracts" assertions="6" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000202" >
+      </testcase>
+      <testcase name="test_post_process_layer_contracts" assertions="11" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000203" >
+      </testcase>
+      <testcase name="test_shockwave_manager_contracts" assertions="2" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000142" >
+      </testcase>
+      <testcase name="test_blood_manager_contracts" assertions="15" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000211" >
+      </testcase>
+      <testcase name="test_impact_manager_contracts" assertions="12" status="pass" classname="test/unit/test_wave19_characterization.gd" time="0.000177" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave2_characterization.gd" tests="8" failures="0" skipped="0" time="0.015518" >
+      <testcase name="test_spatial_shaders_load_and_mode" assertions="151" status="pass" classname="test/unit/test_wave2_characterization.gd" time="0.006209" >
+      </testcase>
+      <testcase name="test_canvas_item_shaders_load_and_mode" assertions="181" status="pass" classname="test/unit/test_wave2_characterization.gd" time="0.002146" >
+      </testcase>
+      <testcase name="test_fog_shaders_load_and_mode" assertions="7" status="pass" classname="test/unit/test_wave2_characterization.gd" time="0.000634" >
+      </testcase>
+      <testcase name="test_ui_and_chunk_uniform_contracts" assertions="26" status="pass" classname="test/unit/test_wave2_characterization.gd" time="0.000358" >
+      </testcase>
+      <testcase name="test_fog_shader_uniform_contracts" assertions="26" status="pass" classname="test/unit/test_wave2_characterization.gd" time="0.00063" >
+      </testcase>
+      <testcase name="test_vfx_post_process_and_death_screen_uniform_contracts" assertions="53" status="pass" classname="test/unit/test_wave2_characterization.gd" time="0.001027" >
+      </testcase>
+      <testcase name="test_vfx_spatial_and_instance_uniform_contracts" assertions="87" status="pass" classname="test/unit/test_wave2_characterization.gd" time="0.004102" >
+      </testcase>
+      <testcase name="test_shader_material_parameter_binding" assertions="18" status="pass" classname="test/unit/test_wave2_characterization.gd" time="0.000412" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave3_characterization.gd" tests="13" failures="0" skipped="0" time="0.00465" >
+      <testcase name="test_collision_layers_constants" assertions="22" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.00036" >
+      </testcase>
+      <testcase name="test_math_utils_damped_spring_contract" assertions="7" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000149" >
+      </testcase>
+      <testcase name="test_power_component_behavior" assertions="13" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000569" >
+      </testcase>
+      <testcase name="test_frame_graph_sampling" assertions="7" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000257" >
+      </testcase>
+      <testcase name="test_rendering_context_pure_helpers" assertions="9" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000232" >
+      </testcase>
+      <testcase name="test_texture_baker_enums_and_helpers" assertions="9" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000445" >
+      </testcase>
+      <testcase name="test_wave_cascade_parameters" assertions="8" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000243" >
+      </testcase>
+      <testcase name="test_soundscape_data_defaults" assertions="5" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000147" >
+      </testcase>
+      <testcase name="test_interactable_leaf_defaults" assertions="7" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000237" >
+      </testcase>
+      <testcase name="test_hex_shield_damage_and_shatter" assertions="9" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000603" >
+      </testcase>
+      <testcase name="test_hiss_resonance_volume" assertions="4" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000653" >
+      </testcase>
+      <testcase name="test_rotating_lamp_and_wind_controller" assertions="7" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.00029" >
+      </testcase>
+      <testcase name="test_auto_scroll_and_door_slide_defaults" assertions="8" status="pass" classname="test/unit/test_wave3_characterization.gd" time="0.000465" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave4_characterization.gd" tests="13" failures="0" skipped="0" time="0.005921" >
+      <testcase name="test_node_query_contracts" assertions="10" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000474" >
+      </testcase>
+      <testcase name="test_utilities_contracts" assertions="10" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000333" >
+      </testcase>
+      <testcase name="test_state_machine_and_state_contracts" assertions="14" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000724" >
+      </testcase>
+      <testcase name="test_types_constants_and_helpers" assertions="16" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000371" >
+      </testcase>
+      <testcase name="test_reference_data_contract" assertions="2" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000201" >
+      </testcase>
+      <testcase name="test_vrs_texture_generator_contract" assertions="4" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000307" >
+      </testcase>
+      <testcase name="test_video_config_contract" assertions="9" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000214" >
+      </testcase>
+      <testcase name="test_data_resources_defaults" assertions="4" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000208" >
+      </testcase>
+      <testcase name="test_gate_and_output_transmitter_contracts" assertions="8" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000494" >
+      </testcase>
+      <testcase name="test_physics_magnet_contract" assertions="4" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000323" >
+      </testcase>
+      <testcase name="test_gas_leak_and_trail_3d_contracts" assertions="6" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000625" >
+      </testcase>
+      <testcase name="test_keypad_and_machine_lock_ui_contracts" assertions="9" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.001375" >
+      </testcase>
+      <testcase name="test_player_and_vfx_constants" assertions="11" status="pass" classname="test/unit/test_wave4_characterization.gd" time="0.000272" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave5_characterization.gd" tests="16" failures="0" skipped="0" time="0.036935" >
+      <testcase name="test_faction_component_contracts" assertions="11" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.000554" >
+      </testcase>
+      <testcase name="test_health_component_contracts" assertions="17" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.000669" >
+      </testcase>
+      <testcase name="test_health_modifier_contracts" assertions="7" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.00038" >
+      </testcase>
+      <testcase name="test_wave_generator_contracts" assertions="14" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.00027" >
+      </testcase>
+      <testcase name="test_breakable_shelf_contracts" assertions="12" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.005232" >
+      </testcase>
+      <testcase name="test_garage_gate_contracts" assertions="16" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.001398" >
+      </testcase>
+      <testcase name="test_gothic_arch_contracts" assertions="13" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.000526" >
+      </testcase>
+      <testcase name="test_base_trigger_area_3d_contracts" assertions="12" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.002445" >
+      </testcase>
+      <testcase name="test_crab_shell_trigger_contracts" assertions="3" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.002377" >
+      </testcase>
+      <testcase name="test_event_dispatching_triggers_contracts" assertions="9" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.006661" >
+      </testcase>
+      <testcase name="test_editor_trigger_visualizer_contracts" assertions="7" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.000392" >
+      </testcase>
+      <testcase name="test_spatial_utility_triggers_contracts" assertions="15" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.001856" >
+      </testcase>
+      <testcase name="test_mannequin_attractor_and_arrival_box_contracts" assertions="10" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.001703" >
+      </testcase>
+      <testcase name="test_music_trigger_contracts" assertions="8" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.000646" >
+      </testcase>
+      <testcase name="test_trigger_look_contracts" assertions="6" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.000735" >
+      </testcase>
+      <testcase name="test_vfx_wave5_contracts" assertions="22" status="pass" classname="test/unit/test_wave5_characterization.gd" time="0.011091" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave6_characterization.gd" tests="14" failures="0" skipped="0" time="0.020979" >
+      <testcase name="test_ocean_contracts" assertions="17" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.000516" >
+      </testcase>
+      <testcase name="test_wave_height_controller_contracts" assertions="6" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.000301" >
+      </testcase>
+      <testcase name="test_hydrogen_water_body_contracts" assertions="21" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.002102" >
+      </testcase>
+      <testcase name="test_explosion_crysis_contracts" assertions="13" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.000921" >
+      </testcase>
+      <testcase name="test_smoke_explosion_vfx_contracts" assertions="9" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.000639" >
+      </testcase>
+      <testcase name="test_color_grading_volume_contracts" assertions="9" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.001002" >
+      </testcase>
+      <testcase name="test_dust_puff_contracts" assertions="1" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.000136" >
+      </testcase>
+      <testcase name="test_argon_lightning_controller_contracts" assertions="9" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.000454" >
+      </testcase>
+      <testcase name="test_energy_wall_contracts" assertions="10" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.000432" >
+      </testcase>
+      <testcase name="test_gel_emitter_contracts" assertions="9" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.00424" >
+      </testcase>
+      <testcase name="test_particle_contracts" assertions="12" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.000554" >
+      </testcase>
+      <testcase name="test_phys_explosion_3d_contracts" assertions="10" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.004053" >
+      </testcase>
+      <testcase name="test_pressurized_fire_jet_contracts" assertions="13" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.001025" >
+      </testcase>
+      <testcase name="test_screenshake_effect_contracts" assertions="7" status="pass" classname="test/unit/test_wave6_characterization.gd" time="0.004604" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave7_characterization.gd" tests="19" failures="0" skipped="0" time="0.030516" >
+      <testcase name="test_dynamic_fog_zone_contracts" assertions="16" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.000938" >
+      </testcase>
+      <testcase name="test_underwater_fog_volume_contracts" assertions="12" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.000669" >
+      </testcase>
+      <testcase name="test_accessible_label_contracts" assertions="4" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.000426" >
+      </testcase>
+      <testcase name="test_argon_water_body_contracts" assertions="12" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.00087" >
+      </testcase>
+      <testcase name="test_basalt_generator_contracts" assertions="12" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.000389" >
+      </testcase>
+      <testcase name="test_citadel_core_contracts" assertions="6" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.001077" >
+      </testcase>
+      <testcase name="test_crab_shell_contracts" assertions="10" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.001464" >
+      </testcase>
+      <testcase name="test_dust_volume_contracts" assertions="9" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.006508" >
+      </testcase>
+      <testcase name="test_electrified_floor_contracts" assertions="8" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.001107" >
+      </testcase>
+      <testcase name="test_flag_controller_contracts" assertions="11" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.001063" >
+      </testcase>
+      <testcase name="test_gothic_energy_gate_contracts" assertions="18" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.005294" >
+      </testcase>
+      <testcase name="test_highlight_component_contracts" assertions="7" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.000753" >
+      </testcase>
+      <testcase name="test_lightning_orb_contracts" assertions="7" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.004453" >
+      </testcase>
+      <testcase name="test_rain_controller_contracts" assertions="9" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.000542" >
+      </testcase>
+      <testcase name="test_snow_ground_contracts" assertions="9" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.000599" >
+      </testcase>
+      <testcase name="test_supply_shell_contracts" assertions="11" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.000733" >
+      </testcase>
+      <testcase name="test_water_body_contracts" assertions="13" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.001087" >
+      </testcase>
+      <testcase name="test_waypoint_3d_contracts" assertions="12" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.002263" >
+      </testcase>
+      <testcase name="test_world_environment_contracts" assertions="9" status="pass" classname="test/unit/test_wave7_characterization.gd" time="0.000281" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave8_characterization.gd" tests="16" failures="0" skipped="0" time="0.017971" >
+      <testcase name="test_oil_spill_path_contracts" assertions="9" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.000901" >
+      </testcase>
+      <testcase name="test_powered_light_3d_contracts" assertions="13" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.0007" >
+      </testcase>
+      <testcase name="test_procedural_barbwire_contracts" assertions="7" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.000283" >
+      </testcase>
+      <testcase name="test_monkey_bar_volume_contracts" assertions="9" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.00027" >
+      </testcase>
+      <testcase name="test_procedural_tube_contracts" assertions="9" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.000317" >
+      </testcase>
+      <testcase name="test_smoke_hazard_contracts" assertions="4" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.003525" >
+      </testcase>
+      <testcase name="test_soundscape_zone_contracts" assertions="8" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.000834" >
+      </testcase>
+      <testcase name="test_tagged_prop_contracts" assertions="9" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.000603" >
+      </testcase>
+      <testcase name="test_target_volume_contracts" assertions="8" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.001377" >
+      </testcase>
+      <testcase name="test_updraft_vent_contracts" assertions="9" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.000992" >
+      </testcase>
+      <testcase name="test_waterfall_stream_contracts" assertions="10" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.002525" >
+      </testcase>
+      <testcase name="test_wolf_climb_surface_contracts" assertions="11" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.000729" >
+      </testcase>
+      <testcase name="test_pulley_cable_visual_3d_contracts" assertions="4" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.000266" >
+      </testcase>
+      <testcase name="test_cable_builder_component_contracts" assertions="3" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.00043" >
+      </testcase>
+      <testcase name="test_checkpoint_scene_contracts" assertions="6" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.001467" >
+      </testcase>
+      <testcase name="test_developer_commentary_contracts" assertions="15" status="pass" classname="test/unit/test_wave8_characterization.gd" time="0.002752" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wave9_characterization.gd" tests="29" failures="0" skipped="0" time="0.020485" >
+      <testcase name="test_breakable_crate_contracts" assertions="18" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.00149" >
+      </testcase>
+      <testcase name="test_burnable_obstacle_contracts" assertions="6" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000491" >
+      </testcase>
+      <testcase name="test_logic_button_contracts" assertions="5" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000774" >
+      </testcase>
+      <testcase name="test_cinder_block_contracts" assertions="8" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000892" >
+      </testcase>
+      <testcase name="test_combination_lock_contracts" assertions="5" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000647" >
+      </testcase>
+      <testcase name="test_combustible_object_contracts" assertions="14" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.001098" >
+      </testcase>
+      <testcase name="test_door_interact_contracts" assertions="4" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.00047" >
+      </testcase>
+      <testcase name="test_door_keypad_contracts" assertions="10" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000932" >
+      </testcase>
+      <testcase name="test_double_sliding_doors_contracts" assertions="11" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000826" >
+      </testcase>
+      <testcase name="test_engine_ramp_contracts" assertions="13" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000787" >
+      </testcase>
+      <testcase name="test_explosive_barrel_contracts" assertions="9" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000602" >
+      </testcase>
+      <testcase name="test_feedback_station_contracts" assertions="5" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000482" >
+      </testcase>
+      <testcase name="test_gas_stove_contracts" assertions="9" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.001289" >
+      </testcase>
+      <testcase name="test_ground_button_contracts" assertions="8" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.00041" >
+      </testcase>
+      <testcase name="test_health_upgrade_contracts" assertions="4" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000741" >
+      </testcase>
+      <testcase name="test_keycard_lock_contracts" assertions="5" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000515" >
+      </testcase>
+      <testcase name="test_keycard_pickup_contracts" assertions="4" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000401" >
+      </testcase>
+      <testcase name="test_ladder_4m_contracts" assertions="6" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.00059" >
+      </testcase>
+      <testcase name="test_laser_target_contracts" assertions="5" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000582" >
+      </testcase>
+      <testcase name="test_mannequin_ragdoll_contracts" assertions="10" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.001072" >
+      </testcase>
+      <testcase name="test_note_item_contracts" assertions="8" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000706" >
+      </testcase>
+      <testcase name="test_pickable_object_contracts" assertions="11" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.00075" >
+      </testcase>
+      <testcase name="test_player_drone_contracts" assertions="9" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.00076" >
+      </testcase>
+      <testcase name="test_portal_contracts" assertions="4" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000608" >
+      </testcase>
+      <testcase name="test_pulley_constraint_contracts" assertions="6" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000274" >
+      </testcase>
+      <testcase name="test_puzzle_socket_contracts" assertions="8" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000698" >
+      </testcase>
+      <testcase name="test_reflector_mirror_contracts" assertions="8" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000513" >
+      </testcase>
+      <testcase name="test_universal_cable_3d_contracts" assertions="5" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000439" >
+      </testcase>
+      <testcase name="test_valve_contracts" assertions="12" status="pass" classname="test/unit/test_wave9_characterization.gd" time="0.000646" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_weapon_inventory_component.gd" tests="5" failures="0" skipped="0" time="0.003889" >
+      <testcase name="test_register_weapon" assertions="2" status="pass" classname="test/unit/test_weapon_inventory_component.gd" time="0.000593" >
+      </testcase>
+      <testcase name="test_select_slot" assertions="7" status="pass" classname="test/unit/test_weapon_inventory_component.gd" time="0.000668" >
+      </testcase>
+      <testcase name="test_select_same_slot_re_emits_event" assertions="1" status="pass" classname="test/unit/test_weapon_inventory_component.gd" time="0.001933" >
+      </testcase>
+      <testcase name="test_add_ammo" assertions="3" status="pass" classname="test/unit/test_weapon_inventory_component.gd" time="0.000406" >
+      </testcase>
+      <testcase name="test_add_ammo_clamps_at_max_reserve" assertions="2" status="pass" classname="test/unit/test_weapon_inventory_component.gd" time="0.000289" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_wolf_wall_run_speed_lines.gd" tests="4" failures="0" skipped="0" time="0.026274" >
+      <testcase name="test_wolf_wall_run_vfx_signal_exists" assertions="1" status="pass" classname="test/unit/test_wolf_wall_run_speed_lines.gd" time="0.000189" >
+      </testcase>
+      <testcase name="test_wolf_wall_run_vfx_signal_emission" assertions="2" status="pass" classname="test/unit/test_wolf_wall_run_speed_lines.gd" time="0.001774" >
+      </testcase>
+      <testcase name="test_speed_lines_overlay_in_ui" assertions="5" status="pass" classname="test/unit/test_wolf_wall_run_speed_lines.gd" time="0.011899" >
+      </testcase>
+      <testcase name="test_speed_lines_toggle_reaction" assertions="2" status="pass" classname="test/unit/test_wolf_wall_run_speed_lines.gd" time="0.012412" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_zipline.gd" tests="7" failures="0" skipped="0" time="0.026224" >
+      <testcase name="test_zipline_scene_nodes_and_layers" assertions="9" status="pass" classname="test/unit/test_zipline.gd" time="0.001016" >
+      </testcase>
+      <testcase name="test_zipline_geometry_generation" assertions="11" status="pass" classname="test/unit/test_zipline.gd" time="0.00068" >
+      </testcase>
+      <testcase name="test_crosshair_interact_mount" assertions="3" status="pass" classname="test/unit/test_zipline.gd" time="0.000634" >
+      </testcase>
+      <testcase name="test_midair_proximity_auto_grab" assertions="4" status="pass" classname="test/unit/test_zipline.gd" time="0.005934" >
+      </testcase>
+      <testcase name="test_cooldown_rejects_auto_grab" assertions="2" status="pass" classname="test/unit/test_zipline.gd" time="0.002417" >
+      </testcase>
+      <testcase name="test_grounded_rejects_auto_grab" assertions="2" status="pass" classname="test/unit/test_zipline.gd" time="0.014272" >
+      </testcase>
+      <testcase name="test_on_player_released_cleans_up" assertions="3" status="pass" classname="test/unit/test_zipline.gd" time="0.001271" >
       </testcase>
   </testsuite>
 </testsuites>
