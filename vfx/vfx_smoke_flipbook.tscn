@@ -1,43 +1,71 @@
 [gd_scene format=3 uid="uid://dkmm4qelgt7gp"]
 
-[ext_resource type="Texture2D" uid="uid://bvicax8m3kdh5" path="res://assets/textures/LeLu_Smoke/T_smoke_flipbook.png" id="1_mhjge"]
+[ext_resource type="Shader" path="res://vfx/smoke_hl2_lit.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" uid="uid://cxfcys2crg0ey" path="res://assets/vfx/smoke/hl2_smoke_cloud_4x4.png" id="2_albedo"]
+[ext_resource type="Texture2D" uid="uid://c05nev3xtoyx" path="res://assets/vfx/smoke/hl2_smoke_normal_4x4.png" id="3_normal"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a2idi"]
-transparency = 1
-vertex_color_use_as_albedo = true
-vertex_color_is_srgb = true
-albedo_texture = ExtResource("1_mhjge")
-billboard_mode = 3
-billboard_keep_scale = true
-particles_anim_h_frames = 8
-particles_anim_v_frames = 8
-particles_anim_loop = false
-proximity_fade_enabled = true
+[sub_resource type="Gradient" id="Gradient_color"]
+offsets = PackedFloat32Array(0, 0.2, 0.72, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.36, 0.92, 0.92, 0.92, 0.3, 0.78, 0.78, 0.78, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_color"]
+gradient = SubResource("Gradient_color")
+
+[sub_resource type="Curve" id="Curve_scale"]
+_data = [Vector2(0, 0.45), 0.0, 1.4, 0, 0, Vector2(0.5, 1.15), 0.85, 0.85, 0, 0, Vector2(1, 1.65), 0.35, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_scale"]
+curve = SubResource("Curve_scale")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ul3b4"]
-particle_flag_rotate_y = true
 emission_shape = 1
-emission_sphere_radius = 0.1
-angle_min = -179.99998
-angle_max = 180.00002
+emission_sphere_radius = 0.28
+angle_min = -180.0
+angle_max = 180.0
 direction = Vector3(0, 1, 0)
-spread = 0.0
-initial_velocity_min = 1.8
-initial_velocity_max = 2.3
-angular_velocity_min = -50.000015
-angular_velocity_max = 49.99998
-gravity = Vector3(0, 0, 0)
-scale_min = 0.9
-scale_max = 2.2
-anim_speed_min = 1.0
-anim_speed_max = 1.0
+spread = 16.0
+initial_velocity_min = 0.9
+initial_velocity_max = 1.5
+angular_velocity_min = -28.0
+angular_velocity_max = 28.0
+gravity = Vector3(0, 0.25, 0)
+damping_min = 0.35
+damping_max = 0.6
+scale_min = 0.85
+scale_max = 1.5
+scale_curve = SubResource("CurveTexture_scale")
+color_ramp = SubResource("GradientTexture1D_color")
+anim_offset_min = 0.0
+anim_offset_max = 1.0
+collision_mode = 1
+collision_friction = 0.1
+collision_bounce = 0.0
+collision_use_scale = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hl2"]
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/albedo_atlas = ExtResource("2_albedo")
+shader_parameter/normal_atlas = ExtResource("3_normal")
+shader_parameter/atlas_grid = Vector2(4, 4)
+shader_parameter/soft_particle_distance = 0.85
+shader_parameter/near_fade_distance = 0.75
+shader_parameter/scatter_strength = 0.65
+shader_parameter/wrap_diffuse_bias = 0.78
+shader_parameter/ambient_floor = 0.1
+shader_parameter/normal_strength = 0.2
 
 [sub_resource type="QuadMesh" id="QuadMesh_vvn46"]
+material = SubResource("ShaderMaterial_hl2")
+size = Vector2(2, 2)
 
 [node name="VFX_Smoke_Flipbook" type="GPUParticles3D" unique_id=2050701906]
-material_override = SubResource("StandardMaterial3D_a2idi")
-amount = 20
-lifetime = 2.0
+layers = 512
+amount = 32
+lifetime = 3.2
 fixed_fps = 60
+collision_base_size = 0.6
+visibility_aabb = AABB(-4, -1, -4, 8, 9, 8)
 process_material = SubResource("ParticleProcessMaterial_ul3b4")
 draw_pass_1 = SubResource("QuadMesh_vvn46")

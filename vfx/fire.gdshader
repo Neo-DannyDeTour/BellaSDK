@@ -32,10 +32,8 @@ uniform vec3 color_smoke = vec3(0.08, 0.06, 0.06);
 varying vec3 world_position;
 varying vec3 world_camera;
 
-float hash(vec3 p) {
-	p = fract(p * 0.3183099 + vec3(0.1, 0.3, 0.7));
-	p = p * dot(p, p.yzx + 19.19);
-	return fract((p.x + p.y) * p.z);
+float interleaved_gradient_noise(vec2 screen_pos) {
+	return fract(52.9829189 * fract(dot(screen_pos, vec2(0.06711056, 0.00583715))));
 }
 
 float flame_sdf(vec3 p, vec3 base_pos) {
@@ -58,13 +56,25 @@ float flame_sdf(vec3 p, vec3 base_pos) {
 	dist = max(dist, -bent_pos.y);
 	dist = max(dist, (bent_pos.y - fire_height) * 0.8);
 
-	vec3 uv1 = bent_pos * noise_scale + vec3(0.0, -TIME * time_scale * 1.8, 0.0);
-	vec3 uv2 = bent_pos * (noise_scale * 2.2) + vec3(0.0, -TIME * time_scale * 3.4, 0.0);
+	// 3-octave upward curl turbulence for semi-realistic wispy HL2 flames.
+	vec3 uv1 = bent_pos * noise_scale + vec3(0.0, -TIME * time_scale * 1.9, 0.0);
 	float n1 = texture(sample_noise, fract(uv1)).r;
+	vec3 curl_offset = vec3(n1 - 0.5, (n1 - 0.5) * 0.20, 0.5 - n1)
+			* (0.30 * clamp(h_ratio, 0.1, 1.0));
+	vec3 uv2 = bent_pos * (noise_scale * 2.35) + curl_offset
+			+ vec3(0.0, -TIME * time_scale * 3.6, 0.0);
 	float n2 = texture(sample_noise, fract(uv2)).r;
-	float combined_noise = mix(n1, n2, 0.4);
+	vec3 uv3 = bent_pos * (noise_scale * 4.75) - curl_offset * 0.65
+			+ vec3(0.0, -TIME * time_scale * 5.4, 0.0);
+	float n3 = texture(sample_noise, fract(uv3)).r;
 
-	dist += (combined_noise - noise_threshold) * mix(0.25, 0.7, clamp(h_ratio, 0.0, 1.0));
+	float ridge1 = abs(n1 * 2.0 - 1.0);
+	float ridge2 = abs(n2 * 2.0 - 1.0);
+	float ridge3 = abs(n3 * 2.0 - 1.0);
+	float combined_ridge = ridge1 * 0.48 + ridge2 * 0.34 + ridge3 * 0.18;
+	float sharpened_ridge = mix(combined_ridge, smoothstep(0.10, 0.90, combined_ridge), 0.38);
+
+	dist += (sharpened_ridge - noise_threshold) * mix(0.28, 0.80, clamp(h_ratio, 0.0, 1.0));
 	return dist;
 }
 
@@ -118,7 +128,7 @@ void fragment() {
 	float step_size = march_range / float(raymarch_steps);
 	float jitter_offset = 0.0;
 	if (sample_jitter) {
-		jitter_offset = hash(ray_origin + ray_direction * TIME) * step_size * 0.5;
+		jitter_offset = interleaved_gradient_noise(FRAGCOORD.xy) * step_size * 0.65;
 	}
 
 	float total_distance = t_enter + jitter_offset;
@@ -134,15 +144,18 @@ void fragment() {
 		float dist = flame_sdf(current_pos, NODE_POSITION_WORLD);
 
 		if (dist < 0.0) {
-			float density = clamp(-dist / sharpness_cutoff, 0.0, 1.0);
+			float raw_density = clamp(-dist / max(sharpness_cutoff, 0.1), 0.0, 1.0);
+			float density = smoothstep(0.0, 0.92, raw_density);
 			float h_norm = clamp((current_pos.y - base_world.y) / fire_height, 0.0, 1.0);
 
-			vec3 col = mix(color_outer, color_mid, density);
-			col = mix(col, color_core, smoothstep(0.4, 0.95, density) * (1.0 - h_norm * 0.85));
-			col = mix(col, color_smoke, smoothstep(0.65, 1.0, h_norm));
+			vec3 col = mix(color_outer, color_mid, smoothstep(0.02, 0.78, density));
+			col = mix(col, color_core, smoothstep(0.42, 0.96, density) * (1.0 - h_norm * 0.82));
+			col = mix(col, color_smoke, smoothstep(0.72, 1.0, h_norm));
 
-			float alpha_step = 1.0 - exp(-density * step_size * 20.0);
-			final_color += col * alpha_step * (1.0 - current_alpha);
+			float core_boost = pow(density, 1.75) * emission_strength * 2.0 * (1.0 - h_norm * 0.75);
+			vec3 hdr_col = col * emission_strength + color_core * core_boost;
+			float alpha_step = 1.0 - exp(-density * step_size * 15.0);
+			final_color += hdr_col * alpha_step * (1.0 - current_alpha);
 			current_alpha += alpha_step * (1.0 - current_alpha);
 
 			if (current_alpha > 0.98) {
@@ -158,5 +171,5 @@ void fragment() {
 	}
 
 	ALPHA = clamp(current_alpha, 0.0, 1.0);
-	ALBEDO = final_color * emission_strength;
+	ALBEDO = final_color;
 }

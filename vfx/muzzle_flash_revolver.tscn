@@ -1,0 +1,176 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://vfx/muzzle_flash.gd" id="1_script"]
+[ext_resource type="Shader" path="res://vfx/muzzle_flash.gdshader" id="2_flash_sh"]
+[ext_resource type="Texture2D" uid="uid://bnri6j7kq75ls" path="res://assets/vfx/muzzle/muzzle_flash_atlas.png" id="3_flash_tex"]
+[ext_resource type="Shader" uid="uid://d312ra6y334gv" path="res://vfx/explosion_sparks.gdshader" id="4_spark_sh"]
+[ext_resource type="Shader" path="res://vfx/smoke_hl2_lit.gdshader" id="5_smoke_sh"]
+[ext_resource type="Texture2D" uid="uid://cxfcys2crg0ey" path="res://assets/vfx/smoke/hl2_smoke_cloud_4x4.png" id="6_smoke_alb"]
+[ext_resource type="Texture2D" uid="uid://c05nev3xtoyx" path="res://assets/vfx/smoke/hl2_smoke_normal_4x4.png" id="7_smoke_nrm"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_flash"]
+render_priority = 2
+shader = ExtResource("2_flash_sh")
+shader_parameter/flash_atlas = ExtResource("3_flash_tex")
+
+[sub_resource type="QuadMesh" id="QuadMesh_star"]
+size = Vector2(0.22, 0.22)
+
+[sub_resource type="QuadMesh" id="QuadMesh_jet"]
+size = Vector2(0.28, 0.16)
+center_offset = Vector3(0.14, 0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sparks"]
+render_priority = 1
+shader = ExtResource("4_spark_sh")
+shader_parameter/spark_color = Color(6, 2.6, 0.6, 1)
+
+[sub_resource type="Curve" id="Curve_spark_alpha"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.65, 0.85), -0.5, -0.5, 0, 0, Vector2(1, 0), -2.5, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_spark_alpha"]
+curve = SubResource("Curve_spark_alpha")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sparks"]
+particle_flag_align_y = true
+lifetime_randomness = 0.35
+direction = Vector3(0, 0, -1)
+spread = 22.0
+initial_velocity_min = 9.0
+initial_velocity_max = 15.0
+gravity = Vector3(0, -6, 0)
+damping_min = 3.0
+damping_max = 6.0
+scale_min = 0.7
+scale_max = 1.2
+alpha_curve = SubResource("CurveTexture_spark_alpha")
+
+[sub_resource type="QuadMesh" id="QuadMesh_spark"]
+size = Vector2(0.01, 0.055)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_smoke"]
+render_priority = 0
+shader = ExtResource("5_smoke_sh")
+shader_parameter/albedo_atlas = ExtResource("6_smoke_alb")
+shader_parameter/normal_atlas = ExtResource("7_smoke_nrm")
+shader_parameter/atlas_grid = Vector2(4, 4)
+shader_parameter/soft_particle_distance = 0.85
+shader_parameter/near_fade_distance = 0.75
+shader_parameter/scatter_strength = 0.65
+shader_parameter/wrap_diffuse_bias = 0.8
+shader_parameter/ambient_floor = 0.1
+shader_parameter/normal_strength = 0.18
+
+[sub_resource type="Curve" id="Curve_smoke_alpha"]
+_data = [Vector2(0, 0), 0.0, 2.2, 0, 0, Vector2(0.2, 0.3), 0.1, -0.1, 0, 0, Vector2(1, 0), -0.5, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_smoke_alpha"]
+curve = SubResource("Curve_smoke_alpha")
+
+[sub_resource type="Curve" id="Curve_smoke_scale"]
+_data = [Vector2(0, 0.45), 0.0, 1.5, 0, 0, Vector2(1, 1.65), 0.6, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_smoke_scale"]
+curve = SubResource("Curve_smoke_scale")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_smoke"]
+emission_shape = 1
+emission_sphere_radius = 0.02
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 0.25, -1)
+spread = 18.0
+initial_velocity_min = 0.6
+initial_velocity_max = 1.2
+angular_velocity_min = -35.0
+angular_velocity_max = 35.0
+gravity = Vector3(0, 0.45, 0)
+damping_min = 1.2
+damping_max = 2.0
+scale_curve = SubResource("CurveTexture_smoke_scale")
+alpha_curve = SubResource("CurveTexture_smoke_alpha")
+anim_speed_min = 0.1
+anim_speed_max = 0.25
+anim_offset_max = 1.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_smoke"]
+size = Vector2(0.16, 0.16)
+
+[node name="MuzzleFlash" type="Node3D" unique_id=1410203001]
+script = ExtResource("1_script")
+flash_duration = 0.048
+light_energy_peak = 4.8
+light_range = 5.5
+light_color = Color(1, 0.74, 0.34, 1)
+
+[node name="FlashRig" type="Node3D" parent="." unique_id=1410203002]
+visible = false
+
+[node name="FrontStar" type="MeshInstance3D" parent="FlashRig" unique_id=1410203003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.02)
+layers = 512
+material_override = SubResource("ShaderMaterial_flash")
+cast_shadow = 0
+instance_shader_parameters/atlas_offset = Vector2(0, 0)
+instance_shader_parameters/flash_alpha = 0.0
+instance_shader_parameters/flash_tint = Color(1, 0.78, 0.38, 1)
+instance_shader_parameters/hdr_energy = 7.5
+mesh = SubResource("QuadMesh_star")
+
+[node name="SideJetA" type="MeshInstance3D" parent="FlashRig" unique_id=1410203004]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, 0)
+layers = 512
+material_override = SubResource("ShaderMaterial_flash")
+cast_shadow = 0
+instance_shader_parameters/atlas_offset = Vector2(0.5, 0)
+instance_shader_parameters/flash_alpha = 0.0
+instance_shader_parameters/flash_tint = Color(1, 0.78, 0.38, 1)
+instance_shader_parameters/hdr_energy = 7.5
+mesh = SubResource("QuadMesh_jet")
+
+[node name="SideJetB" type="MeshInstance3D" parent="FlashRig" unique_id=1410203005]
+transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0, 0, 0)
+layers = 512
+material_override = SubResource("ShaderMaterial_flash")
+cast_shadow = 0
+instance_shader_parameters/atlas_offset = Vector2(0.5, 0)
+instance_shader_parameters/flash_alpha = 0.0
+instance_shader_parameters/flash_tint = Color(1, 0.78, 0.38, 1)
+instance_shader_parameters/hdr_energy = 7.5
+mesh = SubResource("QuadMesh_jet")
+
+[node name="FlashLight" type="OmniLight3D" parent="." unique_id=1410203006]
+light_color = Color(1, 0.74, 0.34, 1)
+light_energy = 0.0
+omni_range = 5.5
+
+[node name="PowderSparks" type="GPUParticles3D" parent="." unique_id=1410203007]
+layers = 512
+material_override = SubResource("ShaderMaterial_sparks")
+cast_shadow = 0
+emitting = false
+amount = 8
+lifetime = 0.22
+one_shot = true
+explosiveness = 0.95
+process_material = SubResource("ParticleProcessMaterial_sparks")
+draw_pass_1 = SubResource("QuadMesh_spark")
+
+[node name="BarrelSmoke" type="GPUParticles3D" parent="." unique_id=1410203008]
+layers = 512
+material_override = SubResource("ShaderMaterial_smoke")
+cast_shadow = 0
+instance_shader_parameters/density_scale = 0.55
+instance_shader_parameters/erosion_bias = 0.08
+instance_shader_parameters/tint_color = Color(0.84, 0.86, 0.9, 0.75)
+emitting = false
+amount = 3
+lifetime = 1.35
+one_shot = true
+explosiveness = 0.85
+local_coords = false
+process_material = SubResource("ParticleProcessMaterial_smoke")
+draw_pass_1 = SubResource("QuadMesh_smoke")

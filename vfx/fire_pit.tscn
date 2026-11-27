@@ -1,56 +1,174 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" uid="uid://ckxfote8jrk5j" path="res://vfx/fire_flipbook_emitter.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://cte75xwrwlfs1" path="res://assets/vfx/fire_flipbook_8x8.png" id="2_atlas"]
-[ext_resource type="PackedScene" uid="uid://dkmm4qelgt7gp" path="res://vfx/vfx_smoke_flipbook.tscn" id="3_smoke"]
-[ext_resource type="PackedScene" uid="uid://dhopg67s57gx" path="res://vfx/gas_leak.tscn" id="4_heat"]
+[ext_resource type="Shader" path="res://vfx/fire_punchy.gdshader" id="2_punchy"]
+[ext_resource type="Texture2D" uid="uid://k61ij0x0aa6n" path="res://assets/vfx/fire/fire_tongues_4x4.png" id="3_tongues"]
+[ext_resource type="Texture2D" uid="uid://8od3mw5i8gci" path="res://assets/vfx/fire/fire_noise_tile.png" id="4_noise"]
+[ext_resource type="PackedScene" uid="uid://dkmm4qelgt7gp" path="res://vfx/vfx_smoke_flipbook.tscn" id="5_smoke"]
+[ext_resource type="PackedScene" uid="uid://dhopg67s57gx" path="res://vfx/gas_leak.tscn" id="6_heat"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fire"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fire_punchy"]
+render_priority = 0
+shader = ExtResource("2_punchy")
+shader_parameter/flame_atlas = ExtResource("3_tongues")
+shader_parameter/noise_tex = ExtResource("4_noise")
+shader_parameter/depth_fade_distance = 0.45
+shader_parameter/warp_strength = 0.032
+shader_parameter/alpha_cutoff = 0.16
+shader_parameter/edge_softness = 0.12
+shader_parameter/atlas_grid = Vector2(4, 4)
+
+[sub_resource type="Curve" id="Curve_flame_scale"]
+_data = [Vector2(0, 0.62), 0.0, 2.2, 0, 0, Vector2(0.28, 1.05), 0.0, -0.4, 0, 0, Vector2(1, 0.32), -1.1, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_flame_scale"]
+curve = SubResource("Curve_flame_scale")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_flame_inner"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.06
+emission_ring_radius = 0.18
+emission_ring_inner_radius = 0.0
+angle_min = -10.0
+angle_max = 10.0
+direction = Vector3(0, 1, 0)
+spread = 10.0
+initial_velocity_min = 0.55
+initial_velocity_max = 1.05
+gravity = Vector3(0, 0.85, 0)
+scale_min = 0.8
+scale_max = 1.15
+scale_curve = SubResource("CurveTexture_flame_scale")
+
+[sub_resource type="QuadMesh" id="QuadMesh_flame_inner"]
+size = Vector2(1.15, 1.45)
+center_offset = Vector3(0, 0.55, 0)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_flame_outer"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.08
+emission_ring_radius = 0.3
+emission_ring_inner_radius = 0.08
+angle_min = -18.0
+angle_max = 18.0
+direction = Vector3(0, 1, 0)
+spread = 18.0
+initial_velocity_min = 0.45
+initial_velocity_max = 0.95
+gravity = Vector3(0, 0.65, 0)
+scale_min = 0.9
+scale_max = 1.3
+scale_curve = SubResource("CurveTexture_flame_scale")
+
+[sub_resource type="QuadMesh" id="QuadMesh_flame_outer"]
+size = Vector2(1.45, 1.85)
+center_offset = Vector3(0, 0.62, 0)
+
+[sub_resource type="Gradient" id="Gradient_ember_life"]
+offsets = PackedFloat32Array(0, 0.25, 0.72, 1)
+colors = PackedColorArray(1, 0.92, 0.55, 1, 1, 0.58, 0.12, 0.95, 0.95, 0.24, 0.03, 0.5, 0.3, 0.04, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ember_life"]
+gradient = SubResource("Gradient_ember_life")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_embers"]
+particle_flag_align_y = true
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.12
+emission_ring_radius = 0.32
+emission_ring_inner_radius = 0.04
+direction = Vector3(0, 1, 0)
+spread = 28.0
+initial_velocity_min = 1.15
+initial_velocity_max = 2.45
+gravity = Vector3(0, 1.2, 0)
+scale_min = 0.5
+scale_max = 1.2
+color_ramp = SubResource("GradientTexture1D_ember_life")
+turbulence_enabled = true
+turbulence_noise_strength = 0.95
+turbulence_noise_scale = 2.2
+
+[sub_resource type="Gradient" id="Gradient_ember_dot"]
+offsets = PackedFloat32Array(0, 0.28, 0.75, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.85, 1, 1, 1, 0.2, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_ember_dot"]
+gradient = SubResource("Gradient_ember_dot")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_embers"]
 transparency = 1
 blend_mode = 1
 shading_mode = 0
-albedo_texture = ExtResource("2_atlas")
+vertex_color_use_as_albedo = true
+albedo_color = Color(2.8, 1.45, 0.45, 1)
+albedo_texture = SubResource("GradientTexture2D_ember_dot")
 billboard_mode = 3
 billboard_keep_scale = true
-particles_anim_h_frames = 8
-particles_anim_v_frames = 8
-particles_anim_loop = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
 
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_fire"]
-gravity = Vector3(0, 0, 0)
-anim_speed_min = 1.0
-anim_speed_max = 1.0
-
-[sub_resource type="QuadMesh" id="QuadMesh_fire"]
-size = Vector2(1.4, 1.6)
-center_offset = Vector3(0, 0.75, 0)
+[sub_resource type="QuadMesh" id="QuadMesh_embers"]
+material = SubResource("StandardMaterial3D_embers")
+size = Vector2(0.01, 0.028)
 
 [node name="FirePit" type="Node3D"]
 script = ExtResource("1_script")
 
 [node name="FlameParticles" type="GPUParticles3D" parent="."]
 layers = 512
-material_override = SubResource("StandardMaterial3D_fire")
-amount = 1
-lifetime = 1.8
-fixed_fps = 30
-process_material = SubResource("ParticleProcessMaterial_fire")
-draw_pass_1 = SubResource("QuadMesh_fire")
+material_override = SubResource("ShaderMaterial_fire_punchy")
+amount = 18
+lifetime = 0.85
+preprocess = 0.5
+fixed_fps = 60
+randomness = 0.35
+process_material = SubResource("ParticleProcessMaterial_flame_inner")
+draw_pass_1 = SubResource("QuadMesh_flame_inner")
 
-[node name="SmokeParticles" parent="." instance=ExtResource("3_smoke")]
-transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 0.85, 0)
+[node name="FlameOuterParticles" type="GPUParticles3D" parent="."]
+layers = 512
+material_override = SubResource("ShaderMaterial_fire_punchy")
+amount = 12
+lifetime = 1.1
+preprocess = 0.5
+fixed_fps = 60
+randomness = 0.5
+process_material = SubResource("ParticleProcessMaterial_flame_outer")
+draw_pass_1 = SubResource("QuadMesh_flame_outer")
+
+[node name="EmberParticles" type="GPUParticles3D" parent="."]
+layers = 512
+amount = 36
+lifetime = 1.6
+preprocess = 0.6
+fixed_fps = 60
+randomness = 0.5
+process_material = SubResource("ParticleProcessMaterial_embers")
+draw_pass_1 = SubResource("QuadMesh_embers")
+
+[node name="SmokeParticles" parent="." instance=ExtResource("5_smoke")]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 0, 0.95, 0)
 layers = 512
 
-[node name="HeatDistortion" parent="." instance=ExtResource("4_heat")]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0.25, 0)
+[node name="HeatDistortion" parent="." instance=ExtResource("6_heat")]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0.95, 0)
 layers = 512
 is_leaking = true
 
 [node name="FireLight" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
-light_color = Color(1, 0.603922, 0.235294, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+light_color = Color(1, 0.572549, 0.2, 1)
 light_energy = 2.2
-omni_range = 5.5
+omni_range = 7.5
 
 [node name="VisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="."]
-aabb = AABB(-0.8, 0, -0.8, 1.6, 2.5, 1.6)
+aabb = AABB(-1, 0, -1, 2, 3, 2)
