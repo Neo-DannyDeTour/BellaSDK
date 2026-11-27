@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://dtm30dwmcgd8n" path="res://environment/water_body.gd" id="2_ejx8y"]
 [ext_resource type="Script" uid="uid://grkqw00wxiwn" path="res://environment/UnderwaterFogVolume.gd" id="3_b5ytn"]
 [ext_resource type="AudioStream" uid="uid://c3gfubvks8j8o" path="res://assets/sounds/WaterSplash.mp3" id="6_266v4"]
-[ext_resource type="AudioStream" uid="uid://dtv3gp57rb7kd" path="res://assets/sounds/Underwater.wav" id="7_d7iy8"]
+[ext_resource type="AudioStream" uid="uid://cd5yp478a6fqn" path="res://assets/sounds/Underwater.ogg" id="7_d7iy8"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_or4qq"]
 noise_type = 3

@@ -49,7 +49,7 @@
 [ext_resource type="PackedScene" uid="uid://bpn41lsyperm8" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_computer_old.tscn" id="46_ujj0l"]
 [ext_resource type="PackedScene" uid="uid://c4jdpcnpsoerv" path="res://interactables/mirror.tscn" id="47_sitvf"]
 [ext_resource type="PackedScene" uid="uid://jvgnyc7a68n6" path="res://environment/soundscape_zone.tscn" id="48_u4cxf"]
-[ext_resource type="AudioStream" uid="uid://1w1y07mxmm0h" path="res://assets/sounds/SoundscapeHorror.wav" id="49_vawem"]
+[ext_resource type="AudioStream" uid="uid://pr8f4iwl782l" path="res://assets/sounds/SoundscapeHorror.ogg" id="49_vawem"]
 [ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://environment/soundscape_data.gd" id="50_7ix0b"]
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://triggers/env_chapter_trigger.tscn" id="51_52lpc"]
 [ext_resource type="PackedScene" uid="uid://4m1edbr3oqv5" path="res://triggers/trigger_hint.tscn" id="53_ol82b"]
