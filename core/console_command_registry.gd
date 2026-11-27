@@ -24,6 +24,11 @@ func unregister_command(command_name: String) -> void:
 		_commands.erase(clean_name)
 
 
+## Clears all registered commands to break any held callable references on shutdown.
+func clear() -> void:
+	_commands.clear()
+
+
 ## Fetches a registered [ConsoleCommand] by its identifier.
 func get_command(command_name: String) -> ConsoleCommand:
 	var clean_name: String = command_name.to_lower()

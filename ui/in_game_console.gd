@@ -158,6 +158,16 @@ func _exit_tree() -> void:
 	):
 		Events.infinite_ammo_toggled.disconnect(_on_external_infinite_ammo_toggled)
 
+	if registry != null:
+		registry.clear()
+	if context != null:
+		context.host = null
+	system_commands = null
+	cheat_commands = null
+	settings_commands = null
+	context = null
+	registry = null
+
 
 ## Intercepts Escape and UI cancellation inputs to dismiss terminal.
 func _input(event: InputEvent) -> void:

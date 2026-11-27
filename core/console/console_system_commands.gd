@@ -5,6 +5,9 @@ extends RefCounted
 ## Context reference providing output logging and scene tree access.
 var context: ConsoleContext = null
 
+## Weak reference to the command registry avoiding a RefCounted cycle on help.
+var _registry_ref: WeakRef = null
+
 
 ## Constructs a new [ConsoleSystemCommands] module with the given [param p_context].
 func _init(p_context: ConsoleContext) -> void:
@@ -14,11 +17,18 @@ func _init(p_context: ConsoleContext) -> void:
 ## Registers system commands into the provided [param registry].
 func register_commands(registry: ConsoleCommandRegistry) -> void:
 	print("ConsoleSystemCommands: Registering system commands.")
-	registry.register_command(
-		ConsoleCommand.new(
-			"help",
-			"Lists all available commands.",
-			func(_args: PackedStringArray) -> void: _cmd_help(registry)
+	_registry_ref = weakref(registry)
+	(
+		registry
+		. register_command(
+			(
+				ConsoleCommand
+				. new(
+					"help",
+					"Lists all available commands.",
+					_cmd_help_handler,
+				)
+			)
 		)
 	)
 	registry.register_command(ConsoleCommand.new("clear", "Clears the output log.", _cmd_clear))
@@ -120,6 +130,16 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 			"bindlist", "Lists all custom keybindings.", _cmd_bindlist, Callable(), false
 		)
 	)
+
+
+## Resolves the weak [ConsoleCommandRegistry] reference and prints help.
+func _cmd_help_handler(_args: PackedStringArray) -> void:
+	var raw_reg: Variant = _registry_ref.get_ref() if is_instance_valid(_registry_ref) else null
+	var reg: ConsoleCommandRegistry = (
+		raw_reg as ConsoleCommandRegistry if raw_reg is ConsoleCommandRegistry else null
+	)
+	if reg != null:
+		_cmd_help(reg)
 
 
 ## Displays all valid registered console commands.
