@@ -1,0 +1,57 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://environment/ocean_clouds/ocean_clouds.gd" id="1_script"]
+[ext_resource type="Shader" path="res://environment/ocean_clouds/ocean_clouds.gdshader" id="2_shader"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_clouds"]
+noise_type = 3
+seed = 1337
+frequency = 0.022
+fractal_type = 1
+fractal_octaves = 4
+fractal_lacunarity = 2.05
+fractal_gain = 0.52
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_clouds"]
+width = 256
+height = 256
+seamless = true
+seamless_blend_skirt = 0.25
+noise = SubResource("FastNoiseLite_clouds")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_clouds"]
+render_priority = 0
+shader = ExtResource("2_shader")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_clouds")
+shader_parameter/wind_direction = Vector2(1, 0.35)
+shader_parameter/wind_speed = 18.0
+shader_parameter/evolution_speed = 0.25
+shader_parameter/cloud_scale = 0.0022
+shader_parameter/cloud_coverage = 0.52
+shader_parameter/cloud_density = 1.6
+shader_parameter/cloud_thickness = 120.0
+shader_parameter/march_steps = 4
+shader_parameter/sun_direction = Vector3(0.45, 0.65, -0.6)
+shader_parameter/cloud_color = Color(0.96, 0.97, 1, 1)
+shader_parameter/shadow_color = Color(0.32, 0.38, 0.48, 1)
+shader_parameter/sun_color = Color(1, 0.95, 0.86, 1)
+shader_parameter/silver_lining = 0.45
+shader_parameter/canopy_radius = 1800.0
+shader_parameter/horizon_curvature = 4e-05
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_canopy"]
+size = Vector2(3600, 3600)
+subdivide_width = 24
+subdivide_depth = 24
+
+[node name="OceanClouds" type="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 80, 0)
+script = ExtResource("1_script")
+
+[node name="CloudMesh" type="MeshInstance3D" parent="."]
+layers = 512
+material_override = SubResource("ShaderMaterial_clouds")
+cast_shadow = 0
+extra_cull_margin = 500.0
+gi_mode = 0
+mesh = SubResource("PlaneMesh_canopy")

@@ -4,17 +4,17 @@ uniform sampler2D flag_texture : source_color, filter_linear_mipmap;
 uniform sampler2D wind_noise : repeat_enable; // Assign a FastNoiseLite texture here
 
 // Structure Ripples (Left-Right flapping)
-uniform float wave_speed : hint_range(0.0, 10.0, 0.01) = 2.5;
-uniform float wave_amplitude : hint_range(0.0, 1.0, 0.01) = 0.15;
-uniform float wave_frequency : hint_range(0.1, 10.0, 0.01) = 3.0;
-uniform float wave_phases : hint_range(1.0, 8.0, 0.01) = 2.0;
+instance uniform float wave_speed : hint_range(0.0, 10.0, 0.01) = 2.5;
+instance uniform float wave_amplitude : hint_range(0.0, 1.0, 0.01) = 0.15;
+instance uniform float wave_frequency : hint_range(0.1, 10.0, 0.01) = 3.0;
+instance uniform float wave_phases : hint_range(1.0, 8.0, 0.01) = 2.0;
 
 // 3D Wind Push (Front-Back chaotic fluttering)
-uniform vec3 wind_direction = vec3(0.0, 0.0, 1.0);
-uniform float wind_intensity : hint_range(0.0, 5.0, 0.01) = 1.0;
-uniform float noise_strength : hint_range(0.0, 1.0, 0.01) = 0.2;
+instance uniform vec3 wind_direction = vec3(0.0, 0.0, 1.0);
+instance uniform float wind_intensity : hint_range(0.0, 5.0, 0.01) = 1.0;
+instance uniform float noise_strength : hint_range(0.0, 1.0, 0.01) = 0.2;
 
-uniform float roughness : hint_range(0.0, 1.0, 0.01) = 0.6;
+instance uniform float roughness : hint_range(0.0, 1.0, 0.01) = 0.6;
 
 
 void vertex() {

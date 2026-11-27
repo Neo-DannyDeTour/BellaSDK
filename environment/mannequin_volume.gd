@@ -486,7 +486,7 @@ func _draw_grid(half_size: Vector3, x_steps: int, z_steps: int) -> void:
 func _raycast(global_start: Vector3, global_end: Vector3) -> Dictionary:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		global_start, global_end
+		global_start, global_end, CollisionLayers.MASK_SOLID_WORLD
 	)
 	return space_state.intersect_ray(query)
 

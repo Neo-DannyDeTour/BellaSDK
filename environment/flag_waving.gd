@@ -3,6 +3,36 @@
 class_name FlagController
 extends Node3D
 
+## Shader uniform key for the flag albedo texture.
+const PARAM_FLAG_TEXTURE: StringName = &"flag_texture"
+
+## Shader uniform key for the wind noise texture.
+const PARAM_WIND_NOISE: StringName = &"wind_noise"
+
+## Instance shader uniform key for global wind direction vector.
+const PARAM_WIND_DIRECTION: StringName = &"wind_direction"
+
+## Instance shader uniform key for wind push intensity.
+const PARAM_WIND_INTENSITY: StringName = &"wind_intensity"
+
+## Instance shader uniform key for wind noise flutter strength.
+const PARAM_NOISE_STRENGTH: StringName = &"noise_strength"
+
+## Instance shader uniform key for wave animation speed.
+const PARAM_WAVE_SPEED: StringName = &"wave_speed"
+
+## Instance shader uniform key for wave displacement amplitude.
+const PARAM_WAVE_AMPLITUDE: StringName = &"wave_amplitude"
+
+## Instance shader uniform key for wave spatial frequency.
+const PARAM_WAVE_FREQUENCY: StringName = &"wave_frequency"
+
+## Instance shader uniform key for secondary wave phase ratio.
+const PARAM_WAVE_PHASES: StringName = &"wave_phases"
+
+## Instance shader uniform key for surface roughness.
+const PARAM_ROUGHNESS: StringName = &"roughness"
+
 ## The texture assigned to this specific flag instance.
 @export var flag_texture: Texture2D = null:
 	set = set_flag_texture
@@ -53,6 +83,9 @@ extends Node3D
 ## Reference to the back mesh preventing Z-fighting artifacts.
 @export var back_mesh: MeshInstance3D
 
+## Base shared [Material] used to derive texture-keyed variants via [MaterialCache].
+var _base_material: Material
+
 ## Shader material cached via [MaterialCache] preventing compilation hitches.
 var _unique_material: ShaderMaterial
 
@@ -64,32 +97,53 @@ func _ready() -> void:
 	_apply_all_settings()
 
 
-## Retrieves or caches unique [ShaderMaterial] via [MaterialCache].
+## Retrieves or caches shared [ShaderMaterial] keyed by texture combination via [MaterialCache].
 func _initialize_material() -> void:
-	#print("FlagController: Initializing unique material via MaterialCache.")
+	#print("FlagController: Initializing shared material via MaterialCache.")
 	if not is_instance_valid(front_mesh):
 		var found_front: Node = NodeQuery.find_first_child_of_type(self, MeshInstance3D)
 		if found_front is MeshInstance3D:
 			front_mesh = found_front as MeshInstance3D
 
 	if is_instance_valid(front_mesh) and front_mesh.mesh != null:
-		var base_mat: Material = front_mesh.mesh.surface_get_material(0)
-		if base_mat != null:
-			var flag_id: String = "flag_%d" % get_instance_id()
-			_unique_material = MaterialCache.get_variant(base_mat, flag_id) as ShaderMaterial
-			if is_instance_valid(_unique_material):
-				front_mesh.set_surface_override_material(0, _unique_material)
-				if is_instance_valid(back_mesh):
-					back_mesh.set_surface_override_material(0, _unique_material)
+		_base_material = front_mesh.mesh.surface_get_material(0)
+		_sync_shared_material()
 
 
-## Applies all exported property values to the cached shader material.
+## Resolves and binds a shared [ShaderMaterial] keyed by texture and wind noise IDs.
+func _sync_shared_material() -> void:
+	if not is_instance_valid(_base_material) or not is_instance_valid(front_mesh):
+		return
+
+	var flag_id: int = flag_texture.get_instance_id() if is_instance_valid(flag_texture) else 0
+	var noise_id: int = wind_noise.get_instance_id() if is_instance_valid(wind_noise) else 0
+	var variant_key: String = "flag_%d_%d" % [flag_id, noise_id]
+	_unique_material = MaterialCache.get_variant(_base_material, variant_key) as ShaderMaterial
+	if not is_instance_valid(_unique_material):
+		return
+
+	if flag_texture != null:
+		_unique_material.set_shader_parameter(PARAM_FLAG_TEXTURE, flag_texture)
+	if wind_noise != null:
+		_unique_material.set_shader_parameter(PARAM_WIND_NOISE, wind_noise)
+
+	front_mesh.set_surface_override_material(0, _unique_material)
+	if is_instance_valid(back_mesh):
+		back_mesh.set_surface_override_material(0, _unique_material)
+
+
+## Sets a per-instance shader parameter on both front and back flag meshes.
+func _set_instance_param(param: StringName, val: Variant) -> void:
+	if is_instance_valid(front_mesh):
+		front_mesh.set_instance_shader_parameter(param, val)
+	if is_instance_valid(back_mesh):
+		back_mesh.set_instance_shader_parameter(param, val)
+
+
+## Applies all exported property values to the shared material and instance uniforms.
 func _apply_all_settings() -> void:
 	print("FlagController: Applying all exported property parameters.")
-	if flag_texture:
-		set_flag_texture(flag_texture)
-	if wind_noise:
-		set_wind_noise(wind_noise)
+	_sync_shared_material()
 	set_flag_size(flag_size)
 	set_wind_direction(wind_direction)
 	set_wind_intensity(wind_intensity)
@@ -101,24 +155,22 @@ func _apply_all_settings() -> void:
 	set_roughness(roughness)
 
 
-## Sets flag albedo texture and updates shader parameter.
+## Sets flag albedo texture and updates shared texture-keyed shader material.
 func set_flag_texture(value: Texture2D) -> void:
 	print("FlagController: set_flag_texture() called.")
 	flag_texture = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("flag_texture", flag_texture)
+	_sync_shared_material()
 
 
-## Sets wind noise texture and updates shader parameter.
+## Sets wind noise texture and updates shared texture-keyed shader material.
 func set_wind_noise(value: Texture2D) -> void:
 	print("FlagController: set_wind_noise() called.")
 	wind_noise = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("wind_noise", wind_noise)
+	_sync_shared_material()
 
 
 ## Sets physical dimensions of flag front and back meshes.
@@ -133,81 +185,73 @@ func set_flag_size(value: Vector2) -> void:
 		back_mesh.scale = Vector3(flag_size.x, flag_size.y, 1.0)
 
 
-## Sets global wind direction vector in shader material.
+## Sets global wind direction vector via per-instance shader uniform.
 func set_wind_direction(value: Vector3) -> void:
 	print("FlagController: set_wind_direction() called with value: ", value)
 	wind_direction = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("wind_direction", wind_direction)
+	_set_instance_param(PARAM_WIND_DIRECTION, wind_direction)
 
 
-## Sets wind intensity force scalar in shader material.
+## Sets wind intensity force scalar via per-instance shader uniform.
 func set_wind_intensity(value: float) -> void:
 	print("FlagController: set_wind_intensity() called with value: ", value)
 	wind_intensity = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("wind_intensity", wind_intensity)
+	_set_instance_param(PARAM_WIND_INTENSITY, wind_intensity)
 
 
-## Sets noise flutter strength scalar in shader material.
+## Sets noise flutter strength scalar via per-instance shader uniform.
 func set_noise_strength(value: float) -> void:
 	print("FlagController: set_noise_strength() called with value: ", value)
 	noise_strength = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("noise_strength", noise_strength)
+	_set_instance_param(PARAM_NOISE_STRENGTH, noise_strength)
 
 
-## Sets wave flap animation speed in shader material.
+## Sets wave flap animation speed via per-instance shader uniform.
 func set_wave_speed(value: float) -> void:
 	print("FlagController: set_wave_speed() called with value: ", value)
 	wave_speed = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("wave_speed", wave_speed)
+	_set_instance_param(PARAM_WAVE_SPEED, wave_speed)
 
 
-## Sets wave ripple vertical amplitude in shader material.
+## Sets wave ripple vertical amplitude via per-instance shader uniform.
 func set_wave_amplitude(value: float) -> void:
 	print("FlagController: set_wave_amplitude() called with value: ", value)
 	wave_amplitude = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("wave_amplitude", wave_amplitude)
+	_set_instance_param(PARAM_WAVE_AMPLITUDE, wave_amplitude)
 
 
-## Sets wave ripple horizontal frequency in shader material.
+## Sets wave ripple horizontal frequency via per-instance shader uniform.
 func set_wave_frequency(value: float) -> void:
 	print("FlagController: set_wave_frequency() called with value: ", value)
 	wave_frequency = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("wave_frequency", wave_frequency)
+	_set_instance_param(PARAM_WAVE_FREQUENCY, wave_frequency)
 
 
-## Sets wave complexity harmonic phase count in shader material.
+## Sets wave complexity harmonic phase count via per-instance shader uniform.
 func set_wave_phases(value: float) -> void:
 	print("FlagController: set_wave_phases() called with value: ", value)
 	wave_phases = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("wave_phases", wave_phases)
+	_set_instance_param(PARAM_WAVE_PHASES, wave_phases)
 
 
-## Sets surface roughness property in shader material.
+## Sets surface roughness property via per-instance shader uniform.
 func set_roughness(value: float) -> void:
 	print("FlagController: set_roughness() called with value: ", value)
 	roughness = value
 	if not is_inside_tree():
 		return
-	if is_instance_valid(_unique_material):
-		_unique_material.set_shader_parameter("roughness", roughness)
+	_set_instance_param(PARAM_ROUGHNESS, roughness)

@@ -1,7 +1,7 @@
 @tool
 ## Generates straight or coiled barbed wire meshes with instanced [MultiMesh] barbs.
 ##
-## Constructs geometry using [Path3D] and sweeps [CSGPolygon3D] profile along curve.
+## Constructs geometry by sweeping a cylindrical [ArrayMesh] along a generated [Curve3D].
 class_name ProceduralBarbwire
 extends Node3D
 
@@ -10,6 +10,12 @@ enum WireType {
 	STRAIGHT,
 	SPRING,
 }
+
+## Radial segment count for the swept wire cross-section.
+const WIRE_SIDES: int = 8
+
+## Sampling step length in meters along helical spring curves.
+const WIRE_STEP_METERS: float = 0.1
 
 ## Geometric configuration profile for the wire.
 @export_category("Wire Shape")
@@ -134,33 +140,63 @@ func _generate_curve() -> Curve3D:
 	return curve
 
 
-## Sweeps circular profile along supplied guide curve using [CSGPolygon3D].
-## [param curve] The guide curve to sweep the polygon cross-section across.
+## Sweeps circular profile along supplied guide curve into a static [ArrayMesh].
+## [param curve] The guide curve to sweep the circular cross-section across.
 func _build_wire_mesh(curve: Curve3D) -> void:
-	print("ProceduralBarbwire: Building wire mesh sweep along curve.")
+	print("ProceduralBarbwire: Building wire ArrayMesh sweep along curve.")
+	var baked_len: float = curve.get_baked_length()
+	if baked_len <= 0.001:
+		return
 
-	var path: Path3D = Path3D.new()
-	path.curve = curve
-	add_child(path)
+	var steps: int = 1
+	if wire_type == ProceduralBarbwire.WireType.SPRING:
+		steps = maxi(2, ceili(baked_len / WIRE_STEP_METERS))
 
-	var polygon: CSGPolygon3D = CSGPolygon3D.new()
-	polygon.mode = CSGPolygon3D.MODE_PATH
-	add_child(polygon)
+	var verts: PackedVector3Array = PackedVector3Array()
+	var normals: PackedVector3Array = PackedVector3Array()
+	var uvs: PackedVector2Array = PackedVector2Array()
+	var indices: PackedInt32Array = PackedInt32Array()
 
-	polygon.path_node = polygon.get_path_to(path)
-	polygon.path_local = true
-	polygon.path_interval_type = CSGPolygon3D.PATH_INTERVAL_DISTANCE
-	polygon.path_interval = 0.1
-	polygon.path_rotation = CSGPolygon3D.PATH_ROTATION_PATH_FOLLOW
-	polygon.smooth_faces = true
+	var stride: int = WIRE_SIDES + 1
+	for r: int in range(steps + 1):
+		var offset: float = (float(r) / float(steps)) * baked_len
+		var xform: Transform3D = curve.sample_baked_with_rotation(offset, true)
+		for j: int in range(stride):
+			var angle: float = (float(j) / float(WIRE_SIDES)) * TAU
+			var dir: Vector3 = xform.basis.x * cos(angle) + xform.basis.y * sin(angle)
+			verts.append(xform.origin + dir * wire_thickness)
+			normals.append(dir.normalized())
+			uvs.append(Vector2(offset, float(j) / float(WIRE_SIDES)))
 
-	var profile: PackedVector2Array = []
-	var points: int = 8
-	for i: int in range(points):
-		var angle: float = (float(i) / float(points)) * TAU
-		profile.append(Vector2(cos(angle), sin(angle)) * wire_thickness)
+	for r: int in range(steps):
+		var row_a: int = r * stride
+		var row_b: int = (r + 1) * stride
+		for j: int in range(WIRE_SIDES):
+			var a: int = row_a + j
+			var b: int = row_a + j + 1
+			var c: int = row_b + j
+			var d: int = row_b + j + 1
+			indices.append(a)
+			indices.append(c)
+			indices.append(b)
+			indices.append(b)
+			indices.append(c)
+			indices.append(d)
 
-	polygon.polygon = profile
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = indices
+
+	var arr_mesh: ArrayMesh = ArrayMesh.new()
+	arr_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+
+	var wire_mesh: MeshInstance3D = MeshInstance3D.new()
+	wire_mesh.name = &"WireMesh"
+	wire_mesh.mesh = arr_mesh
+	add_child(wire_mesh)
 
 
 ## Instantiates star barb geometry along curve sampled intervals via [MultiMesh].
