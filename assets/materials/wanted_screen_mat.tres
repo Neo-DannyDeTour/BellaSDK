@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://dvcs2r4b0es35"]
 
-[ext_resource type="Shader" uid="uid://jyyin2800ti2" path="res://assets/shaders/wanted_screen.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://jyyin2800ti2" path="res://shaders/wanted_screen.gdshader" id="1_shader"]
 
 [resource]
 render_priority = 0
